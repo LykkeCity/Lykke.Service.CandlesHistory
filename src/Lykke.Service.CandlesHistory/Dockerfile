@@ -1,5 +1,4 @@
-FROM microsoft/dotnet:1.1-runtime
-ARG source
+FROM microsoft/aspnetcore:1.1.1
 WORKDIR /app
 COPY . .
 ENTRYPOINT ["dotnet", "Lykke.Service.CandlesHistory.dll"]

@@ -9,6 +9,7 @@
         public class CandlesHistorySettings
         {
             public LogsSettings Logs { get; set; }
+            public RabbitSettings QuoteFeedRabbitSettings { get; set; }
         }
 
         public class LogsSettings

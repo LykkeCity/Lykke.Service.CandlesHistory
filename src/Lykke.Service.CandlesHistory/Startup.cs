@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net.Http;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
@@ -60,7 +59,7 @@ namespace Lykke.Service.CandlesHistory
                 options.SingleApiVersion(new Info
                 {
                     Version = "v1",
-                    Title = "Dutch Auction API"
+                    Title = "Candles hisotry service"
                 });
                 options.DescribeAllEnumsAsStrings();
                 options.EnableXmsEnumExtension();
@@ -73,7 +72,7 @@ namespace Lykke.Service.CandlesHistory
                 options.IncludeXmlComments(xmlPath);
             });
 
-            var settings = LoadSettings();
+            var settings = HttpSettingsLoader.Load<ApplicationSettings>();
             var appSettings = settings.CandlesHistory;
 
             var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
@@ -110,26 +109,6 @@ namespace Lykke.Service.CandlesHistory
             app.UseMvc();
             app.UseSwagger();
             app.UseSwaggerUi();
-        }
-
-        private static ApplicationSettings LoadSettings()
-        {
-            var settingsUrl = Environment.GetEnvironmentVariable("SettingsUrl");
-
-            if (string.IsNullOrEmpty(settingsUrl))
-            {
-                throw new Exception("Environment variable 'SettingsUrl' is not defined");
-            }
-
-            using (var httpClient = new HttpClient())
-            {
-                using (var response = httpClient.GetAsync(settingsUrl).Result)
-                {
-                    var settingsData = response.Content.ReadAsStringAsync().Result;
-
-                    return SettingsProcessor.Process<ApplicationSettings>(settingsData);
-                }
-            }
         }
     }
 }

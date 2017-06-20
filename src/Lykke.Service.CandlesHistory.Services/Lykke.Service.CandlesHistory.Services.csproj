@@ -1,7 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lykke.Common" Version="1.1.69" />
+    <PackageReference Include="Lykke.Domain.Prices" Version="0.9.0" />
+    <PackageReference Include="Lykke.RabbitMqBroker" Version="1.0.65" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
+  </ItemGroup>
 
 </Project>
