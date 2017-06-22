@@ -36,5 +36,14 @@ namespace Lykke.Service.CandlesHistory.Models
 
             return response;
         }
+
+        public static ErrorResponse Create(string field, string message)
+        {
+            var response = new ErrorResponse();
+
+            response.ErrorMessages.Add(field, new List<string> { message });
+
+            return response;
+        }
     }
 }

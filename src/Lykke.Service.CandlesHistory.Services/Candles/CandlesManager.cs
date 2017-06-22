@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,8 +16,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class CandlesManager : ICandlesManager
     {
-        private static readonly TimeInterval[] StoredIntervals =
-        {
+        private static readonly ImmutableArray<TimeInterval> StoredIntervals = ImmutableArray.Create
+        (
             TimeInterval.Sec,
             TimeInterval.Minute,
             TimeInterval.Min30,
@@ -24,14 +25,24 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             TimeInterval.Day,
             TimeInterval.Week,
             TimeInterval.Month
-        };
+        );
 
-        private static readonly PriceType[] StoredPriceTypes =
-        {
+        private static readonly ImmutableArray<PriceType> StoredPriceTypes = ImmutableArray.Create
+        (
             PriceType.Ask,
             PriceType.Bid,
             PriceType.Mid
-        };
+        );
+
+        private static readonly ImmutableDictionary<TimeInterval, TimeInterval> GetToStoredIntervalsMap = ImmutableDictionary.CreateRange(new[]
+        {
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min5, TimeInterval.Minute),
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min15, TimeInterval.Minute),
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min30, TimeInterval.Minute),
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour4, TimeInterval.Hour),
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour6, TimeInterval.Hour),
+            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour12, TimeInterval.Hour)
+        });
 
         private readonly IMidPriceQuoteGenerator _midPriceQuoteGenerator;
         private readonly ICandlesService _candlesService;
@@ -92,6 +103,20 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
+        public IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        {
+            if (StoredIntervals.Contains(timeInterval))
+            {
+                return _candlesService.GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment);
+            }
+
+            var sourceInterval = GetToStoredIntervalsMap[timeInterval];
+            var sourceHistory = _candlesService.GetCandles(assetPairId, priceType, sourceInterval, fromMoment, toMoment);
+
+            // Remap candles from sourceInterval (e.g. Minute) to timeInterval (e.g. Min15)
+            return _candlesService.MergeCandlesToBiggerInterval(sourceHistory, timeInterval);
+        }
+        
         private async Task CacheCandlesAsync()
         {
             await _log.WriteInfoAsync(Constants.ComponentName, null, null, "Caching candles history...");
