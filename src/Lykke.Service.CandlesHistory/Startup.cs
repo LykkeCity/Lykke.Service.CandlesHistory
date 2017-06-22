@@ -1,15 +1,14 @@
 ﻿using System;
-using System.IO;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
 using Lykke.AzureQueueIntegration;
+using Lykke.Common.ApiLibrary.Middleware;
+using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.DependencyInjection;
-using Lykke.Service.CandlesHistory.Middleware;
-using Lykke.Service.CandlesHistory.Swagger;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
 using Microsoft.AspNetCore.Builder;
@@ -17,9 +16,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
 using Newtonsoft.Json.Converters;
-using Swashbuckle.Swagger.Model;
+using Lykke.Service.CandlesHistory.Models;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -56,20 +54,7 @@ namespace Lykke.Service.CandlesHistory
 
             services.AddSwaggerGen(options =>
             {
-                options.SingleApiVersion(new Info
-                {
-                    Version = "v1",
-                    Title = "Candles hisotry service"
-                });
-                options.DescribeAllEnumsAsStrings();
-                options.EnableXmsEnumExtension();
-
-                //Determine base path for the application.
-                var basePath = PlatformServices.Default.Application.ApplicationBasePath;
-
-                //Set the comments path for the swagger json and ui.
-                var xmlPath = Path.Combine(basePath, "Lykke.Service.CandlesHistory.xml");
-                options.IncludeXmlComments(xmlPath);
+                options.DefaultLykkeConfiguration("v1", "Candles history service");
             });
 
             var settings = HttpSettingsLoader.Load<ApplicationSettings>();
@@ -90,7 +75,7 @@ namespace Lykke.Service.CandlesHistory
 
             var builder = new ContainerBuilder();
 
-            builder.RegisterModule(new ApiModule(appSettings, log));
+            builder.RegisterModule(new ApiModule(settings, log));
             builder.Populate(services);
 
             ApplicationContainer = builder.Build();
@@ -104,7 +89,7 @@ namespace Lykke.Service.CandlesHistory
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseMiddleware<GlobalErrorHandlerMiddleware>();
+            app.UseLykkeMiddleware(Constants.ComponentName, () => ErrorResponse.Create("Technical problem"));
 
             app.UseMvc();
             app.UseSwagger();

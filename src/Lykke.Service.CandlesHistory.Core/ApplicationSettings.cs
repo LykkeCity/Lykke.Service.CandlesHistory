@@ -1,4 +1,7 @@
-﻿namespace Lykke.Service.CandlesHistory.Core
+﻿using System;
+using System.Collections.Generic;
+
+namespace Lykke.Service.CandlesHistory.Core
 {
     public class ApplicationSettings
     {
@@ -6,10 +9,20 @@
 
         public SlackNotificationsSettings SlackNotifications { get; set; }
 
+        public Dictionary<string, string> CandleHistoryAssetConnections { get; set; }
+
         public class CandlesHistorySettings
         {
+            public DictionariesSettings Dictionaries { get; set; }
             public LogsSettings Logs { get; set; }
-            public RabbitSettings QuoteFeedRabbitSettings { get; set; }
+            public RabbitSettings QuoteFeedRabbit { get; set; }
+            public int HistoryTicksCacheSize { get; set; }
+        }
+
+        public class DictionariesSettings
+        {
+            public string DbConnectionString { get; set; }
+            public TimeSpan CacheExpirationPeriod { get; set; }
         }
 
         public class LogsSettings

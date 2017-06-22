@@ -6,24 +6,24 @@ using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Model;
 using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core;
-using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.RabbitMq;
 
-namespace Lykke.Service.CandlesHistory.Services
+namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class CandlesBroker : 
         IStartable,
         IDisposable
     {
         private readonly ILog _log;
-        private readonly ICandlesService _quotesService;
+        private readonly ICandlesManager _candlesManager;
         private readonly ApplicationSettings.CandlesHistorySettings _settings;
         private RabbitMqSubscriber<IQuote> _subscriber;
 
-        public CandlesBroker(ILog log, ICandlesService quotesService, ApplicationSettings.CandlesHistorySettings settings)
+        public CandlesBroker(ILog log, ICandlesManager candlesManager, ApplicationSettings.CandlesHistorySettings settings)
         {
             _log = log;
-            _quotesService = quotesService;
+            _candlesManager = candlesManager;
             _settings = settings;
         }
 
@@ -33,13 +33,13 @@ namespace Lykke.Service.CandlesHistory.Services
             {
                 _subscriber = new RabbitMqSubscriber<IQuote>(new RabbitMqSubscriberSettings
                     {
-                        ConnectionString = _settings.QuoteFeedRabbitSettings.ConnectionString,
-                        QueueName = $"{_settings.QuoteFeedRabbitSettings.ExchangeName}.candleshistory",
-                        ExchangeName = _settings.QuoteFeedRabbitSettings.ExchangeName
+                        ConnectionString = _settings.QuoteFeedRabbit.ConnectionString,
+                        QueueName = $"{_settings.QuoteFeedRabbit.ExchangeName}.candleshistory",
+                        ExchangeName = _settings.QuoteFeedRabbit.ExchangeName
                     })
                     .SetMessageDeserializer(new JsonMessageDeserializer<Quote>())
                     .SetMessageReadStrategy(new MessageReadWithTemporaryQueueStrategy())
-                    .Subscribe(ProcessQuote)
+                    .Subscribe(ProcessQuoteAsync)
                     .SetLogger(_log)
                     .Start();
             }
@@ -50,11 +50,11 @@ namespace Lykke.Service.CandlesHistory.Services
             }
         }
 
-        private async Task ProcessQuote(IQuote quote)
+        private async Task ProcessQuoteAsync(IQuote quote)
         {
             try
             {
-                _quotesService.AddQuote(quote);
+                await _candlesManager.ProcessQuoteAsync(quote);
             }
             catch (Exception ex)
             {
