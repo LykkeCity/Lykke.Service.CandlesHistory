@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Globalization;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
@@ -38,6 +37,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         {
             builder.RegisterInstance(_log).SingleInstance();
 
+            builder.RegisterInstance(_settings).SingleInstance();
             builder.RegisterInstance(_settings.CandlesHistory).SingleInstance();
 
             builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>();
@@ -66,10 +66,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterCandles(ContainerBuilder builder)
         {
-            var candlesHistoryAssetConnections = _settings.CandleHistoryAssetConnections.ToImmutableDictionary(
-                i => i.Key,
-                i => i.Value,
-                CultureInfo.InvariantCulture.CompareInfo.GetStringComparer(CompareOptions.IgnoreCase));
+            var candlesHistoryAssetConnections = _settings.CandleHistoryAssetConnections.ToImmutableDictionary();
 
             _services.RegisterCandleHistoryRepository(candlesHistoryAssetConnections, _log);
 

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
+using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
@@ -17,10 +19,14 @@ namespace Lykke.Service.CandlesHistory.Controllers
     public class CandlesHistoryController : Controller
     {
         private readonly ICandlesManager _candlesManager;
+        private readonly IAssetPairsManager _assetPairsManager;
+        private readonly ApplicationSettings _settings;
 
-        public CandlesHistoryController(ICandlesManager candlesManager)
+        public CandlesHistoryController(ICandlesManager candlesManager, IAssetPairsManager assetPairsManager, ApplicationSettings settings)
         {
             _candlesManager = candlesManager;
+            _assetPairsManager = assetPairsManager;
+            _settings = settings;
         }
 
         /// <summary>
@@ -38,6 +44,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
+            assetPairId = assetPairId.ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
@@ -54,6 +61,14 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (fromMoment >= toMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early than To date"));
+            }
+            if (!_settings.CandleHistoryAssetConnections.ContainsKey(assetPairId))
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Connection string for asset pair not configured"));
+            }
+            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found in dictionary or disabled"));
             }
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
@@ -58,6 +59,9 @@ namespace Lykke.Service.CandlesHistory
             });
 
             var settings = HttpSettingsLoader.Load<ApplicationSettings>();
+
+            settings.CandleHistoryAssetConnections = settings.CandleHistoryAssetConnections.ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
+
             var appSettings = settings.CandlesHistory;
 
             var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings

@@ -112,6 +112,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// </summary>
         public async Task<IEnumerable<IFeedCandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
+            if (!_candleHistoryAssetConnectionStrings.ContainsKey(assetPairId))
+            {
+                throw new InvalidOperationException($"Connection string for asset pair {assetPairId} not configured");
+            }
+            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            {
+                throw new InvalidOperationException($"Asset pair {assetPairId} not found or disabled in dictionary");
+            }
+
             var alignedFromMoment = fromMoment.RoundTo(timeInterval);
             var alignedToMoment = toMoment.RoundTo(timeInterval);
 
@@ -143,7 +152,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
 
-            // If cache empty or even oldest cached candle DateTime is after fromMoment try to read persistent history
+            // If cache empty or even oldest cached candle DateTime is after fromMoment and assetPairs has connection string, 
+            // then try to read persistent history
             if (oldestCachedCandle == null || oldestCachedCandle.DateTime > fromMoment)
             {
                 var newToMoment = oldestCachedCandle?.DateTime ?? toMoment;
