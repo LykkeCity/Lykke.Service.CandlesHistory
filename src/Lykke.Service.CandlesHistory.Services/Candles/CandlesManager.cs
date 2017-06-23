@@ -45,7 +45,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         });
 
         private readonly IMidPriceQuoteGenerator _midPriceQuoteGenerator;
-        private readonly ICandlesService _candlesService;
+        private readonly ICachedCandlesHistoryService _cachedCandlesHistoryService;
         private readonly ICandleHistoryRepository _candleHistoryRepository;
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly ILog _log;
@@ -54,7 +54,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public CandlesManager(
             IMidPriceQuoteGenerator midPriceQuoteGenerator,
-            ICandlesService candlesService,
+            ICachedCandlesHistoryService cachedCandlesHistoryService,
             ICandleHistoryRepository candleHistoryRepository,
             IAssetPairsManager assetPairsManager,
             ILog log,
@@ -62,7 +62,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             int amountOfCandlesToStore)
         {
             _midPriceQuoteGenerator = midPriceQuoteGenerator;
-            _candlesService = candlesService;
+            _cachedCandlesHistoryService = cachedCandlesHistoryService;
             _candleHistoryRepository = candleHistoryRepository;
             _assetPairsManager = assetPairsManager;
             _log = log;
@@ -94,11 +94,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             foreach (var timeInterval in StoredIntervals)
             {
-                _candlesService.AddQuote(quote, quotePriceType, timeInterval);
+                _cachedCandlesHistoryService.AddQuote(quote, quotePriceType, timeInterval);
                 
                 if (midPriceQuote != null)
                 {
-                    _candlesService.AddQuote(midPriceQuote, PriceType.Mid, timeInterval);
+                    _cachedCandlesHistoryService.AddQuote(midPriceQuote, PriceType.Mid, timeInterval);
                 }
             }
         }
@@ -120,7 +120,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment);
 
             // Remap candles from sourceInterval (e.g. Minute) to timeInterval (e.g. Min15)
-            return _candlesService.MergeCandlesToBiggerInterval(sourceHistory, timeInterval);
+            return _cachedCandlesHistoryService.MergeCandlesToBiggerInterval(sourceHistory, timeInterval);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <returns></returns>
         private async Task<IEnumerable<IFeedCandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            var cachedHistory = _candlesService
+            var cachedHistory = _cachedCandlesHistoryService
                 .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
@@ -183,7 +183,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     var fromDate = upToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
                     var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, fromDate, upToDate);
 
-                    _candlesService.InitializeHistory(assetPair, priceType, timeInterval, candles);
+                    _cachedCandlesHistoryService.InitializeHistory(assetPair, priceType, timeInterval, candles);
                 }
             }
 

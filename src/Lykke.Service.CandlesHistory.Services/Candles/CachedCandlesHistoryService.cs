@@ -9,7 +9,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class CandlesService : ICandlesService
+    public class CachedCandlesHistoryService : ICachedCandlesHistoryService
     {
         private readonly int _amountOfCandlesToStore;
         /// <summary>
@@ -17,7 +17,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// </summary>
         private readonly ConcurrentDictionary<string, LinkedList<IFeedCandle>> _candles;
 
-        public CandlesService(int amountOfCandlesToStore)
+        public CachedCandlesHistoryService(int amountOfCandlesToStore)
         {
             _amountOfCandlesToStore = amountOfCandlesToStore;
             _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>();
@@ -36,7 +36,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             _candles.AddOrUpdate(key,
                 addValueFactory: k => AddNewCandlesHistory(quote, timeInterval),
-                updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, quote, priceType, timeInterval));
+                updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, quote, timeInterval));
         }
 
         public IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
@@ -77,7 +77,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return history;
         }
 
-        private LinkedList<IFeedCandle> UpdateCandlesHistory(LinkedList<IFeedCandle> history, IQuote quote, PriceType priceType, TimeInterval timeInterval)
+        private LinkedList<IFeedCandle> UpdateCandlesHistory(LinkedList<IFeedCandle> history, IQuote quote, TimeInterval timeInterval)
         {
             var intervalDate = quote.Timestamp.RoundTo(timeInterval);
             var newCandle = quote.ToCandle(intervalDate);

@@ -1,7 +1,7 @@
 ﻿using Lykke.Service.CandlesHistory.Core.Domain;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Lykke.Service.CandlesHistory.Repositories
+namespace Lykke.Service.CandlesHistory.Repositories.Assets
 {
     public class AssetPairEntity :
         TableEntity,

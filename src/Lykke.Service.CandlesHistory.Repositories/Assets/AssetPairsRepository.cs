@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using AzureStorage;
 using Lykke.Service.CandlesHistory.Core.Domain;
 
-namespace Lykke.Service.CandlesHistory.Repositories
+namespace Lykke.Service.CandlesHistory.Repositories.Assets
 {
     public class AssetPairsRepository : IAssetPairsRepository
     {

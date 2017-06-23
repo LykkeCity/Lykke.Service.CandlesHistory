@@ -12,7 +12,7 @@ using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Repositories;
+using Lykke.Service.CandlesHistory.Repositories.Assets;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,8 +87,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(new TypedParameter(typeof(IImmutableDictionary<string, string>), candlesHistoryAssetConnections))
                 .SingleInstance();
 
-            builder.RegisterType<CandlesService>()
-                .As<ICandlesService>()
+            builder.RegisterType<CachedCandlesHistoryService>()
+                .As<ICachedCandlesHistoryService>()
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .SingleInstance();
         }
