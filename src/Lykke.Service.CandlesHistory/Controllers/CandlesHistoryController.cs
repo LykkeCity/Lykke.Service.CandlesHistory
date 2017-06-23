@@ -9,6 +9,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.SwaggerGen.Annotations;
 
 namespace Lykke.Service.CandlesHistory.Controllers
 {
@@ -38,6 +39,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="fromMoment">From moment in ISO 8601</param>
         /// <param name="toMoment">To moment in ISO 8601</param>
         [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
+        [SwaggerOperation("GetCandlesHistory")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)

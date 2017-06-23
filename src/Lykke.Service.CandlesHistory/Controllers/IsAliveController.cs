@@ -2,6 +2,7 @@
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;
+using Swashbuckle.SwaggerGen.Annotations;
 
 namespace Lykke.Service.CandlesHistory.Controllers
 {
@@ -15,6 +16,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Checks service is alive
         /// </summary>
         [HttpGet]
+        [SwaggerOperation("IsAlive")]
         public IsAliveResponse Get()
         {
             return new IsAliveResponse
