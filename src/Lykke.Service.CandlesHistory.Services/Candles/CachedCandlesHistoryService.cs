@@ -23,7 +23,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>();
         }
 
-        public void InitializeHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, IEnumerable<IFeedCandle> candles)
+        public void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
 

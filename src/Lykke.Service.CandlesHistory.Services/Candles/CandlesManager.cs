@@ -9,6 +9,7 @@ using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Repositories;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
@@ -49,6 +50,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly ICandleHistoryRepository _candleHistoryRepository;
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly ILog _log;
+        private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IImmutableDictionary<string, string> _candleHistoryAssetConnectionStrings;
         private readonly int _amountOfCandlesToStore;
 
@@ -58,6 +60,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             ICandleHistoryRepository candleHistoryRepository,
             IAssetPairsManager assetPairsManager,
             ILog log,
+            IDateTimeProvider dateTimeProvider,
             IImmutableDictionary<string, string> candleHistoryAssetConnectionStrings,
             int amountOfCandlesToStore)
         {
@@ -66,6 +69,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candleHistoryRepository = candleHistoryRepository;
             _assetPairsManager = assetPairsManager;
             _log = log;
+            _dateTimeProvider = dateTimeProvider;
             _candleHistoryAssetConnectionStrings = candleHistoryAssetConnectionStrings;
             _amountOfCandlesToStore = amountOfCandlesToStore;
         }
@@ -79,7 +83,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(quote.AssetPair);
 
-            if (assetPair == null || assetPair.IsDisabled)
+            if (assetPair == null)
             {
                 return;
             }
@@ -162,7 +166,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             await _log.WriteInfoAsync(Constants.ComponentName, null, null, "Caching candles history...");
 
             var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
-            var now = DateTime.UtcNow;
+            var now = _dateTimeProvider.UtcNow;
             var cacheAssetPairTasks = assetPairs
                 .Where(a => _candleHistoryAssetConnectionStrings.ContainsKey(a.Id))
                 .Select(assetPair => CacheAssetPairCandlesAsync(assetPair, now));
@@ -172,7 +176,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             await _log.WriteInfoAsync(Constants.ComponentName, null, null, "All candles history is cached");
         }
 
-        private async Task CacheAssetPairCandlesAsync(IAssetPair assetPair, DateTime upToDate)
+        private async Task CacheAssetPairCandlesAsync(IAssetPair assetPair, DateTime toDate)
         {
             await _log.WriteInfoAsync(Constants.ComponentName, null, null, $"Caching {assetPair.Id} candles history...");
 
@@ -180,10 +184,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 foreach (var timeInterval in StoredIntervals)
                 {
-                    var fromDate = upToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
-                    var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, fromDate, upToDate);
+                    var alignedToDate = toDate.RoundTo(timeInterval);
+                    var alignedFromDate = alignedToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
+                    var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate);
 
-                    _cachedCandlesHistoryService.InitializeHistory(assetPair.Id, priceType, timeInterval, candles);
+                    _cachedCandlesHistoryService.InitializeHistory(assetPair.Id, timeInterval, priceType, candles);
                 }
             }
 

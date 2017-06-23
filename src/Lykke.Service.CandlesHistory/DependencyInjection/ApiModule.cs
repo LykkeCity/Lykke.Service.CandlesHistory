@@ -10,9 +10,11 @@ using Lykke.AzureRepositories.CandleHistory;
 using Lykke.Domain.Prices.Repositories;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Repositories.Assets;
+using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +39,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_log).SingleInstance();
 
             builder.RegisterInstance(_settings.CandlesHistory).SingleInstance();
+
+            builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>();
 
             RegisterAssets(builder);
             RegisterCandles(builder);

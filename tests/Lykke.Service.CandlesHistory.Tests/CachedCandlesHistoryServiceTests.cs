@@ -6,10 +6,10 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
+namespace Lykke.Service.CandlesHistory.Tests
 {
     [TestClass]
-    public class CachedCandlesHistoryServiceInitializeHistoryTests
+    public class CachedCandlesHistoryServiceTests
     {
         private const int AmountOfCandlesToStore = 5;
 
@@ -38,7 +38,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01), new DateTime(2017, 07, 01)).ToArray();
             
@@ -66,7 +66,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01), new DateTime(2017, 07, 01)).ToArray();
 
@@ -92,7 +92,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01), new DateTime(2017, 07, 01)).ToArray();
 
@@ -144,7 +144,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
             };
             var quote = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 14, 10, 50, 20) };
 
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             _service.AddQuote(quote, PriceType.Ask, TimeInterval.Day);
@@ -278,7 +278,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14) },
             };
 
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 11), new DateTime(2017, 06, 13)).ToArray();
@@ -303,7 +303,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14) },
             };
 
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             var candles1 = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 05, 11), new DateTime(2017, 05, 13));
@@ -328,7 +328,7 @@ namespace Lykke.Service.CandlesHistory.Tests.CachedCandlesHistoryServiceTests
             };
             var quote = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 14, 10, 50, 20) };
 
-            _service.InitializeHistory("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
             _service.AddQuote(quote, PriceType.Ask, TimeInterval.Day);
 
             // Act

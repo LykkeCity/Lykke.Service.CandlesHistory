@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using System.Collections.Generic;
+using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandlesHistory.Services.Assets
 {
@@ -11,13 +12,15 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
     {
         private readonly IAssetPairsRepository _repository;
         private readonly IAssetPairsCacheService _cache;
+        private readonly IDateTimeProvider _dateTimeProvider;
         private readonly TimeSpan _cacheExpirationPeriod;
         private DateTime _cacheExpirationMoment;
 
-        public AssetPairsManager(IAssetPairsRepository repository, IAssetPairsCacheService cache, TimeSpan cacheExpirationPeriod)
+        public AssetPairsManager(IAssetPairsRepository repository, IAssetPairsCacheService cache, IDateTimeProvider dateTimeProvider, TimeSpan cacheExpirationPeriod)
         {
             _repository = repository;
             _cache = cache;
+            _dateTimeProvider = dateTimeProvider;
             _cacheExpirationPeriod = cacheExpirationPeriod;
 
             _cacheExpirationMoment = DateTime.MinValue;
@@ -41,10 +44,10 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
 
         private async Task EnsureCacheIsUpdatedAsync()
         {
-            if (_cacheExpirationMoment < DateTime.UtcNow)
+            if (_cacheExpirationMoment < _dateTimeProvider.UtcNow)
             {
                 await UpdateCacheAsync();
-                _cacheExpirationMoment = DateTime.UtcNow + _cacheExpirationPeriod;
+                _cacheExpirationMoment = _dateTimeProvider.UtcNow + _cacheExpirationPeriod;
             }
         }
 

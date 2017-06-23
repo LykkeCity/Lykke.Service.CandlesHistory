@@ -7,7 +7,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface ICachedCandlesHistoryService
     {
-        void InitializeHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, IEnumerable<IFeedCandle> candles);
+        void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles);
         void AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval);
         IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
