@@ -32,7 +32,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
 
             var pair = _cache.TryGetPair(assetPairId);
 
-            return pair.IsDisabled ? null : pair;
+            return pair == null || pair.IsDisabled ? null : pair;
         }
 
         public async Task<IEnumerable<IAssetPair>> GetAllEnabledAsync()
