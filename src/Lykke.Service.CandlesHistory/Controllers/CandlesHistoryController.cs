@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
+using Lykke.Service.CandlesHistory.Models.CandlesHistory;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -29,6 +32,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="fromMoment">From moment in ISO 8601</param>
         /// <param name="toMoment">To moment in ISO 8601</param>
         [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
+        [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             fromMoment = fromMoment.ToUniversalTime();
@@ -53,7 +58,17 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
-            return Ok(candles);
+            return Ok(new CandlesHistoryResponseModel
+            {
+                History = candles.Select(c => new CandlesHistoryResponseModel.Candle
+                {
+                    DateTime = c.DateTime,
+                    Open = c.Open,
+                    Close = c.Close,
+                    High = c.High,
+                    Low = c.Low
+                })
+            });
         }
     }
 }
