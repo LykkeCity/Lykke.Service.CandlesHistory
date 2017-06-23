@@ -90,7 +90,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
 
             var quotePriceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
-            var midPriceQuote = _midPriceQuoteGenerator.TryGenerate(quote, assetPair);
+            var midPriceQuote = _midPriceQuoteGenerator.TryGenerate(quote, assetPair.Accuracy);
 
             foreach (var timeInterval in StoredIntervals)
             {

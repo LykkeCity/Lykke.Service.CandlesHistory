@@ -28,19 +28,19 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _assetQuoteStates = new ConcurrentDictionary<string, AssetState>();
         }
 
-        public IQuote TryGenerate(IQuote quote, IAssetPair assetPair)
+        public IQuote TryGenerate(IQuote quote, int assetPairAccuracy)
         {
             var state = _assetQuoteStates.AddOrUpdate(
                 quote.AssetPair,
                 k => AddNewAssetState(quote),
                 (k, oldState) => UpdateAssetState(oldState, quote));
 
-            return TryCreateMidQuote(state, assetPair);
+            return TryCreateMidQuote(state, assetPairAccuracy);
         }
 
         private static AssetState AddNewAssetState(IQuote quote)
         {
-            return quote.IsBuy ? new AssetState(quote, null) : new AssetState(null, quote);
+            return quote.IsBuy ? new AssetState(null, quote) : new AssetState(quote, null);
         }
 
         private static AssetState UpdateAssetState(AssetState oldState, IQuote quote)
@@ -48,14 +48,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return quote.IsBuy ? new AssetState(oldState.Ask, quote) : new AssetState(quote, oldState.Bid);
         }
 
-        private static IQuote TryCreateMidQuote(AssetState assetState, IAssetPair assetPair)
+        private static IQuote TryCreateMidQuote(AssetState assetState, int assetPairAccuracy)
         {
             if (assetState.Bid != null && assetState.Ask != null)
             {
                 return new Quote
                 {
                     AssetPair = assetState.Bid.AssetPair,
-                    Price = Math.Round((assetState.Ask.Price + assetState.Bid.Price) / 2, assetPair.Accuracy),
+                    Price = Math.Round((assetState.Ask.Price + assetState.Bid.Price) / 2, assetPairAccuracy),
                     Timestamp = assetState.Ask.Timestamp >= assetState.Bid.Timestamp
                         ? assetState.Ask.Timestamp
                         : assetState.Bid.Timestamp

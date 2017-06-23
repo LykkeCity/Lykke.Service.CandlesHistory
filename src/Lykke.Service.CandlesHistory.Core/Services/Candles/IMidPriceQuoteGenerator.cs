@@ -5,6 +5,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface IMidPriceQuoteGenerator
     {
-        IQuote TryGenerate(IQuote quote, IAssetPair assetPair);
+        IQuote TryGenerate(IQuote quote, int assetPairAccuracy);
     }
 }
