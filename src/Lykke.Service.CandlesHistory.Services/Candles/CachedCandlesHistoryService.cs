@@ -2,9 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Common;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -23,11 +23,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>();
         }
 
-        public void InitializeHistory(IAssetPair assetPair, PriceType priceType, TimeInterval timeInterval, IEnumerable<IFeedCandle> candles)
+        public void InitializeHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, IEnumerable<IFeedCandle> candles)
         {
-            var key = GetKey(assetPair.Id, priceType, timeInterval);
+            var key = GetKey(assetPairId, priceType, timeInterval);
 
-            _candles.TryAdd(key, new LinkedList<IFeedCandle>(candles));
+            _candles.TryAdd(key, new LinkedList<IFeedCandle>(candles.Limit(_amountOfCandlesToStore)));
         }
 
         public void AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval)
@@ -60,13 +60,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return Enumerable.Empty<IFeedCandle>();
         }
 
-        public IEnumerable<IFeedCandle> MergeCandlesToBiggerInterval(IEnumerable<IFeedCandle> history, TimeInterval timeInterval)
-        {
-            return history
-                .GroupBy(c => c.DateTime.RoundTo(timeInterval))
-                .Select(g => g.MergeAll(g.Key));
-        }
-
         private LinkedList<IFeedCandle> AddNewCandlesHistory(IQuote quote, TimeInterval timeInterval)
         {
             var history = new LinkedList<IFeedCandle>();
@@ -85,7 +78,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             lock (history)
             {
                 // Starting from the latest candle, moving down to the history
-                for (var node = history.Last; node.Previous != null; node = node.Previous)
+                for (var node = history.Last; node != null; node = node.Previous)
                 {
                     // Candle at given point already exists, so we merging they
                     if (node.Value.DateTime == newCandle.DateTime)

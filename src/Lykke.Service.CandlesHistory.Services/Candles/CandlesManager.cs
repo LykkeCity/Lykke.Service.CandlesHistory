@@ -119,8 +119,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var sourceInterval = GetToStoredIntervalsMap[timeInterval];
             var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment);
 
-            // Remap candles from sourceInterval (e.g. Minute) to timeInterval (e.g. Min15)
-            return _cachedCandlesHistoryService.MergeCandlesToBiggerInterval(sourceHistory, timeInterval);
+            // Merging candles from sourceInterval (e.g. Minute) to bigger timeInterval (e.g. Min15)
+            return sourceHistory.MergeIntoBiggerIntervals(timeInterval);
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     var fromDate = upToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
                     var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, fromDate, upToDate);
 
-                    _cachedCandlesHistoryService.InitializeHistory(assetPair, priceType, timeInterval, candles);
+                    _cachedCandlesHistoryService.InitializeHistory(assetPair.Id, priceType, timeInterval, candles);
                 }
             }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using Lykke.Domain.Prices.Model;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

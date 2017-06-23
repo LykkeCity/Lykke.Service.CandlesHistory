@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Model;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles

@@ -1,5 +1,4 @@
 ﻿using Lykke.Domain.Prices.Contracts;
-using Lykke.Service.CandlesHistory.Core.Domain;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
