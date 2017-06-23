@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
@@ -22,20 +23,20 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <summary>
         /// Asset's candles history
         /// </summary>
-        /// <param name="assetId">Asset ID</param>
+        /// <param name="assetPairId">Asset pair ID</param>
         /// <param name="priceType">Price type</param>
         /// <param name="timeInterval">Time interval</param>
         /// <param name="fromMoment">From moment in ISO 8601</param>
         /// <param name="toMoment">To moment in ISO 8601</param>
-        [HttpGet("{assetId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
-        public IActionResult GetCandlesHistory(string assetId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
+        public async Task<IActionResult> GetCandlesHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
 
-            if (string.IsNullOrWhiteSpace(assetId))
+            if (string.IsNullOrWhiteSpace(assetPairId))
             {
-                return BadRequest(ErrorResponse.Create(nameof(assetId), "assetId is required"));
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is required"));
             }
             if (priceType == PriceType.Unspecified)
             {
@@ -50,7 +51,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return BadRequest(ErrorResponse.Create("From date should be early than To date"));
             }
 
-            var candles = _candlesManager.GetCandles(assetId, priceType, timeInterval, fromMoment, toMoment);
+            var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
             return Ok(candles);
         }

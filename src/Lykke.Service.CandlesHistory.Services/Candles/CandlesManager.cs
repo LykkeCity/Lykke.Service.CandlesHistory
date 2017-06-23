@@ -103,20 +103,60 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        public IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        /// <summary>
+        /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
+        /// </summary>
+        public async Task<IEnumerable<IFeedCandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
+            var alignedFromMoment = fromMoment.RoundTo(timeInterval);
+            var alignedToMoment = toMoment.RoundTo(timeInterval);
+
             if (StoredIntervals.Contains(timeInterval))
             {
-                return _candlesService.GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment);
+                return await GetStoredCandlesAsync(assetPairId, priceType, timeInterval, alignedFromMoment, alignedToMoment);
             }
 
             var sourceInterval = GetToStoredIntervalsMap[timeInterval];
-            var sourceHistory = _candlesService.GetCandles(assetPairId, priceType, sourceInterval, fromMoment, toMoment);
+            var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment);
 
             // Remap candles from sourceInterval (e.g. Minute) to timeInterval (e.g. Min15)
             return _candlesService.MergeCandlesToBiggerInterval(sourceHistory, timeInterval);
         }
-        
+
+        /// <summary>
+        /// Obtains candles history from cache only in stored time intervals, reading persistent history if needed
+        /// </summary>
+        /// <param name="assetPairId"></param>
+        /// <param name="priceType"></param>
+        /// <param name="timeInterval"></param>
+        /// <param name="fromMoment"></param>
+        /// <param name="toMoment"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<IFeedCandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        {
+            var cachedHistory = _candlesService
+                .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
+                .ToArray();
+            var oldestCachedCandle = cachedHistory.FirstOrDefault();
+
+            // If cache empty or even oldest cached candle DateTime is after fromMoment try to read persistent history
+            if (oldestCachedCandle == null || oldestCachedCandle.DateTime > fromMoment)
+            {
+                var newToMoment = oldestCachedCandle?.DateTime ?? toMoment;
+                var persistentHistory = await _candleHistoryRepository.GetCandlesAsync(assetPairId, timeInterval,
+                    priceType, fromMoment, newToMoment);
+
+                // Concatenating persistent and cached history
+                return persistentHistory
+                    // If at least one candle is cached, persistent history used only up to the oldest of cached candle
+                    .TakeWhile(c => oldestCachedCandle == null || c.DateTime < oldestCachedCandle.DateTime)
+                    .Concat(cachedHistory);
+            }
+
+            // Cache not empty and it contains fromMoment candle, so we don't need to read persistent history
+            return cachedHistory;
+        }
+
         private async Task CacheCandlesAsync()
         {
             await _log.WriteInfoAsync(Constants.ComponentName, null, null, "Caching candles history...");

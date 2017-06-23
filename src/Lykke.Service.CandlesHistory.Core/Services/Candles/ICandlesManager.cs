@@ -10,6 +10,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
     public interface ICandlesManager : IStartable
     {
         Task ProcessQuoteAsync(IQuote quote);
-        IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
+        Task<IEnumerable<IFeedCandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
 }
