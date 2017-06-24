@@ -44,8 +44,6 @@ namespace Lykke.Service.CandlesHistory
         // This method gets called by the runtime. Use this method to add services to the container.
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ILog log = new LogToConsole();
-
             services.AddMvc()
                 .AddJsonOptions(options =>
                 {
@@ -62,21 +60,7 @@ namespace Lykke.Service.CandlesHistory
 
             settings.CandleHistoryAssetConnections = settings.CandleHistoryAssetConnections.ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
 
-            var appSettings = settings.CandlesHistory;
-
-            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
-            {
-                ConnectionString = settings.SlackNotifications.AzureQueue.ConnectionString,
-                QueueName = settings.SlackNotifications.AzureQueue.QueueName
-            }, log);
-
-            if (!string.IsNullOrEmpty(appSettings.Logs.DbConnectionString) &&
-                !(appSettings.Logs.DbConnectionString.StartsWith("${") && appSettings.Logs.DbConnectionString.EndsWith("}")))
-            {
-                log = new LykkeLogToAzureStorage("Lykke.Service.CandlesHistory", new AzureTableStorage<LogEntity>(
-                    appSettings.Logs.DbConnectionString, "CandlesHistoryLogs", log), slackService);
-            }
-
+            var log = CreateLog(services, settings);
             var builder = new ContainerBuilder();
 
             builder.RegisterModule(new ApiModule(settings, log));
@@ -85,6 +69,37 @@ namespace Lykke.Service.CandlesHistory
             ApplicationContainer = builder.Build();
 
             return new AutofacServiceProvider(ApplicationContainer);
+        }
+
+        private static ILog CreateLog(IServiceCollection services, ApplicationSettings settings)
+        {
+            var appSettings = settings.CandlesHistory;
+
+            LykkeLogToAzureStorage logToAzureStorage = null;
+            var logToConsole = new LogToConsole();
+            var logAggregate = new LogAggregate();
+
+            logAggregate.AddLogger(logToConsole);
+
+            if (!string.IsNullOrEmpty(appSettings.Logs.DbConnectionString) &&
+                !(appSettings.Logs.DbConnectionString.StartsWith("${") && appSettings.Logs.DbConnectionString.EndsWith("}")))
+            {
+                logToAzureStorage = new LykkeLogToAzureStorage("Lykke.Service.CandlesHistory", new AzureTableStorage<LogEntity>(
+                    appSettings.Logs.DbConnectionString, "CandlesHistoryServiceLogs", logToConsole));
+
+                logAggregate.AddLogger(logToAzureStorage);
+            }
+
+            var log = logAggregate.CreateLogger();
+
+            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
+            {
+                ConnectionString = settings.SlackNotifications.AzureQueue.ConnectionString,
+                QueueName = settings.SlackNotifications.AzureQueue.QueueName
+            }, log);
+
+            logToAzureStorage?.SetSlackNotification(slackService);
+            return log;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
