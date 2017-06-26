@@ -33,12 +33,12 @@ namespace Lykke.Service.CandlesHistory.Client
             /// 'Week', 'Month'
             /// </param>
             /// <param name='fromMoment'>
-            /// From moment in ISO 8601
+            /// From moment in ISO 8601 (inclusive)
             /// </param>
             /// <param name='toMoment'>
-            /// To moment in ISO 8601
+            /// To moment in ISO 8601 (exclusive)
             /// </param>
-            public static object GetCandlesHistory(this ICandleshistoryservice operations, string assetPairId, string priceType, string timeInterval, System.DateTime fromMoment, System.DateTime toMoment)
+            public static object GetCandlesHistory(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment)
             {
                 return operations.GetCandlesHistoryAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment).GetAwaiter().GetResult();
             }
@@ -61,15 +61,15 @@ namespace Lykke.Service.CandlesHistory.Client
             /// 'Week', 'Month'
             /// </param>
             /// <param name='fromMoment'>
-            /// From moment in ISO 8601
+            /// From moment in ISO 8601 (inclusive)
             /// </param>
             /// <param name='toMoment'>
-            /// To moment in ISO 8601
+            /// To moment in ISO 8601 (exclusive)
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> GetCandlesHistoryAsync(this ICandleshistoryservice operations, string assetPairId, string priceType, string timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> GetCandlesHistoryAsync(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetCandlesHistoryWithHttpMessagesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, null, cancellationToken).ConfigureAwait(false))
                 {

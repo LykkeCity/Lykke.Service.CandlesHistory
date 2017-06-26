@@ -156,10 +156,10 @@ namespace Lykke.Service.CandlesHistory.Client
         /// 'Week', 'Month'
         /// </param>
         /// <param name='fromMoment'>
-        /// From moment in ISO 8601
+        /// From moment in ISO 8601 (inclusive)
         /// </param>
         /// <param name='toMoment'>
-        /// To moment in ISO 8601
+        /// To moment in ISO 8601 (exclusive)
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -182,19 +182,11 @@ namespace Lykke.Service.CandlesHistory.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<object>> GetCandlesHistoryWithHttpMessagesAsync(string assetPairId, string priceType, string timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> GetCandlesHistoryWithHttpMessagesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (assetPairId == null)
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "assetPairId");
-            }
-            if (priceType == null)
-            {
-                throw new ValidationException(ValidationRules.CannotBeNull, "priceType");
-            }
-            if (timeInterval == null)
-            {
-                throw new ValidationException(ValidationRules.CannotBeNull, "timeInterval");
             }
             // Tracing
             bool _shouldTrace = ServiceClientTracing.IsEnabled;
@@ -215,8 +207,8 @@ namespace Lykke.Service.CandlesHistory.Client
             var _baseUrl = BaseUri.AbsoluteUri;
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/CandlesHistory/{assetPairId}/{priceType}/{timeInterval}/{fromMoment}/{toMoment}").ToString();
             _url = _url.Replace("{assetPairId}", System.Uri.EscapeDataString(assetPairId));
-            _url = _url.Replace("{priceType}", System.Uri.EscapeDataString(priceType));
-            _url = _url.Replace("{timeInterval}", System.Uri.EscapeDataString(timeInterval));
+            _url = _url.Replace("{priceType}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(priceType, SerializationSettings).Trim('"')));
+            _url = _url.Replace("{timeInterval}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(timeInterval, SerializationSettings).Trim('"')));
             _url = _url.Replace("{fromMoment}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(fromMoment, SerializationSettings).Trim('"')));
             _url = _url.Replace("{toMoment}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(toMoment, SerializationSettings).Trim('"')));
             // Create HTTP transport objects

@@ -50,10 +50,10 @@ namespace Lykke.Service.CandlesHistory.Client
         /// 'Hour12', 'Day', 'Week', 'Month'
         /// </param>
         /// <param name='fromMoment'>
-        /// From moment in ISO 8601
+        /// From moment in ISO 8601 (inclusive)
         /// </param>
         /// <param name='toMoment'>
-        /// To moment in ISO 8601
+        /// To moment in ISO 8601 (exclusive)
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -61,7 +61,7 @@ namespace Lykke.Service.CandlesHistory.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<object>> GetCandlesHistoryWithHttpMessagesAsync(string assetPairId, string priceType, string timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object>> GetCandlesHistoryWithHttpMessagesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Checks service is alive

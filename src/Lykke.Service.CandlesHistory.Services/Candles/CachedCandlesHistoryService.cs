@@ -54,7 +54,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 // TODO: binnary search could increase speed
                 return localHistory
                     .SkipWhile(i => i.DateTime < fromMoment)
-                    .TakeWhile(i => i.DateTime <= toMoment);
+                    .TakeWhile(i => i.DateTime < toMoment);
             }
 
             return Enumerable.Empty<IFeedCandle>();

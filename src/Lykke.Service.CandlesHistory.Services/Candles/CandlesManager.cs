@@ -157,8 +157,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             if (oldestCachedCandle == null || oldestCachedCandle.DateTime > fromMoment)
             {
                 var newToMoment = oldestCachedCandle?.DateTime ?? toMoment;
-                var persistentHistory = await _candleHistoryRepository.GetCandlesAsync(assetPairId, timeInterval,
-                    priceType, fromMoment, newToMoment);
+                var persistentHistory = await _candleHistoryRepository.GetCandlesAsync(assetPairId, timeInterval, priceType, fromMoment, newToMoment);
 
                 // Concatenating persistent and cached history
                 return persistentHistory
