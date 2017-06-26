@@ -182,7 +182,7 @@ namespace Lykke.Service.CandlesHistory.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<object>> GetCandlesHistoryWithHttpMessagesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> GetCandlesHistoryOrErrorWithHttpMessagesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (assetPairId == null)
             {
@@ -201,7 +201,7 @@ namespace Lykke.Service.CandlesHistory.Client
                 tracingParameters.Add("fromMoment", fromMoment);
                 tracingParameters.Add("toMoment", toMoment);
                 tracingParameters.Add("cancellationToken", cancellationToken);
-                ServiceClientTracing.Enter(_invocationId, this, "GetCandlesHistory", tracingParameters);
+                ServiceClientTracing.Enter(_invocationId, this, "GetCandlesHistoryOrError", tracingParameters);
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;

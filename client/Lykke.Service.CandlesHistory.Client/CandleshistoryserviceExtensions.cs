@@ -38,9 +38,9 @@ namespace Lykke.Service.CandlesHistory.Client
             /// <param name='toMoment'>
             /// To moment in ISO 8601 (exclusive)
             /// </param>
-            public static object GetCandlesHistory(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment)
+            public static object GetCandlesHistoryOrError(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment)
             {
-                return operations.GetCandlesHistoryAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment).GetAwaiter().GetResult();
+                return operations.GetCandlesHistoryOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment).GetAwaiter().GetResult();
             }
 
             /// <summary>
@@ -69,9 +69,9 @@ namespace Lykke.Service.CandlesHistory.Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> GetCandlesHistoryAsync(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> GetCandlesHistoryOrErrorAsync(this ICandleshistoryservice operations, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.GetCandlesHistoryWithHttpMessagesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.GetCandlesHistoryOrErrorWithHttpMessagesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
