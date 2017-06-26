@@ -7,11 +7,11 @@ using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Repositories;
+using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
-using Lykke.Service.CandlesHistory.Core.Domain;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {

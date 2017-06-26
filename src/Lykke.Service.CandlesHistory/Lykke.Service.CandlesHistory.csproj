@@ -31,6 +31,7 @@
     <PackageReference Include="Lykke.Core" Version="1.0.48" />
     <PackageReference Include="Lykke.Domain.Prices" Version="0.9.11" />
     <PackageReference Include="Lykke.Logs" Version="1.0.14" />
+    <PackageReference Include="Lykke.Service.Assets.Client" Version="1.0.13" />
     <PackageReference Include="Lykke.SettingsReader" Version="1.0.37" />
     <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="1.0.4" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.1" />
@@ -42,7 +43,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
-    <ProjectReference Include="..\Lykke.Service.CandlesHistory.Repositories\Lykke.Service.CandlesHistory.Repositories.csproj" />
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Services\Lykke.Service.CandlesHistory.Services.csproj" />
   </ItemGroup>
 

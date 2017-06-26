@@ -8,13 +8,14 @@ using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Model;
 using Lykke.Domain.Prices.Repositories;
-using Lykke.Service.CandlesHistory.Core.Domain;
-using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
 
 namespace Lykke.Service.CandlesHistory.Tests
 {
@@ -70,9 +71,9 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             _assetPairs = new List<IAssetPair>
             {
-                new AssetPair {Id = "EURUSD", Accuracy = 3},
-                new AssetPair {Id = "USDCHF", Accuracy = 2},
-                new AssetPair {Id = "EURRUB", Accuracy = 2}
+                new AssetPairResponseModel {Id = "EURUSD", Accuracy = 3},
+                new AssetPairResponseModel {Id = "USDCHF", Accuracy = 2},
+                new AssetPairResponseModel {Id = "EURRUB", Accuracy = 2}
             };
 
             _assetPairsManagerMock.Setup(m => m.GetAllEnabledAsync())

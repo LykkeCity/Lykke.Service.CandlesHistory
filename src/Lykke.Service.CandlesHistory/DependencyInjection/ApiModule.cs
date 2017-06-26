@@ -2,21 +2,19 @@
 using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AzureStorage.Tables;
 using Common.Log;
 using Lykke.AzureRepositories;
 using Lykke.AzureRepositories.CandleHistory;
 using Lykke.Domain.Prices.Repositories;
+using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
-using Lykke.Service.CandlesHistory.Core.Domain;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Repositories.Assets;
-using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.Extensions.DependencyInjection;
+using DateTimeProvider = Lykke.Service.CandlesHistory.Services.DateTimeProvider;
+using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
 
 namespace Lykke.Service.CandlesHistory.DependencyInjection
 {
@@ -50,13 +48,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            builder.Register(c => new AssetPairsRepository(
-                    new AzureTableStorage<AssetPairEntity>(_settings.CandlesHistory.Dictionaries.DbConnectionString, "Dictionaries", _log)))
-                .As<IAssetPairsRepository>();
-
-            builder.RegisterType<AssetPairsCacheService>()
-                .As<IAssetPairsCacheService>()
-                .SingleInstance();
+            _services.UseAssetsClient(AssetServiceSettings.Create(
+                new Uri(_settings.CandlesHistory.Dictionaries.AssetsServiceUrl),
+                _settings.CandlesHistory.Dictionaries.CacheExpirationPeriod));
 
             builder.RegisterType<AssetPairsManager>()
                 .As<IAssetPairsManager>()

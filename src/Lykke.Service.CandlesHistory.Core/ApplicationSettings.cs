@@ -21,7 +21,7 @@ namespace Lykke.Service.CandlesHistory.Core
 
         public class DictionariesSettings
         {
-            public string DbConnectionString { get; set; }
+            public string AssetsServiceUrl { get; set; }
             public TimeSpan CacheExpirationPeriod { get; set; }
         }
 

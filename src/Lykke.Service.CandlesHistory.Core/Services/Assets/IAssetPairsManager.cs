@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using System.Collections.Generic;
+using Lykke.Service.Assets.Client.Custom;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.Assets
 {

@@ -286,3 +286,4 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+/client/Lykke.Service.CandlesHistory.Client/Service.CandlesHistory.json
