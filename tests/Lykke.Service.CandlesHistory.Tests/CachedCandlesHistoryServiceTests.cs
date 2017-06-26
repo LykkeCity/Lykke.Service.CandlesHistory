@@ -281,7 +281,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 11), new DateTime(2017, 06, 13)).ToArray();
+            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 11), new DateTime(2017, 06, 14)).ToArray();
 
             // Assert
             Assert.AreEqual(3, candles.Length);
