@@ -1,8 +1,7 @@
-﻿// ReSharper disable once CheckNamespace
-
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Lykke.Service.CandlesHistory.Client.Custom;
 using Lykke.Service.CandlesHistory.Client.Models;
 
 // ReSharper disable once CheckNamespace
