@@ -1,3 +1,5 @@
 # Lykke.Service.CandlesHistory
 
-Provides historical data of market presented as candles
+Provide real-time market candles history
+
+Client library Nuget: https://www.nuget.org/packages/Lykke.Service.CandlesHistory.Client/
