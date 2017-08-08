@@ -1,4 +1,5 @@
 ﻿using System;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -12,6 +13,13 @@ namespace Lykke.Service.CandlesHistory.Controllers
     [Route("api/[controller]")]
     public class IsAliveController : Controller
     {
+        private readonly ICandlesPersistenceQueue _persistenceQueue;
+
+        public IsAliveController(ICandlesPersistenceQueue persistenceQueue)
+        {
+            _persistenceQueue = persistenceQueue;
+        }
+
         /// <summary>
         /// Checks service is alive
         /// </summary>
@@ -22,7 +30,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
             return new IsAliveResponse
             {
                 Version = PlatformServices.Default.Application.ApplicationVersion,
-                Env = Environment.GetEnvironmentVariable("ENV_INFO")
+                Env = Environment.GetEnvironmentVariable("ENV_INFO"),
+                PersistTasksQueueLength = _persistenceQueue.PersistTasksQueueLength,
+                CandlesToPersistQueueLength = _persistenceQueue.CandlesToPersistQueueLength
             };
         }
     }

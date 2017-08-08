@@ -9,16 +9,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Lykke.Service.CandlesHistory.Tests
 {
     [TestClass]
-    public class CachedCandlesHistoryServiceTests
+    public class CachedCandlesCacheServiceTests
     {
         private const int AmountOfCandlesToStore = 5;
 
-        private ICachedCandlesHistoryService _service;
+        private ICandlesCacheService _service;
 
         [TestInitialize]
         public void InitializeTest()
         {
-            _service = new CachedCandlesHistoryService(AmountOfCandlesToStore);
+            _service = new CandlesCacheService(AmountOfCandlesToStore);
         }
 
         

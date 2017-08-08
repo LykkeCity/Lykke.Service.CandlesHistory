@@ -5,10 +5,10 @@ using Lykke.Domain.Prices.Contracts;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
-    public interface ICachedCandlesHistoryService
+    public interface ICandlesCacheService
     {
         void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles);
-        void AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval);
+        IFeedCandle AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval);
         IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
 }

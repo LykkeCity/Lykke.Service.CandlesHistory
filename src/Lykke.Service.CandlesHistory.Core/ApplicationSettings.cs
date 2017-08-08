@@ -17,6 +17,7 @@ namespace Lykke.Service.CandlesHistory.Core
             public LogsSettings Logs { get; set; }
             public RabbitSettings QuoteFeedRabbit { get; set; }
             public int HistoryTicksCacheSize { get; set; }
+            public int PersistenceTasksQueueWarningLength { get; set; }
         }
 
         public class DictionariesSettings
@@ -48,6 +49,7 @@ namespace Lykke.Service.CandlesHistory.Core
         {
             public string ConnectionString { get; set; }
             public string ExchangeName { get; set; }
+            public string DeadLetterExchangeName { get; set; }
         }
     }
 }
