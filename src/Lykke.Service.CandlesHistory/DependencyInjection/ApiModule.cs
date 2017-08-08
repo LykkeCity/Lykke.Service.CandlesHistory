@@ -2,12 +2,13 @@
 using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using AzureStorage.Tables;
+using AzureStorage.Tables.Decorators;
 using Common.Log;
-using Lykke.AzureRepositories;
-using Lykke.AzureRepositories.CandleHistory;
-using Lykke.Domain.Prices.Repositories;
 using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.CandleHistory.Repositories;
 using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Assets;
@@ -62,14 +63,27 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         {
             var candlesHistoryAssetConnections = _settings.CandleHistoryAssetConnections.ToImmutableDictionary();
 
-            _services.RegisterCandleHistoryRepository(candlesHistoryAssetConnections, _log);
+            builder.RegisterInstance(new CandleHistoryRepository((assetPair, tableName) =>
+                {
+                    if (!candlesHistoryAssetConnections.TryGetValue(assetPair, out string assetConnectionString) ||
+                        string.IsNullOrEmpty(assetConnectionString))
+                    {
+                        throw new ConfigurationException($"Connection string for asset pair '{assetPair}' is not specified.");
+                    }
 
-            builder.Register(c => c.Resolve<CandleHistoryRepositoryResolver>())
+                    var storage = new AzureTableStorage<CandleTableEntity>(assetConnectionString, tableName, _log);
+
+                    // Create and preload table info
+                    storage.GetDataAsync(assetPair, "1900-01-01").Wait();
+
+                    return new RetryOnFailureAzureTableStorageDecorator<CandleTableEntity>(storage, 5, 5, TimeSpan.FromSeconds(10));
+                }))
                 .As<ICandleHistoryRepository>();
-            
+           
             builder.RegisterType<CandlesBroker>()
                 .As<IStartable>()
-                .SingleInstance();
+                .SingleInstance()
+                .AutoActivate();
 
             builder.RegisterType<MidPriceQuoteGenerator>()
                 .As<IMidPriceQuoteGenerator>()
@@ -82,10 +96,26 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(new TypedParameter(typeof(IImmutableDictionary<string, string>), candlesHistoryAssetConnections))
                 .SingleInstance();
 
-            builder.RegisterType<CachedCandlesHistoryService>()
-                .As<ICachedCandlesHistoryService>()
+            builder.RegisterType<CandlesCacheService>()
+                .As<ICandlesCacheService>()
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .SingleInstance();
+
+            builder.RegisterType<CandlesPersistenceManager>()
+                .As<IStartable>()
+                .SingleInstance()
+                .AutoActivate();
+
+            builder.RegisterType<CandlesPersistenceQueue>()
+                .As<ICandlesPersistenceQueue>()
+                .As<IStartable>()
+                .SingleInstance();
+
+            builder.RegisterType<QueueMonitor>()
+                .As<IStartable>()
+                .SingleInstance()
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.PersistenceTasksQueueWarningLength))
+                .AutoActivate();
         }
     }
 }

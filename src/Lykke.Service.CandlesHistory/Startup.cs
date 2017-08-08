@@ -108,7 +108,7 @@ namespace Lykke.Service.CandlesHistory
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseLykkeMiddleware(Constants.ComponentName, ex => ErrorResponse.Create("Technical problem"));
+            app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
 
             app.UseMvc();
             app.UseSwagger();

@@ -13,5 +13,8 @@
         /// Environment variables
         /// </summary>
         public string Env { get; set; }
+
+        public int PersistTasksQueueLength { get; set; }
+        public int CandlesToPersistQueueLength { get; set; }
     }
 }

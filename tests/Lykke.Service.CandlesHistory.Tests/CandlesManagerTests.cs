@@ -7,9 +7,9 @@ using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Model;
-using Lykke.Domain.Prices.Repositories;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
@@ -52,20 +52,22 @@ namespace Lykke.Service.CandlesHistory.Tests
         private List<IAssetPair> _assetPairs;
 
         private Mock<IMidPriceQuoteGenerator> _midPriceQuoteGeneratorMock;
-        private Mock<ICachedCandlesHistoryService> _cachedCandlesHistoryServiceMock;
+        private Mock<ICandlesCacheService> _cachedCandlesHistoryServiceMock;
         private Mock<ICandleHistoryRepository> _candlesHistoryRepositoryMock;
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
         private ICandlesManager _manager;
         private Mock<IDateTimeProvider> _dateTimeProviderMock;
+        private Mock<ICandlesPersistenceQueue> _candlesPersistenceQueueMock;
 
         [TestInitialize]
         public void InitializeTest()
         {
             _midPriceQuoteGeneratorMock = new Mock<IMidPriceQuoteGenerator>();
-            _cachedCandlesHistoryServiceMock = new Mock<ICachedCandlesHistoryService>();
+            _cachedCandlesHistoryServiceMock = new Mock<ICandlesCacheService>();
             _candlesHistoryRepositoryMock = new Mock<ICandleHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
             _dateTimeProviderMock = new Mock<IDateTimeProvider>();
+            _candlesPersistenceQueueMock = new Mock<ICandlesPersistenceQueue>();
 
             var logMock = new Mock<ILog>();
 
@@ -85,7 +87,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 _midPriceQuoteGeneratorMock.Object,
                 _cachedCandlesHistoryServiceMock.Object,
                 _candlesHistoryRepositoryMock.Object,
-                _assetPairsManagerMock.Object,
+                _assetPairsManagerMock.Object, 
+                _candlesPersistenceQueueMock.Object,
                 logMock.Object, 
                 _dateTimeProviderMock.Object,
                 _assetPairConnectionStrings,
@@ -175,11 +178,16 @@ namespace Lykke.Service.CandlesHistory.Tests
             foreach (var interval in StoredIntervals)
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.Is<IQuote>(q => q.AssetPair == "EURUSD"), It.IsAny<PriceType>(), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURUSD"), It.IsAny<PriceType>(), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.Is<IQuote>(q => q.AssetPair == "USDRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair");
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.Is<IQuote>(q => q.AssetPair == "EURRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No connection string");
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.Is<IQuote>(q => q.AssetPair == "EURCHF"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair nor connection string");
+
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "USDRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair");
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No connection string");
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURCHF"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair nor connection string");
         }
 
         [TestMethod]
@@ -195,9 +203,11 @@ namespace Lykke.Service.CandlesHistory.Tests
             foreach (var interval in StoredIntervals)
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p == PriceType.Bid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p != PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         [TestMethod]
@@ -213,9 +223,11 @@ namespace Lykke.Service.CandlesHistory.Tests
             foreach (var interval in StoredIntervals)
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p != PriceType.Ask), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Ask), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         [TestMethod]
@@ -233,9 +245,13 @@ namespace Lykke.Service.CandlesHistory.Tests
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddQuote(It.IsAny<IQuote>(), It.Is<PriceType>(p => p == PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         #endregion

@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
-using Lykke.Domain.Prices.Repositories;
 using Lykke.Service.Assets.Client.Custom;
-using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
@@ -46,9 +45,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         });
 
         private readonly IMidPriceQuoteGenerator _midPriceQuoteGenerator;
-        private readonly ICachedCandlesHistoryService _cachedCandlesHistoryService;
+        private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandleHistoryRepository _candleHistoryRepository;
         private readonly IAssetPairsManager _assetPairsManager;
+        private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly ILog _log;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IImmutableDictionary<string, string> _candleHistoryAssetConnectionStrings;
@@ -56,18 +56,20 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public CandlesManager(
             IMidPriceQuoteGenerator midPriceQuoteGenerator,
-            ICachedCandlesHistoryService cachedCandlesHistoryService,
+            ICandlesCacheService candlesCacheService,
             ICandleHistoryRepository candleHistoryRepository,
             IAssetPairsManager assetPairsManager,
+            ICandlesPersistenceQueue candlesPersistenceQueue,
             ILog log,
             IDateTimeProvider dateTimeProvider,
             IImmutableDictionary<string, string> candleHistoryAssetConnectionStrings,
             int amountOfCandlesToStore)
         {
             _midPriceQuoteGenerator = midPriceQuoteGenerator;
-            _cachedCandlesHistoryService = cachedCandlesHistoryService;
+            _candlesCacheService = candlesCacheService;
             _candleHistoryRepository = candleHistoryRepository;
             _assetPairsManager = assetPairsManager;
+            _candlesPersistenceQueue = candlesPersistenceQueue;
             _log = log;
             _dateTimeProvider = dateTimeProvider;
             _candleHistoryAssetConnectionStrings = candleHistoryAssetConnectionStrings;
@@ -93,18 +95,21 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return;
             }
 
-            var quotePriceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
+            var priceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
             var midPriceQuote = _midPriceQuoteGenerator.TryGenerate(quote, assetPair.Accuracy);
 
             foreach (var timeInterval in StoredIntervals)
             {
-                _cachedCandlesHistoryService.AddQuote(quote, quotePriceType, timeInterval);
-                
+                var candle = _candlesCacheService.AddQuote(quote, priceType, timeInterval);
+                _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
+
                 if (midPriceQuote != null)
                 {
-                    _cachedCandlesHistoryService.AddQuote(midPriceQuote, PriceType.Mid, timeInterval);
+                    var midPriceCandle = _candlesCacheService.AddQuote(midPriceQuote, PriceType.Mid, timeInterval);
+                    _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
                 }
             }
+
         }
 
         /// <summary>
@@ -147,7 +152,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <returns></returns>
         private async Task<IEnumerable<IFeedCandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            var cachedHistory = _cachedCandlesHistoryService
+            var cachedHistory = _candlesCacheService
                 .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
@@ -172,7 +177,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private async Task CacheCandlesAsync()
         {
-            await _log.WriteInfoAsync(Constants.ComponentName, null, null, "Caching candles history...");
+            await _log.WriteInfoAsync(nameof(CandlesManager), nameof(CacheCandlesAsync), null, "Caching candles history...");
 
             var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
             var now = _dateTimeProvider.UtcNow;
@@ -182,12 +187,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             await Task.WhenAll(cacheAssetPairTasks);
 
-            await _log.WriteInfoAsync(Constants.ComponentName, null, null, "All candles history is cached");
+            await _log.WriteInfoAsync(nameof(CandlesManager), nameof(CacheCandlesAsync), null, "All candles history is cached");
         }
 
         private async Task CacheAssetPairCandlesAsync(IAssetPair assetPair, DateTime toDate)
         {
-            await _log.WriteInfoAsync(Constants.ComponentName, null, null, $"Caching {assetPair.Id} candles history...");
+            await _log.WriteInfoAsync(nameof(CandlesManager), nameof(CacheCandlesAsync), null, $"Caching {assetPair.Id} candles history...");
 
             foreach (var priceType in StoredPriceTypes)
             {
@@ -197,11 +202,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     var alignedFromDate = alignedToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
                     var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate);
 
-                    _cachedCandlesHistoryService.InitializeHistory(assetPair.Id, timeInterval, priceType, candles);
+                    _candlesCacheService.InitializeHistory(assetPair.Id, timeInterval, priceType, candles);
                 }
             }
 
-            await _log.WriteInfoAsync(Constants.ComponentName, null, null, $"{assetPair.Id} candles history is cached");
+            await _log.WriteInfoAsync(nameof(CandlesManager), nameof(CacheCandlesAsync), null, $"{assetPair.Id} candles history is cached");
         }
     }
 }
