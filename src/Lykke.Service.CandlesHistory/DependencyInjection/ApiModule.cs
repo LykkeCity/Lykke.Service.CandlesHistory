@@ -116,6 +116,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .SingleInstance()
                 .WithParameter(TypedParameter.From(_settings.CandlesHistory.PersistenceTasksQueueWarningLength))
                 .AutoActivate();
+
+            builder.RegisterType<FailedToPersistCandlesProducer>()
+                .As<IFailedToPersistCandlesProducer>()
+                .As<IStartable>()
+                .SingleInstance();
         }
     }
 }

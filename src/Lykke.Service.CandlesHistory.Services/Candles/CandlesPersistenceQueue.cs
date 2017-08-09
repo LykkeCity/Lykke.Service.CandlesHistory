@@ -35,6 +35,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public int CandlesToPersistQueueLength => _candlesToPersist.Count;
 
         private readonly ICandleHistoryRepository _repository;
+        private readonly IFailedToPersistCandlesProducer _failedToPersistCandlesProducer;
         private readonly ILog _log;
 
         private readonly ConcurrentQueue<FeedCandle> _candlesToPersist;
@@ -44,11 +45,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public CandlesPersistenceQueue(
             ICandleHistoryRepository repository,
+            IFailedToPersistCandlesProducer failedToPersistCandlesProducer,
             ILog log) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
             _repository = repository;
+            _failedToPersistCandlesProducer = failedToPersistCandlesProducer;
             _log = log;
             _candlesToPersist = new ConcurrentQueue<FeedCandle>();
         }
@@ -161,11 +164,26 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             foreach (var group in grouppedCandles)
             {
-                await _repository.InsertOrMergeAsync(
-                    group,
-                    assetPairId,
-                    group.Key.TimeInterval,
-                    group.Key.PriceType);
+                try
+                {
+                    await _repository.InsertOrMergeAsync(
+                        group,
+                        assetPairId,
+                        group.Key.TimeInterval,
+                        group.Key.PriceType);
+                }
+                catch (Exception ex)
+                {
+                    await _failedToPersistCandlesProducer.ProduceAsync(new FailedCandlesEnvelope
+                    {
+                        ProcessingMoment = DateTime.UtcNow,
+                        Exception = ex.ToString(),
+                        AssetPairId = assetPairId,
+                        TimeInterval = group.Key.TimeInterval,
+                        PriceType = group.Key.PriceType,
+                        Candles = group
+                    });
+                }
             }
         }
 
