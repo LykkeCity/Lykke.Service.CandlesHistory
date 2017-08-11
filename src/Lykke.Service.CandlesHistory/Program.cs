@@ -46,6 +46,8 @@ namespace Lykke.Service.CandlesHistory
 
         private static void Stop(IWebHost host)
         {
+            Console.WriteLine("Stopping...");
+
             var log = host.Services.GetService<ILog>();
 
             var broker = host.Services.GetService<CandlesBroker>();

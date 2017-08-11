@@ -10,5 +10,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
         void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles);
         IFeedCandle AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval);
         IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
+        IFeedCandle GetMidPriceCandle(string assetPair, int assetPairAccuracy, DateTime timestamp, TimeInterval timeInterval);
     }
 }

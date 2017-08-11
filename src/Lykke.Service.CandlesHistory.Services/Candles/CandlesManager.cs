@@ -44,7 +44,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour12, TimeInterval.Hour)
         });
 
-        private readonly IMidPriceQuoteGenerator _midPriceQuoteGenerator;
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandleHistoryRepository _candleHistoryRepository;
         private readonly IAssetPairsManager _assetPairsManager;
@@ -55,7 +54,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly int _amountOfCandlesToStore;
 
         public CandlesManager(
-            IMidPriceQuoteGenerator midPriceQuoteGenerator,
             ICandlesCacheService candlesCacheService,
             ICandleHistoryRepository candleHistoryRepository,
             IAssetPairsManager assetPairsManager,
@@ -65,7 +63,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             IImmutableDictionary<string, string> candleHistoryAssetConnectionStrings,
             int amountOfCandlesToStore)
         {
-            _midPriceQuoteGenerator = midPriceQuoteGenerator;
             _candlesCacheService = candlesCacheService;
             _candleHistoryRepository = candleHistoryRepository;
             _assetPairsManager = assetPairsManager;
@@ -96,16 +93,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
 
             var priceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
-            var midPriceQuote = _midPriceQuoteGenerator.TryGenerate(quote, assetPair.Accuracy);
 
             foreach (var timeInterval in StoredIntervals)
             {
                 var candle = _candlesCacheService.AddQuote(quote, priceType, timeInterval);
                 _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
 
-                if (midPriceQuote != null)
+                var midPriceCandle = _candlesCacheService.GetMidPriceCandle(assetPair.Id, assetPair.Accuracy, quote.Timestamp, timeInterval);
+                if (midPriceCandle != null)
                 {
-                    var midPriceCandle = _candlesCacheService.AddQuote(midPriceQuote, PriceType.Mid, timeInterval);
                     _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
                 }
             }
