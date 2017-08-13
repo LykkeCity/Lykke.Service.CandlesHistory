@@ -6,6 +6,7 @@ using Common;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Domain.Prices.Model;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -114,7 +115,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             if (askCandle != null && bidCandle != null)
             {
-                return new FeedCandle
+                return new AssetPairCandle
                 {
                     DateTime = askCandle.DateTime,
                     Open = CalculateMidPrice(askCandle.Open, bidCandle.Open, assetPairAccuracy),
@@ -126,7 +127,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             if (askCandle != null)
             {
-                return new FeedCandle
+                return new AssetPairCandle
                 {
                     DateTime = askCandle.DateTime,
                     Open = askCandle.Open,
@@ -136,7 +137,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 };
             }
 
-            return new FeedCandle
+            return new AssetPairCandle
             {
                 DateTime = bidCandle.DateTime,
                 Open = bidCandle.Open,

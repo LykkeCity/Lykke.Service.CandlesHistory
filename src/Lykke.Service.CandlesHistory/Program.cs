@@ -2,10 +2,7 @@
 using System.IO;
 using System.Runtime.Loader;
 using System.Threading;
-using System.Threading.Tasks;
-using Common.Log;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -48,26 +45,11 @@ namespace Lykke.Service.CandlesHistory
         {
             Console.WriteLine("Stopping...");
 
-            var log = host.Services.GetService<ILog>();
+            var shutdownManager = host.Services.GetService<IShutdownManager>();
 
-            var broker = host.Services.GetService<CandlesBroker>();
-            broker.Stop();
+            shutdownManager.Shutdown().Wait();
 
-            var persistenceQueue = host.Services.GetService<ICandlesPersistenceQueue>();
-            persistenceQueue.Persist();
-
-            var queueLength = persistenceQueue.PersistTasksQueueLength;
-
-            while (queueLength > 0)
-            {
-                log.WriteInfoAsync(nameof(Program), nameof(Stop), "", $"PersistenceQueue has {queueLength} tasks. Wait a second...");
-
-                Task.Delay(TimeSpan.FromSeconds(1)).Wait();
-
-                queueLength = persistenceQueue.PersistTasksQueueLength;
-            }
-
-            log.WriteInfoAsync(nameof(Program), nameof(Stop), "", "PersistenceQueue is empty");
+            Console.WriteLine("Stopped");
         }
     }
 }

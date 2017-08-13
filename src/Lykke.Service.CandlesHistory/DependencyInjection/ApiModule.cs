@@ -9,8 +9,10 @@ using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.Extensions.DependencyInjection;
@@ -110,12 +112,17 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<QueueMonitor>()
                 .As<IStartable>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.CandlesHistory.PersistenceTasksQueueWarningLength))
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.QueueMonitor))
                 .AutoActivate();
 
             builder.RegisterType<FailedToPersistCandlesProducer>()
                 .As<IFailedToPersistCandlesProducer>()
                 .As<IStartable>()
+                .SingleInstance();
+
+            builder
+                .RegisterType<ShutdownManager>()
+                .As<IShutdownManager>()
                 .SingleInstance();
         }
     }

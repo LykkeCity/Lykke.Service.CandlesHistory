@@ -21,7 +21,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public override Task Execute()
         {
-            _persistenceQueue.Persist();
+            _persistenceQueue.DispatchCandlesToPersist();
 
             return Task.FromResult(0);
         }

@@ -14,7 +14,9 @@
         /// </summary>
         public string Env { get; set; }
 
-        public int PersistTasksQueueLength { get; set; }
-        public int CandlesToPersistQueueLength { get; set; }
+        public int BatchesToPersistQueueLength { get; set; }
+        public int CandlesToDispatchQueueLength { get; set; }
+        public bool IsShuttingDown { get; set; }
+        public bool IsShuttedDown { get; set; }
     }
 }
