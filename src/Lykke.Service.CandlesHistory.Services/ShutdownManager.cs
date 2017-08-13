@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services
 {
@@ -13,13 +12,13 @@ namespace Lykke.Service.CandlesHistory.Services
         public bool IsShuttingDown { get; private set; }
         
         private readonly ILog _log;
-        private readonly CandlesBroker _broker;
+        private readonly ICandlesBroker _broker;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
         private readonly object _lock;
         
         public ShutdownManager(
             ILog log,
-            CandlesBroker broker, 
+            ICandlesBroker broker, 
             ICandlesPersistenceQueue persistenceQueue)
         {
             _log = log;

@@ -83,6 +83,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandleHistoryRepository>();
            
             builder.RegisterType<CandlesBroker>()
+                .As<ICandlesBroker>()
                 .As<IStartable>()
                 .SingleInstance()
                 .AutoActivate();

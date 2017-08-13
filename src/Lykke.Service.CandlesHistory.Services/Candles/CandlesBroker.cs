@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Autofac;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
@@ -14,8 +13,8 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class CandlesBroker :
-        IStartable,
+    public class CandlesBroker : 
+        ICandlesBroker,
         IDisposable
     {
         private readonly ILog _log;
