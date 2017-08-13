@@ -15,7 +15,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             _shutdownManager = shutdownManager;
         }
 
-        [HttpPost]
+        [HttpPost("shutdown")]
         [SwaggerOperation("Shutdown")]
         public async Task<IActionResult> Shutdown()
         {
