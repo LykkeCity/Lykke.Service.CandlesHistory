@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common;
 using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -14,16 +16,19 @@ namespace Lykke.Service.CandlesHistory.Services
         private readonly ILog _log;
         private readonly ICandlesBroker _broker;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
+        private readonly IEnumerable<IStopable> _stoppables;
         private readonly object _lock;
         
         public ShutdownManager(
             ILog log,
             ICandlesBroker broker, 
-            ICandlesPersistenceQueue persistenceQueue)
+            ICandlesPersistenceQueue persistenceQueue,
+            IEnumerable<IStopable> stoppables)
         {
             _log = log;
             _broker = broker;
             _persistenceQueue = persistenceQueue;
+            _stoppables = stoppables;
 
             _lock = new object();
         }
@@ -57,7 +62,7 @@ namespace Lykke.Service.CandlesHistory.Services
 
             try
             {
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(Shutdown), "", "Shutdown is started");
+                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(Shutdown), "", "Shutting down...");
 
                 _broker.Stop();
 
@@ -70,7 +75,15 @@ namespace Lykke.Service.CandlesHistory.Services
                 // Wait until all batches is persisted
                 _persistenceQueue.Stop();
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(Shutdown), "", "Shutdown is ended");
+                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(Shutdown), "", "Persistence queue is stopped, stopping rest of services...");
+
+                // Let all stoppables to be stopped
+                foreach (var stoppable in _stoppables)
+                {
+                    stoppable.Stop();
+                }
+
+                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(Shutdown), "", "Shutted down");
 
                 IsShuttedDown = true;
             }

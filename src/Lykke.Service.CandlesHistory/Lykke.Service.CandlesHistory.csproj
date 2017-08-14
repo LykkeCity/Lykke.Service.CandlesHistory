@@ -26,7 +26,7 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.1.0" />
     <PackageReference Include="Lykke.AzureQueueIntegration" Version="1.0.7" />
     <PackageReference Include="Lykke.AzureStorage" Version="1.2.30" />
-    <PackageReference Include="Lykke.Common" Version="1.1.79" />
+    <PackageReference Include="Lykke.Common" Version="1.1.80" />
     <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.0.11" />
     <PackageReference Include="Lykke.Core" Version="1.0.67" />
     <PackageReference Include="Lykke.Domain.Prices" Version="0.9.11" />

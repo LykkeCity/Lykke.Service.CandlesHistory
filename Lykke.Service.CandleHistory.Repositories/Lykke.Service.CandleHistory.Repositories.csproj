@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Lykke.AzureStorage" Version="1.2.30" />
-    <PackageReference Include="Lykke.Common" Version="1.1.79" />
+    <PackageReference Include="Lykke.Common" Version="1.1.80" />
   </ItemGroup>
 
   <ItemGroup>
