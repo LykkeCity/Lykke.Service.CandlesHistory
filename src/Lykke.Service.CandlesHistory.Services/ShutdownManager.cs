@@ -74,6 +74,11 @@ namespace Lykke.Service.CandlesHistory.Services
 
                 IsShuttedDown = true;
             }
+            catch (Exception ex)
+            {
+                await _log.WriteErrorAsync(nameof(ShutdownManager), nameof(Shutdown), "", ex);
+                throw;
+            }
             finally
             {
                 IsShuttingDown = false;

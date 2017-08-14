@@ -34,11 +34,11 @@ namespace Lykke.Service.CandlesHistory
 
             host.Run(webHostCancellationTokenSource.Token);
 
-            end.Set();
-
             Stop(host);
 
             Console.WriteLine("Terminated");
+
+            end.Set();
         }
 
         private static void Stop(IWebHost host)
