@@ -72,23 +72,31 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public IFeedCandle GetMidPriceCandle(string assetPair, int assetPairAccuracy, DateTime timestamp, TimeInterval timeInterval)
         {
-            var midKey = GetKey(assetPair, PriceType.Mid, timeInterval);
-
-            IFeedCandle candle = null;
-
-            var askCandle = TryGetCandle(assetPair, PriceType.Ask, timestamp, timeInterval);
-            var bidCandle = TryGetCandle(assetPair, PriceType.Bid, timestamp, timeInterval);
-
-            _candles.AddOrUpdate(midKey,
-                addValueFactory: k => AddNewMidCandlesHistory(askCandle, bidCandle, assetPairAccuracy, out candle),
-                updateValueFactory: (k, hisotry) => UpdateMidCandlesHistory(hisotry, askCandle, bidCandle, assetPairAccuracy, out candle));
-
-            if (candle == null)
+            try
             {
-                throw new InvalidOperationException("No candle to return");
-            }
+                var midKey = GetKey(assetPair, PriceType.Mid, timeInterval);
 
-            return candle;
+                IFeedCandle candle = null;
+
+                var askCandle = TryGetCandle(assetPair, PriceType.Ask, timestamp, timeInterval);
+                var bidCandle = TryGetCandle(assetPair, PriceType.Bid, timestamp, timeInterval);
+
+                _candles.AddOrUpdate(midKey,
+                    addValueFactory: k => AddNewMidCandlesHistory(askCandle, bidCandle, assetPairAccuracy, out candle),
+                    updateValueFactory: (k, hisotry) => UpdateMidCandlesHistory(hisotry, askCandle, bidCandle,
+                        assetPairAccuracy, out candle));
+
+                if (candle == null)
+                {
+                    throw new InvalidOperationException($"No candle to return");
+                }
+
+                return candle;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to get mid candle for AssetPair={assetPair}, timestamp={timestamp}, timeIntervla={timeInterval}", ex);
+            }
         }
 
         private LinkedList<IFeedCandle> AddNewMidCandlesHistory(

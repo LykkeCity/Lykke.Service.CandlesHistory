@@ -80,32 +80,39 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public async Task ProcessQuoteAsync(IQuote quote)
         {
-            var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(quote.AssetPair);
-
-            if (assetPair == null)
+            try
             {
-                return;
-            }
+                var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(quote.AssetPair);
 
-            if (!_candleHistoryAssetConnectionStrings.ContainsKey(assetPair.Id))
-            {
-                return;
-            }
-
-            var priceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
-
-            foreach (var timeInterval in StoredIntervals)
-            {
-                var candle = _candlesCacheService.AddQuote(quote, priceType, timeInterval);
-                _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
-
-                var midPriceCandle = _candlesCacheService.GetMidPriceCandle(assetPair.Id, assetPair.Accuracy, quote.Timestamp, timeInterval);
-                if (midPriceCandle != null)
+                if (assetPair == null)
                 {
-                    _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
+                    return;
+                }
+
+                if (!_candleHistoryAssetConnectionStrings.ContainsKey(assetPair.Id))
+                {
+                    return;
+                }
+
+                var priceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
+
+                foreach (var timeInterval in StoredIntervals)
+                {
+                    var candle = _candlesCacheService.AddQuote(quote, priceType, timeInterval);
+                    _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
+
+                    var midPriceCandle = _candlesCacheService.GetMidPriceCandle(assetPair.Id, assetPair.Accuracy,
+                        quote.Timestamp, timeInterval);
+                    if (midPriceCandle != null)
+                    {
+                        _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
+                    }
                 }
             }
-
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to process quote: {quote.ToJson()}", ex);
+            }
         }
 
         /// <summary>
