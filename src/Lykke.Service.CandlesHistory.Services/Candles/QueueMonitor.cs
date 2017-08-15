@@ -40,8 +40,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     nameof(Execute),
                     "",
                     $@"One of processing queue's size exceeded warning level. 
-Candles batches to persist queue length={currentBatchesQueueLength} (warning={_setting.BatchesToPersistQueueLengthWarning}.
-Candles to dispatch queue length={currentCandlesQueueLength} (warning={_setting.CandlesToDispatchQueueLengthWarning}");
+Candles batches to persist queue length={currentBatchesQueueLength} (warning={_setting.BatchesToPersistQueueLengthWarning}).
+Candles to dispatch queue length={currentCandlesQueueLength} (warning={_setting.CandlesToDispatchQueueLengthWarning})");
             }
         }
     }
