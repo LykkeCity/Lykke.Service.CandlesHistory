@@ -5,7 +5,6 @@ using System.Linq;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
-using Lykke.Domain.Prices.Model;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
@@ -60,6 +59,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
+            if (fromMoment.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException($"Date kind should be Utc, but it is {fromMoment.Kind}", nameof(fromMoment));
+            }
+            if (toMoment.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException($"Date kind should be Utc, but it is {toMoment.Kind}", nameof(toMoment));
+            }
+
             var key = GetKey(assetPairId, priceType, timeInterval);
 
             if (_candles.TryGetValue(key, out LinkedList<IFeedCandle> history))
