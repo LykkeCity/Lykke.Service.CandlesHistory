@@ -28,8 +28,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
+            var candlesList = new LinkedList<IFeedCandle>(candles.Limit(_amountOfCandlesToStore));
 
-            _candles.TryAdd(key, new LinkedList<IFeedCandle>(candles.Limit(_amountOfCandlesToStore)));
+            foreach (var candle in candlesList)
+            {
+                if (candle.DateTime.Kind != DateTimeKind.Utc)
+                {
+                    throw new InvalidOperationException($"Candle {candle.ToJson()} DateTime.Kind is {candle.DateTime.Kind}, but should be Utc");
+                }
+            }
+
+            _candles.TryAdd(key, candlesList);
         }
 
         public IFeedCandle AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval)
@@ -88,14 +97,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 if (candle == null)
                 {
-                    throw new InvalidOperationException($"No candle to return");
+                    throw new InvalidOperationException("No candle to return");
                 }
 
                 return candle;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to get mid candle for AssetPair={assetPair}, timestamp={timestamp}, timeIntervla={timeInterval}", ex);
+                throw new InvalidOperationException($"Failed to get mid candle for {new {assetPair, timestamp, timeInterval}.ToJson()}", ex);
             }
         }
 
@@ -288,7 +297,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private static string GetKey(string assetPairId, PriceType priceType, TimeInterval timeInterval)
         {
-            return $"{assetPairId}-{priceType}-{timeInterval}";
+            return $"{assetPairId.Trim().ToUpper()}-{priceType}-{timeInterval}";
         }
     }
 }
