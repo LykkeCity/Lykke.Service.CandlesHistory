@@ -88,6 +88,10 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .SingleInstance()
                 .AutoActivate();
 
+            builder.RegisterType<MidPriceQuoteGenerator>()
+                .As<IMidPriceQuoteGenerator>()
+                .SingleInstance();
+
             builder.RegisterType<CandlesManager>()
                 .As<ICandlesManager>()
                 .As<IStartable>()

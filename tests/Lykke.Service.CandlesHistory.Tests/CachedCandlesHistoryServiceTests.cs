@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Lykke.Service.CandlesHistory.Tests
 {
     [TestClass]
-    public class CandlesCacheServiceTests
+    public class CachedCandlesCacheServiceTests
     {
         private const int AmountOfCandlesToStore = 5;
 
@@ -247,137 +247,6 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(7, candles[4].High);
             Assert.AreEqual(false, candles[4].IsBuy);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 28), candles[4].DateTime);
-        }
-
-        #endregion
-
-
-        #region Mid price candle generation
-
-        [TestMethod]
-        public void Bid_and_ask_quotes_generates_mid_candle()
-        {
-            // Arrange
-            var date1 = new DateTime(2017, 06, 23, 12, 56, 10);
-            var date2 = new DateTime(2017, 06, 23, 12, 56, 20);
-
-
-            _service.AddQuote(new Quote {AssetPair = "EURUSD", IsBuy = false, Price = 1, Timestamp = date1}, PriceType.Ask, TimeInterval.Minute);
-            _service.AddQuote(new Quote {AssetPair = "EURUSD", IsBuy = true, Price = 2, Timestamp = date2}, PriceType.Bid, TimeInterval.Minute);
-
-            // Act
-            var midCandle = _service.GetMidPriceCandle("EURUSD", 3, date2, TimeInterval.Minute);
-                
-            // Assert
-            Assert.IsNotNull(midCandle);
-            Assert.IsFalse(midCandle.IsBuy);
-            Assert.AreEqual(1.5, midCandle.Open);
-            Assert.AreEqual(1.5, midCandle.Close);
-            Assert.AreEqual(1.5, midCandle.Low);
-            Assert.AreEqual(1.5, midCandle.High);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 12, 56, 00), midCandle.DateTime);
-        }
-        
-        [TestMethod]
-        public void Many_bid_and_ask_quotes_generates_mid_candle()
-        {
-            // Arrange
-            var date1 = new DateTime(2017, 06, 23, 12, 56, 00);
-            var date2 = new DateTime(2017, 06, 23, 12, 56, 30);
-            var date3 = new DateTime(2017, 06, 23, 12, 57, 00);
-            var date4 = new DateTime(2017, 06, 23, 12, 58, 00);
-
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 1, Timestamp = date1 }, PriceType.Ask, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = date2 }, PriceType.Ask, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 3, Timestamp = date3 }, PriceType.Ask, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 4, Timestamp = date4 }, PriceType.Ask, TimeInterval.Hour);
-
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 8, Timestamp = date1 }, PriceType.Bid, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 6, Timestamp = date2 }, PriceType.Bid, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 4, Timestamp = date3 }, PriceType.Bid, TimeInterval.Hour);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 2, Timestamp = date4 }, PriceType.Bid, TimeInterval.Hour);
-
-            // Act
-            var midCandle = _service.GetMidPriceCandle("EURUSD", 3, new DateTime(2017, 06, 23, 12, 58, 00), TimeInterval.Hour);
-
-            // Assert
-            Assert.IsNotNull(midCandle);
-            Assert.IsFalse(midCandle.IsBuy);
-            Assert.AreEqual(4.5, midCandle.Open);
-            Assert.AreEqual(3, midCandle.Close);
-            Assert.AreEqual(1.5, midCandle.Low);
-            Assert.AreEqual(6, midCandle.High);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 12, 00, 00), midCandle.DateTime);
-        }
-
-        [TestMethod]
-        public void Mid_candle_price_is_rounded()
-        {
-            // Arrange
-            var date1 = new DateTime(2017, 06, 23, 12, 56, 10);
-            var date2 = new DateTime(2017, 06, 23, 12, 56, 20);
-
-
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 1.123, Timestamp = date1 }, PriceType.Ask, TimeInterval.Minute);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 2, Timestamp = date2 }, PriceType.Bid, TimeInterval.Minute);
-
-            // Act
-            var midCandle = _service.GetMidPriceCandle("EURUSD", 2, date2, TimeInterval.Minute);
-
-            // Assert
-            Assert.IsNotNull(midCandle);
-            Assert.AreEqual(1.56, midCandle.Open);
-            Assert.AreEqual(1.56, midCandle.Close);
-            Assert.AreEqual(1.56, midCandle.Low);
-            Assert.AreEqual(1.56, midCandle.High);
-        }
-
-        [TestMethod]
-        public void Bid_only_quotes_generates_mid_candle()
-        {
-            // Arrange
-            var date1 = new DateTime(2017, 06, 23, 12, 56, 10);
-            var date2 = new DateTime(2017, 06, 23, 12, 56, 20);
-
-
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 1, Timestamp = date1 }, PriceType.Bid, TimeInterval.Minute);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = true, Price = 2, Timestamp = date2 }, PriceType.Bid, TimeInterval.Minute);
-
-            // Act
-            var midCandle = _service.GetMidPriceCandle("EURUSD", 3, date2, TimeInterval.Minute);
-
-            // Assert
-            Assert.IsNotNull(midCandle);
-            Assert.IsFalse(midCandle.IsBuy);
-            Assert.AreEqual(1, midCandle.Open);
-            Assert.AreEqual(2, midCandle.Close);
-            Assert.AreEqual(1, midCandle.Low);
-            Assert.AreEqual(2, midCandle.High);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 12, 56, 00), midCandle.DateTime);
-        }
-
-        [TestMethod]
-        public void Ask_only_quotes_generates_mid_quote()
-        {
-            // Arrange
-            var date1 = new DateTime(2017, 06, 23, 12, 56, 10);
-            var date2 = new DateTime(2017, 06, 23, 12, 56, 20);
-
-
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 1, Timestamp = date1 }, PriceType.Ask, TimeInterval.Minute);
-            _service.AddQuote(new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = date2 }, PriceType.Ask, TimeInterval.Minute);
-
-            // Act
-            var midCandle = _service.GetMidPriceCandle("EURUSD", 3, date2, TimeInterval.Minute);
-
-            // Assert
-            Assert.IsNotNull(midCandle);
-            Assert.IsFalse(midCandle.IsBuy);
-            Assert.AreEqual(1, midCandle.Open);
-            Assert.AreEqual(2, midCandle.Close);
-            Assert.AreEqual(1, midCandle.Low);
-            Assert.AreEqual(2, midCandle.High);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 12, 56, 00), midCandle.DateTime);
         }
 
         #endregion
