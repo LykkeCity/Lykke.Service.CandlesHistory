@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Common;
+using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -13,14 +13,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     public class CandlesCacheService : ICandlesCacheService
     {
         private readonly int _amountOfCandlesToStore;
+        private readonly ILog _log;
+
         /// <summary>
         /// Candles keyed by asset ID, price type and time interval type are sorted by DateTime 
         /// </summary>
         private readonly ConcurrentDictionary<string, LinkedList<IFeedCandle>> _candles;
 
-        public CandlesCacheService(int amountOfCandlesToStore)
+        public CandlesCacheService(int amountOfCandlesToStore, ILog log)
         {
             _amountOfCandlesToStore = amountOfCandlesToStore;
+            _log = log;
             _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>();
         }
 
@@ -40,21 +43,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles.TryAdd(key, candlesList);
         }
 
-        public IFeedCandle AddQuote(IQuote quote, PriceType priceType, TimeInterval timeInterval)
+        public void AddCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval)
         {
-            var key = GetKey(quote.AssetPair, priceType, timeInterval);
-            IFeedCandle candle = null;
+            var key = GetKey(assetPairId, priceType, timeInterval);
 
             _candles.AddOrUpdate(key,
-                addValueFactory: k => AddNewCandlesHistory(quote, timeInterval, out candle),
-                updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, quote, timeInterval, out candle));
-
-            if (candle == null)
-            {
-                throw new InvalidOperationException("No candle to return");
-            }
-
-            return candle;
+                addValueFactory: k => AddNewCandlesHistory(candle),
+                updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle, assetPairId, priceType, timeInterval));
         }
 
         public IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
@@ -87,44 +82,35 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return Enumerable.Empty<IFeedCandle>();
         }
 
-        private LinkedList<IFeedCandle> AddNewCandlesHistory(IQuote quote, TimeInterval timeInterval, out IFeedCandle candle)
+        private static LinkedList<IFeedCandle> AddNewCandlesHistory(IFeedCandle candle)
         {
             var history = new LinkedList<IFeedCandle>();
-            var intervalDate = quote.Timestamp.RoundTo(timeInterval);
-
-            candle = quote.ToCandle(intervalDate);
-
+            
             history.AddLast(candle);
 
             return history;
         }
 
-        private LinkedList<IFeedCandle> UpdateCandlesHistory(LinkedList<IFeedCandle> history, IQuote quote, TimeInterval timeInterval, out IFeedCandle candle)
+        private LinkedList<IFeedCandle> UpdateCandlesHistory(LinkedList<IFeedCandle> history, IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval)
         {
-            var intervalDate = quote.Timestamp.RoundTo(timeInterval);
-            var newCandle = quote.ToCandle(intervalDate);
-
-            candle = newCandle;
-
             lock (history)
             {
                 // Starting from the latest candle, moving down to the history
                 for (var node = history.Last; node != null; node = node.Previous)
                 {
                     // Candle at given point already exists, so we merging they
-                    if (node.Value.DateTime == newCandle.DateTime)
+                    if (node.Value.DateTime == candle.DateTime)
                     {
-                        candle = node.Value.MergeWith(newCandle);
-                        node.Value = candle;
+                        node.Value = node.Value.MergeWith(candle);
 
                         break;
                     }
 
-                    // If we found more early point than newCandle has,
-                    // that's the point after which we should add newCandle
-                    if (node.Value.DateTime < intervalDate)
-                    {   
-                        history.AddAfter(node, newCandle);
+                    // If we found more early point than candle,
+                    // that's the point after which we should add candle
+                    if (node.Value.DateTime < candle.DateTime)
+                    {
+                        history.AddAfter(node, candle);
 
                         // Should we remove oldest candle?
                         if (history.Count > _amountOfCandlesToStore)
@@ -134,12 +120,26 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                         break;
                     }
-                }
-            }
 
-            if (candle == null)
-            {
-                throw new InvalidOperationException("No candle was merged or generated");
+                    // If we achieve first node, we should check if cache is full or not
+                    if (node == history.First)
+                    {
+                        if (history.Count < _amountOfCandlesToStore)
+                        {
+                            // Cache is not full, so we can store the candle as earliest point in history
+                            history.AddBefore(history.First, candle);
+                        }
+                      
+                        // Cache is full, so we can't store the candle there, because, probably
+                        // there is persisted candle at this point
+                        _log.WriteWarningAsync(
+                            nameof(CandlesCacheService), 
+                            nameof(UpdateCandlesHistory),
+                            candle.ToJson(),
+                            $"Can't cache candle it's too old to store in cache. Current history length for {assetPairId}:{priceType}:{timeInterval} = {history.Count}");
+                        break;
+                    }
+                }
             }
 
             return history;

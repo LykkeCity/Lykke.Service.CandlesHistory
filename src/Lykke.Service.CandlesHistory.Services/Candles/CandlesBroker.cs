@@ -95,17 +95,20 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 errors.Add("Argument 'Order' is null.");
             }
-            if (quote != null && string.IsNullOrEmpty(quote.AssetPair))
+            else
             {
-                errors.Add(string.Format("Invalid 'AssetPair': '{0}'", quote.AssetPair ?? ""));
-            }
-            if (quote != null && (quote.Timestamp == DateTime.MinValue || quote.Timestamp == DateTime.MaxValue))
-            {
-                errors.Add(string.Format("Invalid 'Timestamp' range: '{0}'", quote.Timestamp));
-            }
-            if (quote != null && quote.Timestamp.Kind != DateTimeKind.Utc)
-            {
-                errors.Add(string.Format("Invalid 'Timestamp' Kind (UTC is required): '{0}'", quote.Timestamp));
+                if (string.IsNullOrEmpty(quote.AssetPair))
+                {
+                    errors.Add(string.Format("Invalid 'AssetPair': '{0}'", quote.AssetPair ?? ""));
+                }
+                if (quote.Timestamp == DateTime.MinValue || quote.Timestamp == DateTime.MaxValue)
+                {
+                    errors.Add(string.Format("Invalid 'Timestamp' range: '{0}'", quote.Timestamp));
+                }
+                if (quote.Timestamp.Kind != DateTimeKind.Utc)
+                {
+                    errors.Add(string.Format("Invalid 'Timestamp' Kind (UTC is required): '{0}'", quote.Timestamp));
+                }
             }
 
             return errors;

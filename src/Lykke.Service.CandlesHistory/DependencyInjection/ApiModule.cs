@@ -104,6 +104,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .SingleInstance();
 
+            builder.RegisterType<CandlesGenerator>()
+                .As<ICandlesGenerator>();
+
             builder.RegisterType<CandlesPersistenceManager>()
                 .As<IStartable>()
                 .SingleInstance()

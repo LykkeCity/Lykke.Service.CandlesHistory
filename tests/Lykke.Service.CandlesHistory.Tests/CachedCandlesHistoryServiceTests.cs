@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Linq;
+using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Model;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace Lykke.Service.CandlesHistory.Tests
 {
@@ -18,7 +20,8 @@ namespace Lykke.Service.CandlesHistory.Tests
         [TestInitialize]
         public void InitializeTest()
         {
-            _service = new CandlesCacheService(AmountOfCandlesToStore);
+            var logMock = new Mock<ILog>();
+            _service = new CandlesCacheService(AmountOfCandlesToStore, logMock.Object);
         }
 
         
@@ -110,13 +113,13 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Quote adding
 
         [TestMethod]
-        public void Adding_quote_without_history_builds_candle()
+        public void Adding_candle_without_history_adds_candle()
         {
             // Arrange
-            var quote = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 23, 13, 49, 23, 432) };
+            var candle = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc) };
 
             // Act
-            _service.AddQuote(quote, PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle, "EURUSD", PriceType.Ask, TimeInterval.Day);
 
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
@@ -131,7 +134,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Adding_quote_merges_with_history()
+        public void Adding_candle_merges_with_history()
         {
             // Arrange
             var history = new[]
@@ -142,12 +145,12 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new FeedCandle { Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8, DateTime = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc) },
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) }
             };
-            var quote = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 14, 10, 50, 20, DateTimeKind.Utc) };
+            var candle = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, 0, DateTimeKind.Utc) };
 
             _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
-            _service.AddQuote(quote, PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle, "EURUSD", PriceType.Ask, TimeInterval.Day);
 
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
             
@@ -163,19 +166,19 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Sequental_quote_addition_without_history_merges_to_candle()
+        public void Sequental_candles_addition_without_history_merges_candles()
         {
             // Arrange
-            var quote1 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 23, 13, 49, 23, 432) };
-            var quote2 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 1, Timestamp = new DateTime(2017, 06, 23, 13, 49, 24, 432) };
-            var quote3 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 5, Timestamp = new DateTime(2017, 06, 23, 13, 49, 25, 432) };
-            var quote4 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 4, Timestamp = new DateTime(2017, 06, 23, 13, 49, 26, 432) };
+            var candle1 = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc) };
+            var candle2 = new FeedCandle { IsBuy = false, Open = 1, Close = 1, Low = 1, High = 1, DateTime = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc) };
+            var candle3 = new FeedCandle { IsBuy = false, Open = 5, Close = 5, Low = 5, High = 5, DateTime = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc) };
+            var candle4 = new FeedCandle { IsBuy = false, Open = 4, Close = 4, Low = 4, High = 4, DateTime = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc) };
 
             // Act
-            _service.AddQuote(quote1, PriceType.Ask, TimeInterval.Day);
-            _service.AddQuote(quote2, PriceType.Ask, TimeInterval.Day);
-            _service.AddQuote(quote3, PriceType.Ask, TimeInterval.Day);
-            _service.AddQuote(quote4, PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle1, "EURUSD", PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle2, "EURUSD", PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle3, "EURUSD", PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle4, "EURUSD", PriceType.Ask, TimeInterval.Day);
 
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
@@ -193,20 +196,20 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void To_old_candles_evicts()
         {
             // Arrange
-            var quote1 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 23, 13, 49, 23, 432) };
-            var quote2 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 1, Timestamp = new DateTime(2017, 06, 23, 13, 49, 24, 432) };
-            var quote3 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 5, Timestamp = new DateTime(2017, 06, 23, 13, 49, 25, 432) };
-            var quote4 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 4, Timestamp = new DateTime(2017, 06, 23, 13, 49, 26, 432) };
-            var quote5 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 3, Timestamp = new DateTime(2017, 06, 23, 13, 49, 27, 432) };
-            var quote6 = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 7, Timestamp = new DateTime(2017, 06, 23, 13, 49, 28, 432) };
+            var candle1 = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 23, 13, 49, 23, 0, DateTimeKind.Utc) };
+            var candle2 = new FeedCandle { IsBuy = false, Open = 1, Close = 1, Low = 1, High = 1, DateTime = new DateTime(2017, 06, 23, 13, 49, 24, 0, DateTimeKind.Utc) };
+            var candle3 = new FeedCandle { IsBuy = false, Open = 5, Close = 5, Low = 5, High = 5, DateTime = new DateTime(2017, 06, 23, 13, 49, 25, 0, DateTimeKind.Utc) };
+            var candle4 = new FeedCandle { IsBuy = false, Open = 4, Close = 4, Low = 4, High = 4, DateTime = new DateTime(2017, 06, 23, 13, 49, 26, 0, DateTimeKind.Utc) };
+            var candle5 = new FeedCandle { IsBuy = false, Open = 3, Close = 3, Low = 3, High = 3, DateTime = new DateTime(2017, 06, 23, 13, 49, 27, 0, DateTimeKind.Utc) };
+            var candle6 = new FeedCandle { IsBuy = false, Open = 7, Close = 7, Low = 7, High = 7, DateTime = new DateTime(2017, 06, 23, 13, 49, 28, 0, DateTimeKind.Utc) };
 
             // Act
-            _service.AddQuote(quote1, PriceType.Ask, TimeInterval.Sec);
-            _service.AddQuote(quote2, PriceType.Ask, TimeInterval.Sec);
-            _service.AddQuote(quote3, PriceType.Ask, TimeInterval.Sec);
-            _service.AddQuote(quote4, PriceType.Ask, TimeInterval.Sec);
-            _service.AddQuote(quote5, PriceType.Ask, TimeInterval.Sec);
-            _service.AddQuote(quote6, PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle1, "EURUSD", PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle2, "EURUSD", PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle3, "EURUSD", PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle4, "EURUSD", PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle5, "EURUSD", PriceType.Ask, TimeInterval.Sec);
+            _service.AddCandle(candle6, "EURUSD", PriceType.Ask, TimeInterval.Sec);
 
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
@@ -326,10 +329,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new FeedCandle { Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8, DateTime = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc) },
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) },
             };
-            var quote = new Quote { AssetPair = "EURUSD", IsBuy = false, Price = 2, Timestamp = new DateTime(2017, 06, 14, 10, 50, 20, DateTimeKind.Utc) };
+            
+            var candle = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) };
 
             _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
-            _service.AddQuote(quote, PriceType.Ask, TimeInterval.Day);
+            _service.AddCandle(candle, "EURUSD", PriceType.Ask, TimeInterval.Day);
 
             // Act
             var candles1 = _service.GetCandles("USDCHF", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
