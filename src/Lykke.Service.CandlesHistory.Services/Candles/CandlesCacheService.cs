@@ -30,7 +30,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
-            var candlesList = new LinkedList<IFeedCandle>(candles.Limit(_amountOfCandlesToStore));
+            var candlesList = new LinkedList<IFeedCandle>(candles);
 
             foreach (var candle in candlesList)
             {

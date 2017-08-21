@@ -111,7 +111,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                     if (midPriceQuote != null)
                     {
-                        var midPriceCandle = _candlesGenerator.GenerateCandle(quote, timeInterval);
+                        var midPriceCandle = _candlesGenerator.GenerateCandle(midPriceQuote, timeInterval);
 
                         _candlesCacheService.AddCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
                         _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
@@ -212,7 +212,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 {
                     var alignedToDate = toDate.RoundTo(timeInterval);
                     var alignedFromDate = alignedToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
-                    var candles = await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate);
+                    var candles = (await _candleHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate))
+                        .ToArray();
+
+                    if ((priceType == PriceType.Ask || priceType == PriceType.Bid) && timeInterval == TimeInterval.Sec)
+                    {
+                        var lastCandle = candles.LastOrDefault();
+                        if (lastCandle != null)
+                        {
+                            _midPriceQuoteGenerator.Initialize(assetPair.Id, priceType == PriceType.Bid, lastCandle.Close, lastCandle.DateTime);
+                        }
+                    }
 
                     _candlesCacheService.InitializeHistory(assetPair.Id, timeInterval, priceType, candles);
                 }

@@ -8,12 +8,24 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class MidPriceQuoteGenerator : IMidPriceQuoteGenerator
     {
-        private struct AssetState
+        private class AssetPrice
         {
-            public IQuote Ask { get; }
-            public IQuote Bid { get; }
+            public double Price { get; }
+            public DateTime Timestamp { get; }
 
-            public AssetState(IQuote ask, IQuote bid)
+            public AssetPrice(double price, DateTime timestamp)
+            {
+                Price = price;
+                Timestamp = timestamp;
+            }
+        }
+
+        private class AssetState
+        {
+            public AssetPrice Ask { get; }
+            public AssetPrice Bid { get; }
+
+            public AssetState(AssetPrice ask, AssetPrice bid)
             {
                 Ask = ask;
                 Bid = bid;
@@ -27,33 +39,42 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _assetQuoteStates = new ConcurrentDictionary<string, AssetState>();
         }
 
+        public void Initialize(string assetPairId, bool isBid, double price, DateTime timestamp)
+        {
+            _assetQuoteStates.AddOrUpdate(
+                assetPairId.Trim().ToUpper(),
+                k => AddNewAssetState(new AssetPrice(price, timestamp), isBid),
+                (k, oldState) => UpdateAssetState(oldState, new AssetPrice(price, timestamp), isBid));
+        }
+
         public IQuote TryGenerate(IQuote quote, int assetPairAccuracy)
         {
+            var assetPairId = quote.AssetPair.Trim().ToUpper();
             var state = _assetQuoteStates.AddOrUpdate(
-                quote.AssetPair,
-                k => AddNewAssetState(quote),
-                (k, oldState) => UpdateAssetState(oldState, quote));
+                assetPairId,
+                k => AddNewAssetState(new AssetPrice(quote.Price, quote.Timestamp), quote.IsBuy),
+                (k, oldState) => UpdateAssetState(oldState, new AssetPrice(quote.Price, quote.Timestamp), quote.IsBuy));
 
-            return TryCreateMidQuote(state, assetPairAccuracy);
+            return TryCreateMidQuote(assetPairId, state, assetPairAccuracy);
         }
 
-        private static AssetState AddNewAssetState(IQuote quote)
+        private static AssetState AddNewAssetState(AssetPrice assetPrice, bool isBid)
         {
-            return quote.IsBuy ? new AssetState(null, quote) : new AssetState(quote, null);
+            return isBid ? new AssetState(null, assetPrice) : new AssetState(assetPrice, null);
         }
 
-        private static AssetState UpdateAssetState(AssetState oldState, IQuote quote)
+        private static AssetState UpdateAssetState(AssetState oldState, AssetPrice assetPrice, bool isBid)
         {
-            return quote.IsBuy ? new AssetState(oldState.Ask, quote) : new AssetState(quote, oldState.Bid);
+            return isBid ? new AssetState(oldState.Ask, assetPrice) : new AssetState(assetPrice, oldState.Bid);
         }
 
-        private static IQuote TryCreateMidQuote(AssetState assetState, int assetPairAccuracy)
+        private static IQuote TryCreateMidQuote(string assetPairId, AssetState assetState, int assetPairAccuracy)
         {
             if (assetState.Bid != null && assetState.Ask != null)
             {
                 return new Quote
                 {
-                    AssetPair = assetState.Bid.AssetPair,
+                    AssetPair = assetPairId,
                     Price = Math.Round((assetState.Ask.Price + assetState.Bid.Price) / 2, assetPairAccuracy),
                     Timestamp = assetState.Ask.Timestamp >= assetState.Bid.Timestamp
                         ? assetState.Ask.Timestamp
