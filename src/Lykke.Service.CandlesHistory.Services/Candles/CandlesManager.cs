@@ -51,6 +51,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly ILog _log;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IImmutableDictionary<string, string> _candleHistoryAssetConnectionStrings;
+        private readonly ICandlesGenerator _candlesGenerator;
         private readonly int _amountOfCandlesToStore;
 
         public CandlesManager(
@@ -61,6 +62,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             ILog log,
             IDateTimeProvider dateTimeProvider,
             IImmutableDictionary<string, string> candleHistoryAssetConnectionStrings,
+            ICandlesGenerator candlesGenerator,
             int amountOfCandlesToStore)
         {
             _candlesCacheService = candlesCacheService;
@@ -70,6 +72,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _log = log;
             _dateTimeProvider = dateTimeProvider;
             _candleHistoryAssetConnectionStrings = candleHistoryAssetConnectionStrings;
+            _candlesGenerator = candlesGenerator;
             _amountOfCandlesToStore = amountOfCandlesToStore;
         }
 
@@ -98,17 +101,20 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 foreach (var timeInterval in StoredIntervals)
                 {
-                    var candle = _candlesCacheService.AddQuote(quote, priceType, timeInterval);
+                    var candle = _candlesGenerator.GenerateAskBidCandle(quote, timeInterval);
+
+                    _candlesCacheService.AddCandle(candle, assetPair.Id, priceType, timeInterval);
                     _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
 
                     try
                     {
-                        var midPriceCandle = _candlesCacheService.GetMidPriceCandle(assetPair.Id, assetPair.Accuracy, quote.Timestamp, timeInterval);
-                        if (midPriceCandle != null)
-                        {
-                            _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid,
-                                timeInterval);
-                        }
+                        // TODO: Take PersistentQueue into account.
+                        var askCandleTask = GetCandleAsync(assetPair.Id, PriceType.Ask, timeInterval, quote.Timestamp);
+                        var bidCandleTask = GetCandleAsync(assetPair.Id, PriceType.Bid, timeInterval, quote.Timestamp);
+                        var midPriceCandle = _candlesGenerator.GenerateMidCandle(await askCandleTask, await bidCandleTask, assetPair.Accuracy);
+
+                        _candlesCacheService.AddCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
+                        _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
                     }
                     catch (Exception ex)
                     {
@@ -149,6 +155,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             // Merging candles from sourceInterval (e.g. Minute) to bigger timeInterval (e.g. Min15)
             return sourceHistory.MergeIntoBiggerIntervals(timeInterval);
+        }
+
+        private async Task<IFeedCandle> GetCandleAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime moment)
+        {
+            var candles = await GetCandlesAsync(assetPairId, priceType, timeInterval, moment, moment.AddIntervalTicks(1, timeInterval));
+
+            return candles.FirstOrDefault();
         }
 
         /// <summary>
