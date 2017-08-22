@@ -103,6 +103,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     {
                         node.Value = node.Value.MergeWith(candle);
 
+                        if (node != history.Last)
+                        {
+                            _log.WriteWarningAsync(
+                                nameof(CandlesCacheService),
+                                nameof(UpdateCandlesHistory),
+                                candle.ToJson(),
+                                $"Cached candle was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
+                        }
+
                         break;
                     }
 
@@ -110,12 +119,21 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     // that's the point after which we should add candle
                     if (node.Value.DateTime < candle.DateTime)
                     {
-                        history.AddAfter(node, candle);
+                        var newNode = history.AddAfter(node, candle);
 
                         // Should we remove oldest candle?
                         if (history.Count > _amountOfCandlesToStore)
                         {
                             history.RemoveFirst();
+                        }
+
+                        if (newNode != history.Last)
+                        {
+                            _log.WriteWarningAsync(
+                                nameof(CandlesCacheService),
+                                nameof(UpdateCandlesHistory),
+                                candle.ToJson(),
+                                $"Cached candle was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                         }
 
                         break;
@@ -136,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                             nameof(CandlesCacheService), 
                             nameof(UpdateCandlesHistory),
                             candle.ToJson(),
-                            $"Can't cache candle it's too old to store in cache. Current history length for {assetPairId}:{priceType}:{timeInterval} = {history.Count}");
+                            $"Can't cache candle it's too old to store in cache. Current history length for {assetPairId}:{priceType}:{timeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
                         break;
                     }
                 }
