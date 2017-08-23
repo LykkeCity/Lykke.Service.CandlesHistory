@@ -13,9 +13,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class CandlesBroker : 
-        ICandlesBroker,
-        IDisposable
+    public class CandlesBroker : ICandlesBroker
     {
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;

@@ -73,7 +73,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                         throw new ConfigurationException($"Connection string for asset pair '{assetPair}' is not specified.");
                     }
 
-                    var storage = new AzureTableStorage<CandleTableEntity>(assetConnectionString, tableName, _log);
+                    var storage = AzureTableStorage<CandleTableEntity>.Create(() => assetConnectionString, tableName, _log);
 
                     // Create and preload table info
                     storage.GetDataAsync(assetPair, "1900-01-01").Wait();

@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Common.Log;
-using Lykke.Domain.Prices.Contracts;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core;
@@ -9,7 +9,9 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class FailedToPersistCandlesProducer : IFailedToPersistCandlesProducer
+    public class FailedToPersistCandlesProducer : 
+        IFailedToPersistCandlesProducer,
+        IDisposable
     {
         private readonly ILog _log;
         private readonly ApplicationSettings.CandlesHistorySettings _settings;
@@ -41,6 +43,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public Task ProduceAsync(FailedCandlesEnvelope failedCandlesEnvelope)
         {
             return _publisher.ProduceAsync(failedCandlesEnvelope);
+        }
+
+        public void Dispose()
+        {
+            _publisher?.Dispose();
         }
     }
 }
