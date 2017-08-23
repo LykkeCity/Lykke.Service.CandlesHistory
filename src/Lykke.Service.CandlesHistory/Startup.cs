@@ -121,7 +121,7 @@ namespace Lykke.Service.CandlesHistory
             app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
 
             appLifetime.ApplicationStopping.Register(StopApplication);
-            appLifetime.ApplicationStopped.Register(() => ApplicationContainer.Dispose());
+            appLifetime.ApplicationStopped.Register(CleanUp);
 
             app.UseMvc();
             app.UseSwagger();
@@ -137,6 +137,15 @@ namespace Lykke.Service.CandlesHistory
             shutdownManager.Shutdown().Wait();
 
             Console.WriteLine("Stopped");
+        }
+
+        private void CleanUp()
+        {
+            Console.WriteLine("Cleaning up...");
+
+            ApplicationContainer.Dispose();
+
+            Console.WriteLine("Cleaned up");
         }
     }
 }
