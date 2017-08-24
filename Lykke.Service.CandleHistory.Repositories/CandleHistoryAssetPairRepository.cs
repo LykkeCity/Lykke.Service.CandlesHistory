@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AzureStorage;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Lykke.Service.CandleHistory.Repositories
@@ -12,27 +13,39 @@ namespace Lykke.Service.CandleHistory.Repositories
     internal sealed class CandleHistoryAssetPairRepository
     {
         private readonly INoSQLTableStorage<CandleTableEntity> _tableStorage;
+        private readonly IAssetPairRepositoryHealthService _healthService;
 
-        public CandleHistoryAssetPairRepository(INoSQLTableStorage<CandleTableEntity> tableStorage)
+        public CandleHistoryAssetPairRepository(INoSQLTableStorage<CandleTableEntity> tableStorage, IAssetPairRepositoryHealthService healthService)
         {
             _tableStorage = tableStorage;
+            _healthService = healthService;
         }
 
         public async Task InsertOrMergeAsync(IEnumerable<IFeedCandle> candles, PriceType priceType, TimeInterval interval)
         {
             // Group by row
-            var groups = candles
-                .GroupBy(candle => new { pKey = candle.PartitionKey(priceType), rowKey = candle.RowKey(interval) });
+            var groups = candles.GroupBy(candle => new
+            {
+                PartitionKey = candle.PartitionKey(priceType),
+                RowKey = candle.RowKey(interval)
+            });
+
+            int groupsCount = 0;
 
             // Update rows
             foreach (var group in groups)
             {
-                await InsertOrMergeAsync(group, group.Key.pKey, group.Key.rowKey, interval);
+                await InsertOrMergeAsync(group.ToArray(), group.Key.PartitionKey, group.Key.RowKey, interval);
+                ++groupsCount;
             }
+
+            _healthService.TraceRowMergedGroupsCount(groupsCount);
         }
 
-        private async Task InsertOrMergeAsync(IEnumerable<IFeedCandle> candles, string partitionKey, string rowKey, TimeInterval interval)
+        private async Task InsertOrMergeAsync(IFeedCandle[] candles, string partitionKey, string rowKey, TimeInterval interval)
         {
+            _healthService.TraceRowMergedCandlesCount(candles.Length);
+
             // Read row
             var entity = await _tableStorage.GetDataAsync(partitionKey, rowKey) ??
                          new CandleTableEntity(partitionKey, rowKey);

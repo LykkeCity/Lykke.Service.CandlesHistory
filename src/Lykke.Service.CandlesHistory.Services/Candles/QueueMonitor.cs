@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Common;
 using Common.Log;
 using Lykke.Service.CandlesHistory.Core;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -12,25 +12,25 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     /// </summary>
     public class QueueMonitor : TimerPeriod
     {
-        private readonly ICandlesPersistenceQueue _queue;
         private readonly ApplicationSettings.QueueMonitorSettings _setting;
         private readonly ILog _log;
+        private readonly IHealthService _healthService;
 
         public QueueMonitor(
             ILog log, 
-            ICandlesPersistenceQueue queue, 
+            IHealthService healthService,
             ApplicationSettings.QueueMonitorSettings setting)
-            : base(nameof(QueueMonitor), (int)TimeSpan.FromMinutes(10).TotalMilliseconds, log)
+            : base(nameof(QueueMonitor), (int)setting.ScanPeriod.TotalMilliseconds, log)
         {
             _log = log;
-            _queue = queue;
+            _healthService = healthService;
             _setting = setting;
         }
 
         public override async Task Execute()
         {
-            var currentBatchesQueueLength = _queue.BatchesToPersistQueueLength;
-            var currentCandlesQueueLength = _queue.CandlesToDispatchQueueLength;
+            var currentBatchesQueueLength = _healthService.BatchesToPersistQueueLength;
+            var currentCandlesQueueLength = _healthService.CandlesToDispatchQueueLength;
 
             if (currentBatchesQueueLength > _setting.BatchesToPersistQueueLengthWarning ||
                 currentCandlesQueueLength > _setting.CandlesToDispatchQueueLengthWarning)

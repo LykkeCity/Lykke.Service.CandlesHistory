@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
+using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -12,9 +13,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public CandlesPersistenceManager(
             ICandlesPersistenceQueue persistenceQueue,
-            ILog log) : 
+            ILog log,
+            ApplicationSettings.PersistenceSettings settings) : 
 
-            base(nameof(CandlesPersistenceManager), (int)TimeSpan.FromSeconds(10).TotalMilliseconds, log)
+            base(nameof(CandlesPersistenceManager), (int)settings.PersistPeriod.TotalMilliseconds, log)
         {
             _persistenceQueue = persistenceQueue;
         }

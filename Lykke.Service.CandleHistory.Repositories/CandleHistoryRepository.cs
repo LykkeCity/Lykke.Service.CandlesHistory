@@ -5,17 +5,20 @@ using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
     public class CandleHistoryRepository : ICandleHistoryRepository
     {
         private readonly CreateStorage _createStorage;
+        private readonly IHealthService _healthService;
         private readonly ConcurrentDictionary<string, CandleHistoryAssetPairRepository> _assetPairRepositories;
 
-        public CandleHistoryRepository(CreateStorage createStorage)
+        public CandleHistoryRepository(CreateStorage createStorage, IHealthService healthService)
         {
             _createStorage = createStorage;
+            _healthService = healthService;
             _assetPairRepositories = new ConcurrentDictionary<string, CandleHistoryAssetPairRepository>();
         }
 
@@ -70,10 +73,11 @@ namespace Lykke.Service.CandleHistory.Repositories
 
             if (!_assetPairRepositories.TryGetValue(key, out CandleHistoryAssetPairRepository repo) || repo == null)
             {
+                var repositoryHealthService = _healthService.GetAssetPairRepositoryHealth(key);
                 return _assetPairRepositories.AddOrUpdate(
                     key: key,
-                    addValueFactory: k => new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName)),
-                    updateValueFactory: (k, oldRepo) => oldRepo ?? new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName)));
+                    addValueFactory: k => new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName), repositoryHealthService),
+                    updateValueFactory: (k, oldRepo) => oldRepo ?? new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName), repositoryHealthService));
             }
 
             return repo;

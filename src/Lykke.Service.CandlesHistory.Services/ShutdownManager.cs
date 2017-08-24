@@ -61,10 +61,12 @@ namespace Lykke.Service.CandlesHistory.Services
 
                 _broker.Stop();
 
+                var hasCandlesToDispatch = true;
+                
                 // Dispatch all generated candles to batches
-                while (_persistenceQueue.CandlesToDispatchQueueLength > 0)
+                while (hasCandlesToDispatch)
                 {
-                    _persistenceQueue.DispatchCandlesToPersist();
+                    hasCandlesToDispatch = _persistenceQueue.DispatchCandlesToPersist();
                 }
 
                 // Wait until all batches is persisted

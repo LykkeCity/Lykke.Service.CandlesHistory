@@ -107,14 +107,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     var candle = _candlesGenerator.GenerateCandle(quote, timeInterval);
 
                     _candlesCacheService.AddCandle(candle, assetPair.Id, priceType, timeInterval);
-                    _candlesPersistenceQueue.EnqueCandle(candle, assetPair.Id, priceType, timeInterval);
+                    _candlesPersistenceQueue.EnqueueCandle(candle, assetPair.Id, priceType, timeInterval);
 
                     if (midPriceQuote != null)
                     {
                         var midPriceCandle = _candlesGenerator.GenerateCandle(midPriceQuote, timeInterval);
 
                         _candlesCacheService.AddCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
-                        _candlesPersistenceQueue.EnqueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
+                        _candlesPersistenceQueue.EnqueueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
                     }
                 }
             }

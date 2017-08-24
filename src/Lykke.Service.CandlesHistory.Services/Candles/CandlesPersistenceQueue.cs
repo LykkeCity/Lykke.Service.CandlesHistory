@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
+using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -18,33 +18,32 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         ProducerConsumer<IReadOnlyCollection<AssetPairCandle>>,
         ICandlesPersistenceQueue
     {
-        public int BatchesToPersistQueueLength => _batchesToPersistQueueLength;
-        public int CandlesToDispatchQueueLength => _candlesToDispatch.Count;
-
         private readonly ICandleHistoryRepository _repository;
         private readonly IFailedToPersistCandlesProducer _failedToPersistCandlesProducer;
         private readonly ILog _log;
+        private readonly IHealthService _healthService;
+        private readonly ApplicationSettings.PersistenceSettings _settings;
 
         private readonly ConcurrentQueue<AssetPairCandle> _candlesToDispatch;
-        private int _batchesToPersistQueueLength;
-        private TimeSpan _averagePersistTime;
-        private DateTime _lastPerformanceLogMoment;
-
+        
         public CandlesPersistenceQueue(
             ICandleHistoryRepository repository,
             IFailedToPersistCandlesProducer failedToPersistCandlesProducer,
-            ILog log) :
+            ILog log,
+            IHealthService healthService,
+            ApplicationSettings.PersistenceSettings settings) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
             _repository = repository;
             _failedToPersistCandlesProducer = failedToPersistCandlesProducer;
             _log = log;
+            _healthService = healthService;
+            _settings = settings;
             _candlesToDispatch = new ConcurrentQueue<AssetPairCandle>();
-            Stop();
         }
 
-        public void EnqueCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        public void EnqueueCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval)
         {
             _candlesToDispatch.Enqueue(new AssetPairCandle
             {
@@ -58,20 +57,22 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 High = candle.High,
                 IsBuy = candle.IsBuy
             });
+
+            _healthService.TraceEnqueueCandle();
         }
 
-        public void DispatchCandlesToPersist()
+        public bool DispatchCandlesToPersist()
         {
             var candlesCount = _candlesToDispatch.Count;
 
             if (candlesCount == 0)
             {
-                return;
+                return false;
             }
 
             var candles = new List<AssetPairCandle>(candlesCount);
 
-            for (var i = 0; i < Math.Min(candlesCount, 1000); i++)
+            for (var i = 0; i < Math.Min(candlesCount, _settings.MaxBatchSize); i++)
             {
                 if (_candlesToDispatch.TryDequeue(out AssetPairCandle candle))
                 {
@@ -83,18 +84,19 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 }
             }
 
-            Interlocked.Increment(ref _batchesToPersistQueueLength);
+            _healthService.TraceCandlesBatchDispatched(candles.Count);
 
             // Add candles to producer/consumer's queue
             Produce(candles);
+
+            return true;
         }
 
         protected override async Task Consume(IReadOnlyCollection<AssetPairCandle> candles)
         {
-            // On consume just await task
 #if DEBUG
             await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
-                $"Consuming candles batch with {candles.Count} candles. Amount of batches in queue={BatchesToPersistQueueLength}. Amount of candles to dispath={_candlesToDispatch.Count}");
+                $"Consuming candles batch with {candles.Count} candles. Amount of batches in queue={_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath={_healthService.CandlesToDispatchQueueLength}");
 #endif
             try
             {
@@ -102,11 +104,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
             finally
             {
-                Interlocked.Decrement(ref _batchesToPersistQueueLength);
+                _healthService.TraceCandlesBatchPersisted();
             }
 #if DEBUG
             await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
-                $"Candles batch with {candles.Count} candles is persisted. Amount of batches in queue={BatchesToPersistQueueLength}. Amount of candles to dispath={_candlesToDispatch.Count}");
+                $"Candles batch with {candles.Count} candles is persisted. Amount of batches in queue={_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath={_healthService.CandlesToDispatchQueueLength}");
 #endif
         }
 
@@ -117,33 +119,32 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return;
             }
 
-            // Start persisting candles
-            var sw = new Stopwatch();
-            sw.Start();
-
-            var grouppedCandles = candles
-                .GroupBy(c => c.AssetPairId);
-            var tasks = new List<Task>();
-
-            foreach (var group in grouppedCandles)
-            {
-                tasks.Add(InsertAssetPairCandlesAsync(group.Key, group));
-            }
+            _healthService.TraceStartPersistCandles(candles.Count);
 
             try
             {
-                await Task.WhenAll(tasks);
+                var grouppedCandles = candles.GroupBy(c => c.AssetPairId);
+                var tasks = new List<Task>();
+
+                foreach (var group in grouppedCandles)
+                {
+                    tasks.Add(InsertAssetPairCandlesAsync(group.Key, group));
+                }
+
+                try
+                {
+                    await Task.WhenAll(tasks);
+                }
+                catch (Exception ex)
+                {
+                    await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(PersistCandles), "", ex);
+                }
+
             }
-            catch (Exception ex)
+            finally
             {
-                await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(PersistCandles), "", ex);
+                _healthService.TraceStopPersistCandles();
             }
-
-            // Update average write time and log service information
-            sw.Stop();
-
-            UpdatePerformanceStatistics(sw);
-            await LogPerformanceStatistics();
         }
 
         private async Task InsertAssetPairCandlesAsync(string assetPairId, IEnumerable<AssetPairCandle> candles)
@@ -154,8 +155,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 try
                 {
+                    var mergedCandles = group
+                        .GroupBy(c => c.DateTime)
+                        .Select(g => g.MergeAll());
+
                     await _repository.InsertOrMergeAsync(
-                        group,
+                        mergedCandles,
                         assetPairId,
                         group.Key.TimeInterval,
                         group.Key.PriceType);
@@ -173,21 +178,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     });
                 }
             }
-        }
-
-        private async Task LogPerformanceStatistics()
-        {
-            if (DateTime.UtcNow - _lastPerformanceLogMoment > TimeSpan.FromHours(1))
-            {
-                await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(PersistCandles), "", $"Average write time: {_averagePersistTime}");
-
-                _lastPerformanceLogMoment = DateTime.UtcNow;
-            }
-        }
-
-        private void UpdatePerformanceStatistics(Stopwatch sw)
-        {
-            _averagePersistTime = new TimeSpan((_averagePersistTime.Ticks + sw.Elapsed.Ticks) / 2);
         }
     }
 }

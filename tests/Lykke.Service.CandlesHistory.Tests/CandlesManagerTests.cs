@@ -183,16 +183,16 @@ namespace Lykke.Service.CandlesHistory.Tests
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.Is<string>(p => p == "EURUSD"), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.Is<string>(p => p == "EURUSD"), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Never);
-                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURUSD"), It.IsAny<PriceType>(), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURUSD"), It.IsAny<PriceType>(), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.Is<string>(p => p == "USDRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair");
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.Is<string>(p => p == "EURRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No connection string");
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.Is<string>(p => p == "EURCHF"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair nor connection string");
 
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "USDRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair");
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No connection string");
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURCHF"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair nor connection string");
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "USDRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair");
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURRUB"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No connection string");
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.Is<string>(a => a == "EURCHF"), It.IsAny<PriceType>(), It.IsAny<TimeInterval>()), Times.Never, "No asset pair nor connection string");
         }
 
         [TestMethod]
@@ -208,11 +208,11 @@ namespace Lykke.Service.CandlesHistory.Tests
             foreach (var interval in StoredIntervals)
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
-                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         [TestMethod]
@@ -228,11 +228,11 @@ namespace Lykke.Service.CandlesHistory.Tests
             foreach (var interval in StoredIntervals)
             {
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
-                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Ask), It.IsAny<TimeInterval>()), Times.Never);
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Ask), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p != PriceType.Ask), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         [TestMethod]
@@ -251,12 +251,12 @@ namespace Lykke.Service.CandlesHistory.Tests
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
                 _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
 
-                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
-                _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Ask), It.Is<TimeInterval>(i => i == interval)), Times.Once);
+                _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Mid), It.Is<TimeInterval>(i => i == interval)), Times.Once);
             }
 
             _cachedCandlesHistoryServiceMock.Verify(s => s.AddCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
-            _candlesPersistenceQueueMock.Verify(s => s.EnqueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
+            _candlesPersistenceQueueMock.Verify(s => s.EnqueueCandle(It.IsAny<IFeedCandle>(), It.IsAny<string>(), It.Is<PriceType>(p => p == PriceType.Bid), It.IsAny<TimeInterval>()), Times.Never);
         }
 
         #endregion

@@ -63,6 +63,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterCandles(ContainerBuilder builder)
         {
+            var healthService = new HealthService();
+
+            builder.RegisterInstance(healthService)
+                .As<IHealthService>();
+
             var candlesHistoryAssetConnections = _settings.CandleHistoryAssetConnections.ToImmutableDictionary();
 
             builder.RegisterInstance(new CandleHistoryRepository((assetPair, tableName) =>
@@ -79,7 +84,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                     storage.GetDataAsync(assetPair, "1900-01-01").Wait();
 
                     return new RetryOnFailureAzureTableStorageDecorator<CandleTableEntity>(storage, 5, 5, TimeSpan.FromSeconds(10));
-                }))
+                }, healthService))
                 .As<ICandleHistoryRepository>();
            
             builder.RegisterType<CandlesBroker>()
@@ -110,11 +115,13 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<CandlesPersistenceManager>()
                 .As<IStartable>()
                 .SingleInstance()
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence))
                 .AutoActivate();
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
                 .As<IStartable>()
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence))
                 .SingleInstance();
 
             builder.RegisterType<QueueMonitor>()

@@ -19,12 +19,20 @@ namespace Lykke.Service.CandlesHistory.Core
             public RabbitSettings FailedToPersistRabbit { get; set; }
             public int HistoryTicksCacheSize { get; set; }
             public QueueMonitorSettings QueueMonitor { get; set; }
+            public PersistenceSettings Persistence { get; set; }
+        }
+
+        public class PersistenceSettings
+        {
+            public TimeSpan PersistPeriod { get; set; }
+            public int MaxBatchSize { get; set; }
         }
 
         public class QueueMonitorSettings
         {
             public int BatchesToPersistQueueLengthWarning { get; set; }
             public int CandlesToDispatchQueueLengthWarning { get; set; }
+            public TimeSpan ScanPeriod { get; set; }
         }
 
         public class DictionariesSettings
