@@ -41,7 +41,7 @@
     <PackageReference Include="Swashbuckle.SwaggerUi" Version="6.0.0-beta902" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lykke.Service.CandleHistory.Repositories\Lykke.Service.CandleHistory.Repositories.csproj" />
+    <ProjectReference Include="..\Lykke.Service.CandleHistory.Repositories\Lykke.Service.CandleHistory.Repositories.csproj" />
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Services\Lykke.Service.CandlesHistory.Services.csproj" />
   </ItemGroup>

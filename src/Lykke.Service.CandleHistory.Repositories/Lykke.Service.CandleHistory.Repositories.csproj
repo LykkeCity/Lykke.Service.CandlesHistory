@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
+    <ProjectReference Include="..\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
   </ItemGroup>
 
 </Project>
