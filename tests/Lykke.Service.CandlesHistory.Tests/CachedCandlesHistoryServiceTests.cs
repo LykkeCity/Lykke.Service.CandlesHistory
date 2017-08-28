@@ -41,7 +41,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
             
@@ -69,7 +69,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
@@ -95,7 +95,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
@@ -147,7 +147,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
             var candle = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, 0, DateTimeKind.Utc) };
 
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             _service.AddCandle(candle, "EURUSD", PriceType.Ask, TimeInterval.Day);
@@ -281,7 +281,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) },
             };
 
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)).ToArray();
@@ -306,7 +306,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new FeedCandle { Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) },
             };
 
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
 
             // Act
             var candles1 = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
@@ -332,7 +332,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             
             var candle = new FeedCandle { IsBuy = false, Open = 2, Close = 2, Low = 2, High = 2, DateTime = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc) };
 
-            _service.InitializeHistory("EURUSD", TimeInterval.Day, PriceType.Ask, history);
+            _service.Initialize("EURUSD", TimeInterval.Day, PriceType.Ask, history);
             _service.AddCandle(candle, "EURUSD", PriceType.Ask, TimeInterval.Day);
 
             // Act

@@ -63,6 +63,11 @@ namespace Lykke.Service.CandlesHistory.Services
             Interlocked.Increment(ref _candlesToDispatchQueueLength);
         }
 
+        public void TraceSetPersistenceQueueState(int amountOfCandlesToDispatch)
+        {
+            Interlocked.Add(ref _candlesToDispatchQueueLength, amountOfCandlesToDispatch);
+        }
+
         public void TraceCandlesBatchDispatched(int candlesCount)
         {
             Interlocked.Add(ref _candlesToDispatchQueueLength, -candlesCount);

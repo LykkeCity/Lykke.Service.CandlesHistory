@@ -18,16 +18,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         ProducerConsumer<IReadOnlyCollection<AssetPairCandle>>,
         ICandlesPersistenceQueue
     {
-        private readonly ICandleHistoryRepository _repository;
+        private readonly ICandlesHistoryRepository _repository;
         private readonly IFailedToPersistCandlesProducer _failedToPersistCandlesProducer;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
         private readonly ApplicationSettings.PersistenceSettings _settings;
 
-        private readonly ConcurrentQueue<AssetPairCandle> _candlesToDispatch;
+        private ConcurrentQueue<AssetPairCandle> _candlesToDispatch;
         
         public CandlesPersistenceQueue(
-            ICandleHistoryRepository repository,
+            ICandlesHistoryRepository repository,
             IFailedToPersistCandlesProducer failedToPersistCandlesProducer,
             ILog log,
             IHealthService healthService,
@@ -59,6 +59,23 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             });
 
             _healthService.TraceEnqueueCandle();
+        }
+
+        public AssetPairCandle[] GetState()
+        {
+            return _candlesToDispatch.ToArray();
+        }
+
+        public void SetState(AssetPairCandle[] state)
+        {
+            if (_candlesToDispatch.Count > 0)
+            {
+                throw new InvalidOperationException("Queue state can't be set when queue already not empty");
+            }
+
+            _candlesToDispatch = new ConcurrentQueue<AssetPairCandle>(state);
+
+            _healthService.TraceSetPersistenceQueueState(state.Length);
         }
 
         public bool DispatchCandlesToPersist()

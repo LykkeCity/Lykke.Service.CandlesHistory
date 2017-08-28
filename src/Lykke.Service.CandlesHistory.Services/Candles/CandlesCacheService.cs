@@ -18,7 +18,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <summary>
         /// Candles keyed by asset ID, price type and time interval type are sorted by DateTime 
         /// </summary>
-        private readonly ConcurrentDictionary<string, LinkedList<IFeedCandle>> _candles;
+        private ConcurrentDictionary<string, LinkedList<IFeedCandle>> _candles;
 
         public CandlesCacheService(int amountOfCandlesToStore, ILog log)
         {
@@ -27,7 +27,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>();
         }
 
-        public void InitializeHistory(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles)
+        public void Initialize(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<IFeedCandle>(candles.Limit(_amountOfCandlesToStore));
@@ -80,6 +80,21 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
 
             return Enumerable.Empty<IFeedCandle>();
+        }
+
+        public KeyValuePair<string, LinkedList<IFeedCandle>>[] GetState()
+        {
+            return _candles.ToArray();
+        }
+
+        public void SetState(IEnumerable<KeyValuePair<string, LinkedList<IFeedCandle>>> state)
+        {
+            if (_candles.Count > 0)
+            {
+                throw new InvalidOperationException("Cache state can't be set when cache already not empty");
+            }
+
+            _candles = new ConcurrentDictionary<string, LinkedList<IFeedCandle>>(state);
         }
 
         private static LinkedList<IFeedCandle> AddNewCandlesHistory(IFeedCandle candle)

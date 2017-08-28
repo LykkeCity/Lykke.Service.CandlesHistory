@@ -9,7 +9,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Service.CandlesHistory.Core;
-using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
@@ -86,14 +86,14 @@ namespace Lykke.Service.CandlesHistory
                 QueueName = settings.SlackNotifications.AzureQueue.QueueName
             }, aggregateLogger);
 
-            if (!string.IsNullOrEmpty(appSettings.Logs.DbConnectionString) &&
-                !(appSettings.Logs.DbConnectionString.StartsWith("${") && appSettings.Logs.DbConnectionString.EndsWith("}")))
+            if (!string.IsNullOrEmpty(appSettings.Db.LogsConnectionString) &&
+                !(appSettings.Db.LogsConnectionString.StartsWith("${") && appSettings.Db.LogsConnectionString.EndsWith("}")))
             {
                 const string appName = "Lykke.Service.CandlesHistory";
 
                 var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
                     appName,
-                    AzureTableStorage<LogEntity>.Create(() => appSettings.Logs.DbConnectionString, "CandlesHistoryServiceLogs", consoleLogger),
+                    AzureTableStorage<LogEntity>.Create(() => appSettings.Db.LogsConnectionString, "CandlesHistoryServiceLogs", consoleLogger),
                     consoleLogger);
 
                 var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(appName, slackService, consoleLogger);
@@ -120,6 +120,7 @@ namespace Lykke.Service.CandlesHistory
 
             app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
 
+            appLifetime.ApplicationStarted.Register(StartApplication);
             appLifetime.ApplicationStopping.Register(StopApplication);
             appLifetime.ApplicationStopped.Register(CleanUp);
 
@@ -128,13 +129,24 @@ namespace Lykke.Service.CandlesHistory
             app.UseSwaggerUi();
         }
 
+        private void StartApplication()
+        {
+            Console.WriteLine("Starting...");
+
+            var startupManager = ApplicationContainer.Resolve<IStartupManager>();
+
+            startupManager.StartAsync().Wait();
+
+            Console.WriteLine("Started");
+        }
+
         private void StopApplication()
         {
             Console.WriteLine("Stopping...");
 
             var shutdownManager = ApplicationContainer.Resolve<IShutdownManager>();
 
-            shutdownManager.Shutdown().Wait();
+            shutdownManager.ShutdownAsync().Wait();
 
             Console.WriteLine("Stopped");
         }

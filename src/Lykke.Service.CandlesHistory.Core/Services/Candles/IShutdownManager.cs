@@ -1,12 +1,12 @@
 ﻿using System.Threading.Tasks;
 
-namespace Lykke.Service.CandlesHistory.Core.Services
+namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface IShutdownManager
     {
         bool IsShuttedDown { get; }
         bool IsShuttingDown { get; }
 
-        Task Shutdown();
+        Task ShutdownAsync();
     }
 }

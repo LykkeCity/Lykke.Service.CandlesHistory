@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
@@ -7,7 +6,9 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class CandlesPersistenceManager : TimerPeriod
+    public class CandlesPersistenceManager : 
+        TimerPeriod,
+        ICandlesPersistenceManager
     {
         private readonly ICandlesPersistenceQueue _persistenceQueue;
 

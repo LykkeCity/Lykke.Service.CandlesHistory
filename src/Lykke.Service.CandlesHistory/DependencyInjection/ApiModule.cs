@@ -2,8 +2,8 @@
 using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AzureStorage.Tables;
-using AzureStorage.Tables.Decorators;
+using AzureStorage;
+using AzureStorage.Blob;
 using Common.Log;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories;
@@ -68,30 +68,24 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(healthService)
                 .As<IHealthService>();
 
-            var candlesHistoryAssetConnections = _settings.CandleHistoryAssetConnections.ToImmutableDictionary();
+            builder.RegisterType<CandlesHistoryRepository>()
+                .As<ICandlesHistoryRepository>()
+                .WithParameter(
+                    new TypedParameter(typeof(IImmutableDictionary<string, string>), 
+                    _settings.CandleHistoryAssetConnections.ToImmutableDictionary()))
+                .SingleInstance();
 
-            builder.RegisterInstance(new CandleHistoryRepository((assetPair, tableName) =>
-                {
-                    if (!candlesHistoryAssetConnections.TryGetValue(assetPair, out string assetConnectionString) ||
-                        string.IsNullOrEmpty(assetConnectionString))
-                    {
-                        throw new ConfigurationException($"Connection string for asset pair '{assetPair}' is not specified.");
-                    }
+            builder.RegisterType<StartupManager>()
+                .As<IStartupManager>();
 
-                    var storage = AzureTableStorage<CandleTableEntity>.Create(() => assetConnectionString, tableName, _log);
+            builder
+                .RegisterType<ShutdownManager>()
+                .As<IShutdownManager>()
+                .SingleInstance();
 
-                    // Create and preload table info
-                    storage.GetDataAsync(assetPair, "1900-01-01").Wait();
-
-                    return new RetryOnFailureAzureTableStorageDecorator<CandleTableEntity>(storage, 5, 5, TimeSpan.FromSeconds(10));
-                }, healthService))
-                .As<ICandleHistoryRepository>();
-           
             builder.RegisterType<CandlesBroker>()
                 .As<ICandlesBroker>()
-                .As<IStartable>()
-                .SingleInstance()
-                .AutoActivate();
+                .SingleInstance();
 
             builder.RegisterType<MidPriceQuoteGenerator>()
                 .As<IMidPriceQuoteGenerator>()
@@ -99,9 +93,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesManager>()
                 .As<ICandlesManager>()
-                .As<IStartable>()
-                .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
-                .WithParameter(new TypedParameter(typeof(IImmutableDictionary<string, string>), candlesHistoryAssetConnections))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheService>()
@@ -113,14 +104,12 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandlesGenerator>();
 
             builder.RegisterType<CandlesPersistenceManager>()
-                .As<IStartable>()
+                .As<ICandlesPersistenceManager>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence))
-                .AutoActivate();
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence));
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
-                .As<IStartable>()
                 .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence))
                 .SingleInstance();
 
@@ -135,10 +124,31 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<IStartable>()
                 .SingleInstance();
 
-            builder
-                .RegisterType<ShutdownManager>()
-                .As<IShutdownManager>()
-                .SingleInstance();
+            builder.RegisterType<CandlesCacheDeserializationService>()
+                .As<ICandlesCacheDeserializationService>();
+
+            builder.RegisterType<CandlesCacheInitalizationService>()
+                .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
+                .As<ICandlesCacheInitalizationService>();
+
+            builder.RegisterType<CandlesPersistenceQueueDeserializationService>()
+                .As<ICandlesPersistenceQueueDeserializationService>();
+
+            builder.RegisterType<CandlesCacheSerializationService>()
+                .As<ICandlesCacheSerializationService>();
+
+            builder.RegisterType<CandlesPersistenceQueueSerializationService>()
+                .As<ICandlesPersistenceQueueSerializationService>();
+
+            builder.RegisterType<CandlesCacheSnapshotRepository>()
+                .As<ICandlesCacheSnapshotRepository>()
+                .WithParameter(TypedParameter.From<IBlobStorage>(
+                    new AzureBlobStorage(_settings.CandlesHistory.Db.SnapshotsConnectionString)));
+
+            builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
+                .As<ICandlesPersistenceQueueSnapshotRepository>()
+                .WithParameter(TypedParameter.From<IBlobStorage>(
+                    new AzureBlobStorage(_settings.CandlesHistory.Db.SnapshotsConnectionString)));
         }
     }
 }

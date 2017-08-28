@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.SwaggerGen.Annotations;
 
@@ -19,7 +20,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [SwaggerOperation("Shutdown")]
         public async Task<IActionResult> Shutdown()
         {
-            await _shutdownManager.Shutdown();
+            await _shutdownManager.ShutdownAsync();
 
             return NoContent();
         }

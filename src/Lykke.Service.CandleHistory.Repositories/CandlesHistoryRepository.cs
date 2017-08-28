@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
+using AzureStorage;
+using AzureStorage.Tables;
+using AzureStorage.Tables.Decorators;
+using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Domain.Prices.Contracts;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -9,17 +14,29 @@ using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
-    public class CandleHistoryRepository : ICandleHistoryRepository
+    public class CandlesHistoryRepository : ICandlesHistoryRepository
     {
-        private readonly CreateStorage _createStorage;
         private readonly IHealthService _healthService;
+        private readonly ILog _log;
+        private readonly IImmutableDictionary<string, string> _assetConnectionStrings;
+
         private readonly ConcurrentDictionary<string, CandleHistoryAssetPairRepository> _assetPairRepositories;
 
-        public CandleHistoryRepository(CreateStorage createStorage, IHealthService healthService)
+        public CandlesHistoryRepository(
+            IHealthService healthService,
+            ILog log,
+            IImmutableDictionary<string, string> assetConnectionStrings)
         {
-            _createStorage = createStorage;
             _healthService = healthService;
+            _log = log;
+            _assetConnectionStrings = assetConnectionStrings;
+
             _assetPairRepositories = new ConcurrentDictionary<string, CandleHistoryAssetPairRepository>();
+        }
+
+        public bool CanStoreAssetPair(string assetPairId)
+        {
+            return _assetConnectionStrings.ContainsKey(assetPairId);
         }
 
         /// <summary>
@@ -76,8 +93,8 @@ namespace Lykke.Service.CandleHistory.Repositories
                 var repositoryHealthService = _healthService.GetAssetPairRepositoryHealth(key);
                 return _assetPairRepositories.AddOrUpdate(
                     key: key,
-                    addValueFactory: k => new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName), repositoryHealthService),
-                    updateValueFactory: (k, oldRepo) => oldRepo ?? new CandleHistoryAssetPairRepository(_createStorage(assetPairId, tableName), repositoryHealthService));
+                    addValueFactory: k => new CandleHistoryAssetPairRepository(CreateStorage(assetPairId, tableName), repositoryHealthService),
+                    updateValueFactory: (k, oldRepo) => oldRepo ?? new CandleHistoryAssetPairRepository(CreateStorage(assetPairId, tableName), repositoryHealthService));
             }
 
             return repo;
@@ -97,6 +114,22 @@ namespace Lykke.Service.CandleHistory.Repositories
             {
                 throw new ArgumentOutOfRangeException(nameof(priceType), "Price type is not specified");
             }
+        }
+
+        private INoSQLTableStorage<CandleTableEntity> CreateStorage(string assetPairId, string tableName)
+        {
+            if (!_assetConnectionStrings.TryGetValue(assetPairId, out string assetConnectionString) ||
+                string.IsNullOrEmpty(assetConnectionString))
+            {
+                throw new ConfigurationException($"Connection string for asset pair '{assetPairId}' is not specified.");
+            }
+
+            var storage = AzureTableStorage<CandleTableEntity>.Create(() => assetConnectionString, tableName, _log);
+
+            // Create and preload table info
+            storage.GetDataAsync(assetPairId, "1900-01-01").Wait();
+
+            return new RetryOnFailureAzureTableStorageDecorator<CandleTableEntity>(storage, 5, 5, TimeSpan.FromSeconds(10));
         }
     }
 }

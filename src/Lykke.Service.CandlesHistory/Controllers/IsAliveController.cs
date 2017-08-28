@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;

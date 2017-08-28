@@ -23,5 +23,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services
 
         IAssetPairRepositoryHealthService GetAssetPairRepositoryHealth(string repositoryKey);
         KeyValuePair<string, IAssetPairRepositoryHealthService>[] GetAssetPairRepositoriesHealth();
+        void TraceSetPersistenceQueueState(int amountOfCandlesToDispatch);
     }
 }
