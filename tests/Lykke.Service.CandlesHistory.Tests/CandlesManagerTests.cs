@@ -35,7 +35,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         private Mock<ICandlesHistoryRepository> _historyRepositoryMock;
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
         private ICandlesManager _manager;
-        
+
         private Mock<ICandlesPersistenceQueue> _persistenceQueueMock;
 
         [TestInitialize]
@@ -61,15 +61,15 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .ReturnsAsync((string assetPairId) => _assetPairs.SingleOrDefault(a => a.Id == assetPairId));
             _historyRepositoryMock
                 .Setup(m => m.CanStoreAssetPair(It.IsAny<string>()))
-                .Returns((string assetPairId) => new[] {"EURUSD", "USDCHF", "USDRUB"}.Contains(assetPairId));
-                
+                .Returns((string assetPairId) => new[] { "EURUSD", "USDCHF", "USDRUB" }.Contains(assetPairId));
+
             _manager = new CandlesManager(
                 _cacheServiceMock.Object,
                 _historyRepositoryMock.Object,
-                _assetPairsManagerMock.Object, 
+                _assetPairsManagerMock.Object,
                 _persistenceQueueMock.Object);
         }
-        
+
 
         #region Candle processing
 
@@ -77,9 +77,9 @@ namespace Lykke.Service.CandlesHistory.Tests
         public async Task Only_candle_for_existing_enabled_asset_pairs_with_connection_string_are_processed()
         {
             // Arrange
-            var quote1 = new Candle {AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First()};
-            var quote2 = new Candle {AssetPairId = "USDRUB", TimeInterval = StoredIntervals.First()};
-            var quote3 = new Candle {AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First()};
+            var quote1 = new Candle { AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First() };
+            var quote2 = new Candle { AssetPairId = "USDRUB", TimeInterval = StoredIntervals.First() };
+            var quote3 = new Candle { AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First() };
 
             // Act
             await _manager.ProcessCandleAsync(quote1);
@@ -94,9 +94,9 @@ namespace Lykke.Service.CandlesHistory.Tests
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
 
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Once, "No asset pair");
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Once, "No connection string");
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Once, "No asset pair nor connection string");
+            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Never, "No asset pair");
+            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
+            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
         }
 
         #endregion
@@ -107,7 +107,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         [TestMethod]
         public async Task Getting_candles_of_asset_pair_that_hasnt_connection_string_throws()
         {
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => 
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
                 _manager.GetCandlesAsync("EURRUB", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
         }
 
@@ -308,7 +308,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             await _manager.GetCandlesAsync("EURUSD", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23));
 
             // Assert
-            _cacheServiceMock.Verify(s => s.GetCandles(It.IsAny<string>(),  It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            _cacheServiceMock.Verify(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Once);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<TimeInterval>(), It.IsAny<PriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
@@ -322,7 +322,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             await _manager.GetCandlesAsync("EURUSD", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23));
 
             // Assert
-            _cacheServiceMock.Verify(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(),It.IsAny<DateTime>()),
+            _cacheServiceMock.Verify(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Once);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<TimeInterval>(), It.IsAny<PriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
