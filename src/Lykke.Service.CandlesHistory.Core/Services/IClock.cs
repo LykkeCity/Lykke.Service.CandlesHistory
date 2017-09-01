@@ -2,7 +2,7 @@
 
 namespace Lykke.Service.CandlesHistory.Core.Services
 {
-    public interface IDateTimeProvider
+    public interface IClock
     {
         DateTime UtcNow { get; }
     }

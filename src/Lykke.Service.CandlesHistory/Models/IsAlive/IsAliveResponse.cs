@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Lykke.Service.CandlesHistory.Models.IsAlive
 {
@@ -25,12 +24,5 @@ namespace Lykke.Service.CandlesHistory.Models.IsAlive
         public int AverageCandlesPersistedPersSecond { get; set; }
         public TimeSpan TotalPersistTime { get; set; }
         public long TotalCandlesPersistedCount { get; set; }
-        public Dictionary<string, AssetPairRepositoryHealth> Repositories { get; set; }
-
-        public class AssetPairRepositoryHealth
-        {
-            public double AverageRowMergeCandlesCount { get; set; }
-            public double AverageRowMergeGroupsCount { get; set; }
-        }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Core.Services
 {
@@ -21,8 +19,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services
         void TraceCandlesBatchDispatched(int candlesCount);
         void TraceCandlesBatchPersisted();
 
-        IAssetPairRepositoryHealthService GetAssetPairRepositoryHealth(string repositoryKey);
-        KeyValuePair<string, IAssetPairRepositoryHealthService>[] GetAssetPairRepositoriesHealth();
         void TraceSetPersistenceQueueState(int amountOfCandlesToDispatch);
     }
 }

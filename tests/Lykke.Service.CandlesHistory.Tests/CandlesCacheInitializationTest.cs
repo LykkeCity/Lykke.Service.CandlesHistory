@@ -5,17 +5,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
-using Lykke.Domain.Prices.Model;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
 
 namespace Lykke.Service.CandlesHistory.Tests
 {
@@ -42,8 +40,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         private const int AmountOfCandlesToStore = 5;
 
         private ICandlesCacheInitalizationService _service;
-        private Mock<IDateTimeProvider> _dateTimeProviderMock;
-        private Mock<IMidPriceQuoteGenerator> _midPriceQuoteGeneratorMock;
+        private Mock<IClock> _dateTimeProviderMock;
         private Mock<ICandlesCacheService> _cacheServiceMock;
         private Mock<ICandlesHistoryRepository> _historyRepositoryMock;
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
@@ -54,8 +51,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             var logMock = new Mock<ILog>();
 
-            _dateTimeProviderMock = new Mock<IDateTimeProvider>();
-            _midPriceQuoteGeneratorMock = new Mock<IMidPriceQuoteGenerator>();
+            _dateTimeProviderMock = new Mock<IClock>();
             _cacheServiceMock = new Mock<ICandlesCacheService>();
             _historyRepositoryMock = new Mock<ICandlesHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
@@ -78,7 +74,6 @@ namespace Lykke.Service.CandlesHistory.Tests
                 logMock.Object,
                 _assetPairsManagerMock.Object,
                 _dateTimeProviderMock.Object,
-                _midPriceQuoteGeneratorMock.Object,
                 _cacheServiceMock.Object,
                 _historyRepositoryMock.Object,
                 AmountOfCandlesToStore);
@@ -93,7 +88,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _dateTimeProviderMock.SetupGet(p => p.UtcNow).Returns(now);
             _historyRepositoryMock
                 .Setup(r => r.GetCandlesAsync(It.IsAny<string>(), It.IsAny<TimeInterval>(), It.IsAny<PriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new[] { new FeedCandle(), new FeedCandle() });
+                .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new[] { new Candle(), new Candle() });
 
             // Act
             await _service.InitializeCacheAsync();
@@ -117,9 +112,9 @@ namespace Lykke.Service.CandlesHistory.Tests
                         _cacheServiceMock.Verify(s =>
                                 s.Initialize(
                                     It.Is<string>(a => a == assetPairId),
-                                    It.Is<TimeInterval>(i => i == interval),
                                     It.Is<PriceType>(p => p == priceType),
-                                    It.Is<IEnumerable<IFeedCandle>>(c => c.Count() == 2)),
+                                    It.Is<TimeInterval>(i => i == interval),
+                                    It.Is<IReadOnlyCollection<ICandle>>(c => c.Count() == 2)),
                             Times.Once);
                     }
                 }
@@ -137,9 +132,9 @@ namespace Lykke.Service.CandlesHistory.Tests
             _cacheServiceMock.Verify(s =>
                     s.Initialize(
                         It.Is<string>(a => !new[] { "EURUSD", "USDCHF" }.Contains(a)),
-                        It.IsAny<TimeInterval>(),
                         It.IsAny<PriceType>(),
-                        It.IsAny<IEnumerable<IFeedCandle>>()),
+                        It.IsAny<TimeInterval>(),
+                        It.IsAny<IReadOnlyCollection<ICandle>>()),
                 Times.Never);
         }
     }

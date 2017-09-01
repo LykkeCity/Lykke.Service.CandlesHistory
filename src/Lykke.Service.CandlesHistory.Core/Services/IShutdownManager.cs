@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Lykke.Service.CandlesHistory.Core.Services.Candles
+namespace Lykke.Service.CandlesHistory.Core.Services
 {
     public interface IShutdownManager
     {

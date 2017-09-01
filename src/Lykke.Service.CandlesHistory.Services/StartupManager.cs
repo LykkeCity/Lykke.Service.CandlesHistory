@@ -1,37 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles
+namespace Lykke.Service.CandlesHistory.Services
 {
     public class StartupManager : IStartupManager
     {
         private readonly ILog _log;
-        private readonly ICandlesBroker _broker;
+        private readonly ICandlesSubscriber _candlesSubscriber;
+        private readonly SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>> _candlesCacheSnapshotSerializer;
+        private readonly SnapshotSerializer<IImmutableDictionary<string, ICandle>> _persistenceQueueSnapshotSerializer;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
         private readonly ICandlesPersistenceManager _persistenceManager;
         private readonly ICandlesCacheInitalizationService _cacheInitalizationService;
-        private readonly ICandlesCacheDeserializationService _cacheDeserializationService;
-        private readonly ICandlesPersistenceQueueDeserializationService _persistenceQueueDeserializationService;
 
         public StartupManager(
             ILog log, 
             ICandlesCacheInitalizationService cacheInitalizationService,
-            ICandlesCacheDeserializationService cacheDeserializationService,
-            ICandlesPersistenceQueueDeserializationService persistenceQueueDeserializationService,
-            ICandlesBroker broker,
+            ICandlesSubscriber candlesSubscriber,
+            SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>> candlesCacheSnapshotSerializer,
+            SnapshotSerializer<IImmutableDictionary<string, ICandle>> persistenceQueueSnapshotSerializer,
             ICandlesPersistenceQueue persistenceQueue,
             ICandlesPersistenceManager persistenceManager)
         {
             _log = log;
-            _broker = broker;
+            _candlesSubscriber = candlesSubscriber;
+            _candlesCacheSnapshotSerializer = candlesCacheSnapshotSerializer;
+            _persistenceQueueSnapshotSerializer = persistenceQueueSnapshotSerializer;
             _persistenceQueue = persistenceQueue;
             _persistenceManager = persistenceManager;
             _cacheInitalizationService = cacheInitalizationService;
-            _cacheDeserializationService = cacheDeserializationService;
-            _persistenceQueueDeserializationService = persistenceQueueDeserializationService;
         }
 
         public async Task StartAsync()
@@ -43,12 +46,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 var tasks = new List<Task>
                 {
-                    _persistenceQueueDeserializationService.DeserializeQueueAsync()
+                    _persistenceQueueSnapshotSerializer.DeserializeAsync()
                 };
 
                 await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Deserializing cache...");
 
-                if (!await _cacheDeserializationService.DeserializeCacheAsync())
+                if (!await _candlesCacheSnapshotSerializer.DeserializeAsync())
                 {
                     await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Initializing cache from history async...");
 
@@ -67,9 +70,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 _persistenceManager.Start();
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Starting broker...");
+                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Starting candles subscriber...");
 
-                _broker.Start();
+                _candlesSubscriber.Start();
 
                 await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Started up");
             }

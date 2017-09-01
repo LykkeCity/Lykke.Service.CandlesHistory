@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
-using Lykke.Domain.Prices.Contracts;
-using Lykke.Domain.Prices.Model;
+using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
-    public class CandlesCacheSnapshotRepository : ICandlesCacheSnapshotRepository
+    public class CandlesCacheSnapshotRepository : ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>
     {
         private const string Container = "CacheSnapshot";
         private const string Key = "Singleton";
@@ -24,14 +24,16 @@ namespace Lykke.Service.CandleHistory.Repositories
             _storage = storage;
         }
 
-        public async Task SaveAsync(KeyValuePair<string, LinkedList<IFeedCandle>>[] state)
+        public async Task SaveAsync(IImmutableDictionary<string, IImmutableList<ICandle>> state)
         {
             using (var stream = new MemoryStream())
             {
                 using (var writer = new BsonDataWriter(stream))
                 {
                     var serializer = new JsonSerializer();
-                    serializer.Serialize(writer, state);
+                    var model = state.ToDictionary(i => i.Key, i => i.Value.Select(CandleSnapshotEntity.Create));
+
+                   serializer.Serialize(writer, model);
 
                     stream.Seek(0, SeekOrigin.Begin);
 
@@ -40,7 +42,7 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        public async Task<IEnumerable<KeyValuePair<string, LinkedList<IFeedCandle>>>> TryGetAsync()
+        public async Task<IImmutableDictionary<string, IImmutableList<ICandle>>> TryGetAsync()
         {
             if (!await _storage.HasBlobAsync(Container, Key))
             {
@@ -58,10 +60,9 @@ namespace Lykke.Service.CandleHistory.Repositories
                 })
                 {
                     var serializer = new JsonSerializer();
+                    var model = serializer.Deserialize<Dictionary<string, IEnumerable<CandleSnapshotEntity>>>(reader);
 
-                    return serializer
-                        .Deserialize<IEnumerable<KeyValuePair<string, IEnumerable<FeedCandle>>>>(reader)
-                        .Select(i => KeyValuePair.Create(i.Key, new LinkedList<IFeedCandle>(i.Value)));
+                    return model.ToImmutableDictionary(i => i.Key, i => (IImmutableList<ICandle>)i.Value.ToImmutableList<ICandle>());
                 }
             }
         }

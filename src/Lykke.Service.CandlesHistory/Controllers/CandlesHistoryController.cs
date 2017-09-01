@@ -22,13 +22,13 @@ namespace Lykke.Service.CandlesHistory.Controllers
     {
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
-        private readonly ApplicationSettings _settings;
+        private readonly AppSettings _settings;
         private readonly IShutdownManager _shutdownManager;
 
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
-            ApplicationSettings settings,
+            AppSettings settings,
             IShutdownManager shutdownManager)
         {
             _candlesManager = candlesManager;
@@ -96,7 +96,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 History = candles.Select(c => new CandlesHistoryResponseModel.Candle
                 {
-                    DateTime = c.DateTime,
+                    DateTime = c.Timestamp,
                     Open = c.Open,
                     Close = c.Close,
                     High = c.High,

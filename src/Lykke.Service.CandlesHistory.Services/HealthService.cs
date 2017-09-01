@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Lykke.Service.CandlesHistory.Core.Services;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services
 {
@@ -28,13 +24,6 @@ namespace Lykke.Service.CandlesHistory.Services
         private Stopwatch _persistCandlesStopwatch;
         private TimeSpan _totalPersistTime;
         private long _totalPersistCount;
-
-        private readonly ConcurrentDictionary<string, IAssetPairRepositoryHealthService> _assetPairRepositoryHealthServices;
-
-        public HealthService()
-        {
-            _assetPairRepositoryHealthServices = new ConcurrentDictionary<string, IAssetPairRepositoryHealthService>();
-        }
 
         public void TraceStartPersistCandles(int candlesCount)
         {
@@ -77,18 +66,6 @@ namespace Lykke.Service.CandlesHistory.Services
         public void TraceCandlesBatchPersisted()
         {
             Interlocked.Decrement(ref _batchesToPersistQueueLength);
-        }
-
-        public IAssetPairRepositoryHealthService GetAssetPairRepositoryHealth(string repositoryKey)
-        {
-            return _assetPairRepositoryHealthServices.GetOrAdd(
-                repositoryKey,
-                key => new AssetPairRepositoryHealthService());
-        }
-
-        public KeyValuePair<string, IAssetPairRepositoryHealthService>[] GetAssetPairRepositoriesHealth()
-        {
-            return _assetPairRepositoryHealthServices.ToArray();
         }
     }
 }

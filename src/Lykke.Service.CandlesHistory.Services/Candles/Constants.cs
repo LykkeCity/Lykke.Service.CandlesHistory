@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Lykke.Domain.Prices;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -10,7 +9,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         (
             TimeInterval.Sec,
             TimeInterval.Minute,
-            TimeInterval.Min30,
             TimeInterval.Hour,
             TimeInterval.Day,
             TimeInterval.Week,

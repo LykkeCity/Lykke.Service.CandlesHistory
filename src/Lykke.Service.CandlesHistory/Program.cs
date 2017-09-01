@@ -1,10 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.Loader;
-using System.Threading;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Lykke.Service.CandlesHistory
 {

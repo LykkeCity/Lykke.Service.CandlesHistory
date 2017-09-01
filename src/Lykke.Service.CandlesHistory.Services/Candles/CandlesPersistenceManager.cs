@@ -15,7 +15,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public CandlesPersistenceManager(
             ICandlesPersistenceQueue persistenceQueue,
             ILog log,
-            ApplicationSettings.PersistenceSettings settings) : 
+            AppSettings.PersistenceSettings settings) : 
 
             base(nameof(CandlesPersistenceManager), (int)settings.PersistPeriod.TotalMilliseconds, log)
         {

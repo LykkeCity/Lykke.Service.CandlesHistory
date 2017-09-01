@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
 {
     public interface ICandlesHistoryRepository
     {
-        Task InsertOrMergeAsync(IEnumerable<IFeedCandle> candles, string assetPairId, TimeInterval interval, PriceType priceType);
-        Task<IEnumerable<IFeedCandle>> GetCandlesAsync(string assetPairId, TimeInterval interval, PriceType priceType, DateTime from, DateTime to);
+        Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval);
+        Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, TimeInterval interval, PriceType priceType, DateTime from, DateTime to);
         bool CanStoreAssetPair(string assetPairId);
     }
 }

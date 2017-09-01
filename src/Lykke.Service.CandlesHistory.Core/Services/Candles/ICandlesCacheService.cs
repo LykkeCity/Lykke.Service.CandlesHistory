@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
-    public interface ICandlesCacheService
+    public interface ICandlesCacheService : IHaveState<IImmutableDictionary<string, IImmutableList<ICandle>>>
     {
-        void Initialize(string assetPairId, TimeInterval timeInterval, PriceType priceType, IEnumerable<IFeedCandle> candles);
-        void AddCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval);
-        IEnumerable<IFeedCandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
-        KeyValuePair<string, LinkedList<IFeedCandle>>[] GetState();
-        void SetState(IEnumerable<KeyValuePair<string, LinkedList<IFeedCandle>>> state);
+        void Initialize(string assetPairId, PriceType priceType, TimeInterval timeInterval, IReadOnlyCollection<ICandle> candles);
+        void Cache(ICandle candle);
+        IEnumerable<ICandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
@@ -12,14 +11,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     /// </summary>
     public class QueueMonitor : TimerPeriod
     {
-        private readonly ApplicationSettings.QueueMonitorSettings _setting;
+        private readonly AppSettings.QueueMonitorSettings _setting;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
 
         public QueueMonitor(
             ILog log, 
             IHealthService healthService,
-            ApplicationSettings.QueueMonitorSettings setting)
+            AppSettings.QueueMonitorSettings setting)
             : base(nameof(QueueMonitor), (int)setting.ScanPeriod.TotalMilliseconds, log)
         {
             _log = log;

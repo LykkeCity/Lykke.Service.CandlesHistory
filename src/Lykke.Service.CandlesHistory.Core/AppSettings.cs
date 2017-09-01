@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Lykke.Service.CandlesHistory.Core
 {
-    public class ApplicationSettings
+    public class AppSettings
     {
         public CandlesHistorySettings CandlesHistory { get; set; }
 

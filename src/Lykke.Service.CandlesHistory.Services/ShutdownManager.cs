@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles
+namespace Lykke.Service.CandlesHistory.Services
 {
     public class ShutdownManager : IShutdownManager
     {
@@ -11,26 +14,23 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public bool IsShuttingDown { get; private set; }
         
         private readonly ILog _log;
-        private readonly ICandlesBroker _broker;
+        private readonly ICandlesSubscriber _candlesSubcriber;
+        private readonly IEnumerable<ISnapshotSerializer> _snapshotSerializers;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
-        private readonly ICandlesCacheSerializationService _cacheSerializationService;
-        private readonly ICandlesPersistenceQueueSerializationService _persistenceQueueSerializationService;
         private readonly ICandlesPersistenceManager _persistenceManager;
         private readonly object _lock;
         
         public ShutdownManager(
             ILog log,
-            ICandlesBroker broker, 
+            ICandlesSubscriber candlesSubscriber, 
+            IEnumerable<ISnapshotSerializer> snapshotSerializers,
             ICandlesPersistenceQueue persistenceQueue,
-            ICandlesCacheSerializationService cacheSerializationService,
-            ICandlesPersistenceQueueSerializationService persistenceQueueSerializationService,
             ICandlesPersistenceManager persistenceManager)
         {
             _log = log;
-            _broker = broker;
+            _candlesSubcriber = candlesSubscriber;
+            _snapshotSerializers = snapshotSerializers;
             _persistenceQueue = persistenceQueue;
-            _cacheSerializationService = cacheSerializationService;
-            _persistenceQueueSerializationService = persistenceQueueSerializationService;
             _persistenceManager = persistenceManager;
 
             _lock = new object();
@@ -73,15 +73,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 
                 _persistenceQueue.Stop();
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Stopping broker...");
+                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Stopping candles subscriber...");
                 
-                _broker.Stop();
+                _candlesSubcriber.Stop();
 
                 await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Serializing state...");
 
-                await Task.WhenAll(
-                    _persistenceQueueSerializationService.SerializeQueueAsync(),
-                    _cacheSerializationService.SerializeCacheAsync());
+                await Task.WhenAll(_snapshotSerializers.Select(s => s.SerializeAsync()));
 
                 await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Shutted down");
 

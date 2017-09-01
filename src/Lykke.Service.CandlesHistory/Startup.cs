@@ -9,6 +9,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
@@ -57,7 +58,7 @@ namespace Lykke.Service.CandlesHistory
                 options.DefaultLykkeConfiguration("v1", "Candles history service");
             });
 
-            var settings = HttpSettingsLoader.Load<ApplicationSettings>();
+            var settings = HttpSettingsLoader.Load<AppSettings>();
 
             settings.CandleHistoryAssetConnections = settings.CandleHistoryAssetConnections.ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
 
@@ -72,7 +73,7 @@ namespace Lykke.Service.CandlesHistory
             return new AutofacServiceProvider(ApplicationContainer);
         }
 
-        private static ILog CreateLog(IServiceCollection services, ApplicationSettings settings)
+        private static ILog CreateLog(IServiceCollection services, AppSettings settings)
         {
             var appSettings = settings.CandlesHistory;
             var consoleLogger = new LogToConsole();

@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -15,67 +14,56 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class CandlesPersistenceQueue : 
-        ProducerConsumer<IReadOnlyCollection<AssetPairCandle>>,
+        ProducerConsumer<IReadOnlyCollection<ICandle>>,
         ICandlesPersistenceQueue
     {
         private readonly ICandlesHistoryRepository _repository;
-        private readonly IFailedToPersistCandlesProducer _failedToPersistCandlesProducer;
+        private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
-        private readonly ApplicationSettings.PersistenceSettings _settings;
+        private readonly AppSettings.PersistenceSettings _settings;
 
-        private ConcurrentQueue<AssetPairCandle> _candlesToDispatch;
+        private ConcurrentQueue<ICandle> _candlesToDispatch;
         
         public CandlesPersistenceQueue(
             ICandlesHistoryRepository repository,
-            IFailedToPersistCandlesProducer failedToPersistCandlesProducer,
+            IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
             IHealthService healthService,
-            ApplicationSettings.PersistenceSettings settings) :
+            AppSettings.PersistenceSettings settings) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
             _repository = repository;
-            _failedToPersistCandlesProducer = failedToPersistCandlesProducer;
+            _failedToPersistCandlesPublisher = failedToPersistCandlesPublisher;
             _log = log;
             _healthService = healthService;
             _settings = settings;
-            _candlesToDispatch = new ConcurrentQueue<AssetPairCandle>();
+            _candlesToDispatch = new ConcurrentQueue<ICandle>();
         }
 
-        public void EnqueueCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        public void EnqueueCandle(ICandle candle)
         {
-            _candlesToDispatch.Enqueue(new AssetPairCandle
-            {
-                AssetPairId = assetPairId,
-                PriceType = priceType,
-                TimeInterval = timeInterval,
-                DateTime = candle.DateTime,
-                Open = candle.Open,
-                Close = candle.Close,
-                Low = candle.Low,
-                High = candle.High,
-                IsBuy = candle.IsBuy
-            });
+            _candlesToDispatch.Enqueue(candle);
 
             _healthService.TraceEnqueueCandle();
         }
 
-        public AssetPairCandle[] GetState()
+        public IImmutableList<ICandle> GetState()
         {
-            return _candlesToDispatch.ToArray();
+            return _candlesToDispatch.ToArray().ToImmutableList();
         }
 
-        public void SetState(AssetPairCandle[] state)
+        public void SetState(IImmutableList<ICandle> state)
         {
             if (_candlesToDispatch.Count > 0)
             {
                 throw new InvalidOperationException("Queue state can't be set when queue already not empty");
             }
 
-            _candlesToDispatch = new ConcurrentQueue<AssetPairCandle>(state);
+            _candlesToDispatch = new ConcurrentQueue<ICandle>(state);
 
-            _healthService.TraceSetPersistenceQueueState(state.Length);
+            _healthService.TraceSetPersistenceQueueState(state.Count);
         }
 
         public bool DispatchCandlesToPersist()
@@ -87,11 +75,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return false;
             }
 
-            var candles = new List<AssetPairCandle>(candlesCount);
+            var candles = new List<ICandle>(candlesCount);
 
             for (var i = 0; i < Math.Min(candlesCount, _settings.MaxBatchSize); i++)
             {
-                if (_candlesToDispatch.TryDequeue(out AssetPairCandle candle))
+                if (_candlesToDispatch.TryDequeue(out ICandle candle))
                 {
                     candles.Add(candle);
                 }
@@ -109,7 +97,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return true;
         }
 
-        protected override async Task Consume(IReadOnlyCollection<AssetPairCandle> candles)
+        protected override async Task Consume(IReadOnlyCollection<ICandle> candles)
         {
 #if DEBUG
             await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
@@ -129,7 +117,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 #endif
         }
 
-        private async Task PersistCandles(IReadOnlyCollection<AssetPairCandle> candles)
+        private async Task PersistCandles(IReadOnlyCollection<ICandle> candles)
         {
             if (!candles.Any())
             {
@@ -145,7 +133,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 foreach (var group in grouppedCandles)
                 {
-                    tasks.Add(InsertAssetPairCandlesAsync(group.Key, group));
+                    tasks.Add(InsertAssetPairCandlesAsync(group, group.Key));
                 }
 
                 try
@@ -156,7 +144,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 {
                     await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(PersistCandles), "", ex);
                 }
-
             }
             finally
             {
@@ -164,7 +151,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        private async Task InsertAssetPairCandlesAsync(string assetPairId, IEnumerable<AssetPairCandle> candles)
+        private async Task InsertAssetPairCandlesAsync(IEnumerable<ICandle> candles, string assetPairId)
         {
             var grouppedCandles = candles.GroupBy(c => new {c.PriceType, c.TimeInterval});
 
@@ -173,24 +160,22 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 try
                 {
                     var mergedCandles = group
-                        .GroupBy(c => c.DateTime)
-                        .Select(g => g.MergeAll());
+                        .GroupBy(c => c.Timestamp)
+                        .Select(g => g.MergeAll())
+                        .ToArray();
 
                     await _repository.InsertOrMergeAsync(
                         mergedCandles,
                         assetPairId,
-                        group.Key.TimeInterval,
-                        group.Key.PriceType);
+                        group.Key.PriceType,
+                        group.Key.TimeInterval);
                 }
                 catch (Exception ex)
                 {
-                    await _failedToPersistCandlesProducer.ProduceAsync(new FailedCandlesEnvelope
+                    await _failedToPersistCandlesPublisher.ProduceAsync(new FailedCandlesEnvelope
                     {
                         ProcessingMoment = DateTime.UtcNow,
                         Exception = ex.ToString(),
-                        AssetPairId = assetPairId,
-                        TimeInterval = group.Key.TimeInterval,
-                        PriceType = group.Key.PriceType,
                         Candles = group
                     });
                 }

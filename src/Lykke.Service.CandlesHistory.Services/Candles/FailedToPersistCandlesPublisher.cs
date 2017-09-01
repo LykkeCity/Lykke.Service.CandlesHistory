@@ -9,15 +9,15 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class FailedToPersistCandlesProducer : 
-        IFailedToPersistCandlesProducer,
+    public class FailedToPersistCandlesPublisher : 
+        IFailedToPersistCandlesPublisher,
         IDisposable
     {
         private readonly ILog _log;
-        private readonly ApplicationSettings.CandlesHistorySettings _settings;
+        private readonly AppSettings.CandlesHistorySettings _settings;
         private RabbitMqPublisher<FailedCandlesEnvelope> _publisher;
 
-        public FailedToPersistCandlesProducer(ILog log, ApplicationSettings.CandlesHistorySettings settings)
+        public FailedToPersistCandlesPublisher(ILog log, AppSettings.CandlesHistorySettings settings)
         {
             _log = log;
             _settings = settings;

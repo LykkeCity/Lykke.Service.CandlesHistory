@@ -8,6 +8,7 @@ using Common.Log;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories;
 using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
@@ -16,18 +17,16 @@ using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.Extensions.DependencyInjection;
-using DateTimeProvider = Lykke.Service.CandlesHistory.Services.DateTimeProvider;
-using IDateTimeProvider = Lykke.Service.CandlesHistory.Core.Services.IDateTimeProvider;
 
 namespace Lykke.Service.CandlesHistory.DependencyInjection
 {
     public class ApiModule : Module
     {
-        private readonly ApplicationSettings _settings;
+        private readonly AppSettings _settings;
         private readonly IServiceCollection _services;
         private readonly ILog _log;
 
-        public ApiModule(ApplicationSettings settings, ILog log)
+        public ApiModule(AppSettings settings, ILog log)
         {
             _settings = settings;
             _services = new ServiceCollection();
@@ -41,7 +40,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_settings).SingleInstance();
             builder.RegisterInstance(_settings.CandlesHistory).SingleInstance();
 
-            builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>();
+            builder.RegisterType<Clock>().As<IClock>();
 
             RegisterAssets(builder);
             RegisterCandles(builder);
@@ -56,9 +55,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 _settings.CandlesHistory.Dictionaries.CacheExpirationPeriod));
 
             builder.RegisterType<AssetPairsManager>()
-                .As<IAssetPairsManager>()
-                .WithParameter(new TypedParameter(typeof(TimeSpan), _settings.CandlesHistory.Dictionaries.CacheExpirationPeriod))
-                .SingleInstance();
+                .As<IAssetPairsManager>();
         }
 
         private void RegisterCandles(ContainerBuilder builder)
@@ -71,8 +68,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<CandlesHistoryRepository>()
                 .As<ICandlesHistoryRepository>()
                 .WithParameter(
-                    new TypedParameter(typeof(IImmutableDictionary<string, string>), 
-                    _settings.CandleHistoryAssetConnections.ToImmutableDictionary()))
+                    new TypedParameter(typeof(IImmutableDictionary<string, string>),
+                        _settings.CandleHistoryAssetConnections.ToImmutableDictionary()))
                 .SingleInstance();
 
             builder.RegisterType<StartupManager>()
@@ -83,14 +80,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<IShutdownManager>()
                 .SingleInstance();
 
-            builder.RegisterType<CandlesBroker>()
-                .As<ICandlesBroker>()
-                .SingleInstance();
-
-            builder.RegisterType<MidPriceQuoteGenerator>()
-                .As<IMidPriceQuoteGenerator>()
-                .SingleInstance();
-
             builder.RegisterType<CandlesManager>()
                 .As<ICandlesManager>()
                 .SingleInstance();
@@ -99,9 +88,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandlesCacheService>()
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .SingleInstance();
-
-            builder.RegisterType<CandlesGenerator>()
-                .As<ICandlesGenerator>();
 
             builder.RegisterType<CandlesPersistenceManager>()
                 .As<ICandlesPersistenceManager>()
@@ -119,36 +105,33 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.CandlesHistory.QueueMonitor))
                 .AutoActivate();
 
-            builder.RegisterType<FailedToPersistCandlesProducer>()
-                .As<IFailedToPersistCandlesProducer>()
+            builder.RegisterType<FailedToPersistCandlesPublisher>()
+                .As<IFailedToPersistCandlesPublisher>()
                 .As<IStartable>()
                 .SingleInstance();
-
-            builder.RegisterType<CandlesCacheDeserializationService>()
-                .As<ICandlesCacheDeserializationService>();
 
             builder.RegisterType<CandlesCacheInitalizationService>()
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .As<ICandlesCacheInitalizationService>();
 
-            builder.RegisterType<CandlesPersistenceQueueDeserializationService>()
-                .As<ICandlesPersistenceQueueDeserializationService>();
-
-            builder.RegisterType<CandlesCacheSerializationService>()
-                .As<ICandlesCacheSerializationService>();
-
-            builder.RegisterType<CandlesPersistenceQueueSerializationService>()
-                .As<ICandlesPersistenceQueueSerializationService>();
-
             builder.RegisterType<CandlesCacheSnapshotRepository>()
-                .As<ICandlesCacheSnapshotRepository>()
+                .As<ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .WithParameter(TypedParameter.From<IBlobStorage>(
                     new AzureBlobStorage(_settings.CandlesHistory.Db.SnapshotsConnectionString)));
+
+            builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
+                .As<ISnapshotSerializer>()
+                .AsSelf();
 
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
-                .As<ICandlesPersistenceQueueSnapshotRepository>()
+                .As<ISnapshotRepository<IImmutableList<ICandle>>>()
                 .WithParameter(TypedParameter.From<IBlobStorage>(
                     new AzureBlobStorage(_settings.CandlesHistory.Db.SnapshotsConnectionString)));
+
+            builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, ICandle>>>()
+                .As<ISnapshotSerializer>()
+                .AsSelf()
+                .PreserveExistingDefaults();
         }
     }
 }

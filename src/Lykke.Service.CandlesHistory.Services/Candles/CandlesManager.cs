@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -23,74 +23,57 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour12, TimeInterval.Hour)
         });
 
-        private readonly IMidPriceQuoteGenerator _midPriceQuoteGenerator;
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
-        private readonly ICandlesGenerator _candlesGenerator;
 
         public CandlesManager(
-            IMidPriceQuoteGenerator midPriceQuoteGenerator,
             ICandlesCacheService candlesCacheService,
             ICandlesHistoryRepository candlesHistoryRepository,
             IAssetPairsManager assetPairsManager,
-            ICandlesPersistenceQueue candlesPersistenceQueue,
-            ICandlesGenerator candlesGenerator)
+            ICandlesPersistenceQueue candlesPersistenceQueue)
         {
-            _midPriceQuoteGenerator = midPriceQuoteGenerator;
             _candlesCacheService = candlesCacheService;
             _candlesHistoryRepository = candlesHistoryRepository;
             _assetPairsManager = assetPairsManager;
             _candlesPersistenceQueue = candlesPersistenceQueue;
-            _candlesGenerator = candlesGenerator;
         }
 
-        public async Task ProcessQuoteAsync(IQuote quote)
+        public async Task ProcessCandleAsync(ICandle candle)
         {
             try
             {
-                var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(quote.AssetPair);
+                if (!_candlesHistoryRepository.CanStoreAssetPair(candle.AssetPairId))
+                {
+                    return;
+                }
+
+                var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(candle.AssetPairId);
 
                 if (assetPair == null)
                 {
                     return;
                 }
 
-                if (!_candlesHistoryRepository.CanStoreAssetPair(assetPair.Id))
+                if (!Constants.StoredIntervals.Contains(candle.TimeInterval))
                 {
                     return;
                 }
-
-                var midPriceQuote = _midPriceQuoteGenerator.TryGenerate(quote, assetPair.Accuracy);
-                var priceType = quote.IsBuy ? PriceType.Bid : PriceType.Ask;
-
-                foreach (var timeInterval in Constants.StoredIntervals)
-                {
-                    var candle = _candlesGenerator.GenerateCandle(quote, timeInterval);
-
-                    _candlesCacheService.AddCandle(candle, assetPair.Id, priceType, timeInterval);
-                    _candlesPersistenceQueue.EnqueueCandle(candle, assetPair.Id, priceType, timeInterval);
-
-                    if (midPriceQuote != null)
-                    {
-                        var midPriceCandle = _candlesGenerator.GenerateCandle(midPriceQuote, timeInterval);
-
-                        _candlesCacheService.AddCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
-                        _candlesPersistenceQueue.EnqueueCandle(midPriceCandle, assetPair.Id, PriceType.Mid, timeInterval);
-                    }
-                }
+                
+                _candlesCacheService.Cache(candle);
+                _candlesPersistenceQueue.EnqueueCandle(candle);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to process quote: {quote.ToJson()}", ex);
+                throw new InvalidOperationException($"Failed to process candle: {candle.ToJson()}", ex);
             }
         }
 
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>
-        public async Task<IEnumerable<IFeedCandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
@@ -125,7 +108,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <param name="fromMoment"></param>
         /// <param name="toMoment"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<IFeedCandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             var cachedHistory = _candlesCacheService
                 .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
@@ -134,15 +117,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             // If cache empty or even oldest cached candle DateTime is after fromMoment and assetPairs has connection string, 
             // then try to read persistent history
-            if (oldestCachedCandle == null || oldestCachedCandle.DateTime > fromMoment)
+            if (oldestCachedCandle == null || oldestCachedCandle.Timestamp > fromMoment)
             {
-                var newToMoment = oldestCachedCandle?.DateTime ?? toMoment;
+                var newToMoment = oldestCachedCandle?.Timestamp ?? toMoment;
                 var persistentHistory = await _candlesHistoryRepository.GetCandlesAsync(assetPairId, timeInterval, priceType, fromMoment, newToMoment);
 
                 // Concatenating persistent and cached history
                 return persistentHistory
                     // If at least one candle is cached, persistent history used only up to the oldest of cached candle
-                    .TakeWhile(c => oldestCachedCandle == null || c.DateTime < oldestCachedCandle.DateTime)
+                    .TakeWhile(c => oldestCachedCandle == null || c.Timestamp < oldestCachedCandle.Timestamp)
                     .Concat(cachedHistory);
             }
 

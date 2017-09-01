@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using Lykke.Service.CandlesHistory.Core.Services;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -41,15 +39,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 AverageCandlesPersistedPersSecond = _healthService.AverageCandlesPersistedPerSecond,
                 TotalPersistTime = _healthService.TotalPersistTime,
                 TotalCandlesPersistedCount = _healthService.TotalCandlesPersistedCount,
-                Repositories = _healthService
-                    .GetAssetPairRepositoriesHealth()
-                    .ToDictionary(
-                        r => r.Key,
-                        r => new IsAliveResponse.AssetPairRepositoryHealth
-                        {
-                            AverageRowMergeGroupsCount = r.Value.AverageRowMergeGroupsCount,
-                            AverageRowMergeCandlesCount = r.Value.AverageRowMergeCandlesCount
-                        }),
                 IsShuttingDown = _shutdownManager.IsShuttingDown,
                 IsShuttedDown = _shutdownManager.IsShuttedDown
             };
