@@ -14,8 +14,8 @@ namespace Lykke.Service.CandlesHistory.Core
         public class CandlesHistorySettings
         {
             public DictionariesSettings Dictionaries { get; set; }
-            public RabbitSettingsWithDeadLetter QuoteFeedRabbit { get; set; }
-            public RabbitSettings FailedToPersistRabbit { get; set; }
+            public RabbitSettingsWithDeadLetter CandlesSubscription { get; set; }
+            public RabbitSettings FailedToPersistPublication { get; set; }
             public int HistoryTicksCacheSize { get; set; }
             public QueueMonitorSettings QueueMonitor { get; set; }
             public PersistenceSettings Persistence { get; set; }

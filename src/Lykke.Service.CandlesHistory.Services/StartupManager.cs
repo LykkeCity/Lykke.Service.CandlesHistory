@@ -14,7 +14,7 @@ namespace Lykke.Service.CandlesHistory.Services
         private readonly ILog _log;
         private readonly ICandlesSubscriber _candlesSubscriber;
         private readonly SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>> _candlesCacheSnapshotSerializer;
-        private readonly SnapshotSerializer<IImmutableDictionary<string, ICandle>> _persistenceQueueSnapshotSerializer;
+        private readonly SnapshotSerializer<IImmutableList<ICandle>> _persistenceQueueSnapshotSerializer;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
         private readonly ICandlesPersistenceManager _persistenceManager;
         private readonly ICandlesCacheInitalizationService _cacheInitalizationService;
@@ -24,7 +24,7 @@ namespace Lykke.Service.CandlesHistory.Services
             ICandlesCacheInitalizationService cacheInitalizationService,
             ICandlesSubscriber candlesSubscriber,
             SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>> candlesCacheSnapshotSerializer,
-            SnapshotSerializer<IImmutableDictionary<string, ICandle>> persistenceQueueSnapshotSerializer,
+            SnapshotSerializer<IImmutableList<ICandle>> persistenceQueueSnapshotSerializer,
             ICandlesPersistenceQueue persistenceQueue,
             ICandlesPersistenceManager persistenceManager)
         {

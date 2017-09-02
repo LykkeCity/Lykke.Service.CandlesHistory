@@ -14,10 +14,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         IDisposable
     {
         private readonly ILog _log;
-        private readonly AppSettings.CandlesHistorySettings _settings;
+        private readonly AppSettings.RabbitSettings _settings;
         private RabbitMqPublisher<FailedCandlesEnvelope> _publisher;
 
-        public FailedToPersistCandlesPublisher(ILog log, AppSettings.CandlesHistorySettings settings)
+        public FailedToPersistCandlesPublisher(ILog log, AppSettings.RabbitSettings settings)
         {
             _log = log;
             _settings = settings;
@@ -27,8 +27,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var settings = new RabbitMqSubscriptionSettings
             {
-                ConnectionString = _settings.FailedToPersistRabbit.ConnectionString,
-                ExchangeName = _settings.FailedToPersistRabbit.ExchangeName,
+                ConnectionString = _settings.ConnectionString,
+                ExchangeName = _settings.ExchangeName,
                 RoutingKey = "",
                 IsDurable = true
             };

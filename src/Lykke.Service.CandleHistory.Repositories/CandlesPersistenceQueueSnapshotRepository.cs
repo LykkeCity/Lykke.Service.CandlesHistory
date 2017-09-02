@@ -28,12 +28,18 @@ namespace Lykke.Service.CandleHistory.Repositories
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new BsonDataWriter(stream))
+                using (var writer = new BsonDataWriter(stream)
+                {
+                    DateTimeKindHandling = DateTimeKind.Utc
+                })
                 {
                     var serializer = new JsonSerializer();
                     var model = state.Select(CandleSnapshotEntity.Create);
 
                     serializer.Serialize(writer, model);
+
+                    await writer.FlushAsync();
+                    await stream.FlushAsync();
 
                     stream.Seek(0, SeekOrigin.Begin);
 
@@ -51,6 +57,8 @@ namespace Lykke.Service.CandleHistory.Repositories
 
             using (var stream = await _storage.GetAsync(Container, Key))
             {
+                await stream.FlushAsync();
+
                 stream.Seek(0, SeekOrigin.Begin);
 
                 using (var reader = new BsonDataReader(stream)

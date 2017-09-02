@@ -75,9 +75,13 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<StartupManager>()
                 .As<IStartupManager>();
 
-            builder
-                .RegisterType<ShutdownManager>()
+            builder.RegisterType<ShutdownManager>()
                 .As<IShutdownManager>()
+                .SingleInstance();
+
+            builder.RegisterType<CandlesSubscriber>()
+                .As<ICandlesSubscriber>()
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.CandlesSubscription))
                 .SingleInstance();
 
             builder.RegisterType<CandlesManager>()
@@ -86,16 +90,19 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesCacheService>()
                 .As<ICandlesCacheService>()
+                .As<IHaveState<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .WithParameter(new TypedParameter(typeof(int), _settings.CandlesHistory.HistoryTicksCacheSize))
                 .SingleInstance();
 
             builder.RegisterType<CandlesPersistenceManager>()
                 .As<ICandlesPersistenceManager>()
+                
                 .SingleInstance()
                 .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence));
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
+                .As<IHaveState<IImmutableList<ICandle>>>()
                 .WithParameter(TypedParameter.From(_settings.CandlesHistory.Persistence))
                 .SingleInstance();
 
@@ -108,6 +115,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<FailedToPersistCandlesPublisher>()
                 .As<IFailedToPersistCandlesPublisher>()
                 .As<IStartable>()
+                .WithParameter(TypedParameter.From(_settings.CandlesHistory.FailedToPersistPublication))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheInitalizationService>()
@@ -128,7 +136,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From<IBlobStorage>(
                     new AzureBlobStorage(_settings.CandlesHistory.Db.SnapshotsConnectionString)));
 
-            builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, ICandle>>>()
+            builder.RegisterType<SnapshotSerializer<IImmutableList<ICandle>>>()
                 .As<ISnapshotSerializer>()
                 .AsSelf()
                 .PreserveExistingDefaults();

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -28,12 +27,18 @@ namespace Lykke.Service.CandleHistory.Repositories
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new BsonDataWriter(stream))
+                using (var writer = new BsonDataWriter(stream)
+                {
+                    DateTimeKindHandling = DateTimeKind.Utc
+                })
                 {
                     var serializer = new JsonSerializer();
-                    var model = state.ToDictionary(i => i.Key, i => i.Value.Select(CandleSnapshotEntity.Create));
+                    var model = state.ToImmutableDictionary(i => i.Key, i => i.Value.Select(CandleSnapshotEntity.Create));
 
-                   serializer.Serialize(writer, model);
+                    serializer.Serialize(writer, model);
+
+                    await writer.FlushAsync();
+                    await stream.FlushAsync();
 
                     stream.Seek(0, SeekOrigin.Begin);
 
@@ -51,16 +56,17 @@ namespace Lykke.Service.CandleHistory.Repositories
 
             using (var stream = await _storage.GetAsync(Container, Key))
             {
+                await stream.FlushAsync();
+
                 stream.Seek(0, SeekOrigin.Begin);
 
                 using (var reader = new BsonDataReader(stream)
                 {
-                    ReadRootValueAsArray = true,
                     DateTimeKindHandling = DateTimeKind.Utc
                 })
                 {
                     var serializer = new JsonSerializer();
-                    var model = serializer.Deserialize<Dictionary<string, IEnumerable<CandleSnapshotEntity>>>(reader);
+                    var model = serializer.Deserialize<ImmutableDictionary<string, CandleSnapshotEntity[]>>(reader);
 
                     return model.ToImmutableDictionary(i => i.Key, i => (IImmutableList<ICandle>)i.Value.ToImmutableList<ICandle>());
                 }
