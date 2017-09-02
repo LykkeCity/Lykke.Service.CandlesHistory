@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Lykke.Service.Assets.Client.Custom;
 
 namespace Lykke.Service.CandlesHistory.Core
 {
@@ -11,9 +12,11 @@ namespace Lykke.Service.CandlesHistory.Core
 
         public Dictionary<string, string> CandleHistoryAssetConnections { get; set; }
 
+        public AssetsSettings Assets { get; set; }
+
         public class CandlesHistorySettings
         {
-            public DictionariesSettings Dictionaries { get; set; }
+            public AssetsCacheSettings AssetsCache { get; set; }
             public RabbitSettingsWithDeadLetter CandlesSubscription { get; set; }
             public RabbitSettings FailedToPersistPublication { get; set; }
             public int HistoryTicksCacheSize { get; set; }
@@ -41,10 +44,9 @@ namespace Lykke.Service.CandlesHistory.Core
             public TimeSpan ScanPeriod { get; set; }
         }
 
-        public class DictionariesSettings
+        public class AssetsCacheSettings
         {
-            public string AssetsServiceUrl { get; set; }
-            public TimeSpan CacheExpirationPeriod { get; set; }
+            public TimeSpan ExpirationPeriod { get; set; }
         }
 
         public class LogsSettings

@@ -51,8 +51,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private void RegisterAssets(ContainerBuilder builder)
         {
             _services.UseAssetsClient(AssetServiceSettings.Create(
-                new Uri(_settings.CandlesHistory.Dictionaries.AssetsServiceUrl),
-                _settings.CandlesHistory.Dictionaries.CacheExpirationPeriod));
+                new Uri(_settings.Assets.ServiceUrl),
+                _settings.CandlesHistory.AssetsCache.ExpirationPeriod));
 
             builder.RegisterType<AssetPairsManager>()
                 .As<IAssetPairsManager>();
