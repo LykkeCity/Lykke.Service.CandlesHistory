@@ -7,6 +7,7 @@ namespace Lykke.Service.CandlesHistory.Models.IsAlive
     /// </summary>
     public class IsAliveResponse
     {
+        public string Name { get; set; }
         /// <summary>
         /// API version
         /// </summary>

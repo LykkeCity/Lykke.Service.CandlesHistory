@@ -31,6 +31,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             return new IsAliveResponse
             {
+                Name = PlatformServices.Default.Application.ApplicationName,
                 Version = PlatformServices.Default.Application.ApplicationVersion,
                 Env = Environment.GetEnvironmentVariable("ENV_INFO"),
                 BatchesToPersistQueueLength = _healthService.BatchesToPersistQueueLength,

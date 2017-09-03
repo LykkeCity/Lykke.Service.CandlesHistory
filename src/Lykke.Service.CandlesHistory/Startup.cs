@@ -128,6 +128,7 @@ namespace Lykke.Service.CandlesHistory
             app.UseMvc();
             app.UseSwagger();
             app.UseSwaggerUi();
+            app.UseStaticFiles();
         }
 
         private void StartApplication()
