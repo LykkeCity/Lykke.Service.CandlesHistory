@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -13,11 +13,13 @@ namespace Lykke.Service.CandlesHistory.Controllers
     [Route("api/[controller]")]
     public class IsAliveController : Controller
     {
-        private readonly ICandlesPersistenceQueue _persistenceQueue;
+        private readonly IHealthService _healthService;
+        private readonly IShutdownManager _shutdownManager;
 
-        public IsAliveController(ICandlesPersistenceQueue persistenceQueue)
+        public IsAliveController(IHealthService healthService, IShutdownManager shutdownManager)
         {
-            _persistenceQueue = persistenceQueue;
+            _healthService = healthService;
+            _shutdownManager = shutdownManager;
         }
 
         /// <summary>
@@ -29,10 +31,17 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             return new IsAliveResponse
             {
+                Name = PlatformServices.Default.Application.ApplicationName,
                 Version = PlatformServices.Default.Application.ApplicationVersion,
                 Env = Environment.GetEnvironmentVariable("ENV_INFO"),
-                PersistTasksQueueLength = _persistenceQueue.PersistTasksQueueLength,
-                CandlesToPersistQueueLength = _persistenceQueue.CandlesToPersistQueueLength
+                BatchesToPersistQueueLength = _healthService.BatchesToPersistQueueLength,
+                CandlesToDispatchQueueLength = _healthService.CandlesToDispatchQueueLength,
+                AveragePersistTime = _healthService.AveragePersistTime,
+                AverageCandlesPersistedPersSecond = _healthService.AverageCandlesPersistedPerSecond,
+                TotalPersistTime = _healthService.TotalPersistTime,
+                TotalCandlesPersistedCount = _healthService.TotalCandlesPersistedCount,
+                IsShuttingDown = _shutdownManager.IsShuttingDown,
+                IsShuttedDown = _shutdownManager.IsShuttedDown
             };
         }
     }

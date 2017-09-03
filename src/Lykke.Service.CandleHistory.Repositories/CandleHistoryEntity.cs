@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Common;
 using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
-    public class CandleTableEntity : ITableEntity
+    public class CandleHistoryEntity : ITableEntity
     {
-        public CandleTableEntity()
+        public CandleHistoryEntity()
         {
         }
 
-        public CandleTableEntity(string partitionKey, string rowKey)
+        public CandleHistoryEntity(string partitionKey, string rowKey)
         {
             PartitionKey = partitionKey;
             RowKey = rowKey;
@@ -59,7 +59,7 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        public List<CandleItem> Candles { get; set; } = new List<CandleItem>();
+        public List<CandleHistoryItem> Candles { get; set; } = new List<CandleHistoryItem>();
 
         public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
@@ -71,7 +71,7 @@ namespace Lykke.Service.CandleHistory.Repositories
                 var json = property.StringValue;
                 if (!string.IsNullOrEmpty(json))
                 {
-                    Candles.AddRange(JsonConvert.DeserializeObject<List<CandleItem>>(json));
+                    Candles.AddRange(JsonConvert.DeserializeObject<List<CandleHistoryItem>>(json));
                 }
             }
         }
@@ -135,36 +135,36 @@ namespace Lykke.Service.CandleHistory.Repositories
             return FormatRowKey(time);
         }
 
-        public void MergeCandles(IEnumerable<IFeedCandle> candles, TimeInterval interval)
+        public void MergeCandles(IEnumerable<ICandle> candles, TimeInterval timeInterval)
         {
             foreach (var candle in candles)
             {
-                MergeCandle(candle, interval);
+                MergeCandle(candle, timeInterval);
             }
         }
 
-        public void MergeCandles(IEnumerable<CandleItem> candles, TimeInterval interval)
-        {
-            foreach (var candle in candles)
-            {
-                MergeCandle(candle, interval);
-            }
-        }
+        //public void MergeCandles(IEnumerable<CandleHistoryItem> candles, TimeInterval timeInterval)
+        //{
+        //    foreach (var candle in candles)
+        //    {
+        //        MergeCandle(candle, timeInterval);
+        //    }
+        //}
 
-        public void MergeCandle(IFeedCandle candle, TimeInterval interval)
+        public void MergeCandle(ICandle candle, TimeInterval interval)
         {
             // 1. Check if candle with specified time already exist
             // 2. If found - merge, else - add to list
             //
-            //var cell = candle.DateTime.GetIntervalCell(interval);
-            var tick = candle.DateTime.GetIntervalTick(interval);
+            //var cell = candle.DateTime.GetIntervalCell(timeInterval);
+            var tick = candle.Timestamp.GetIntervalTick(interval);
             var existingCandle = Candles.FirstOrDefault(ci => ci.Tick == tick);
 
             if (existingCandle != null)
             {
                 // Merge in list
                 var mergedCandle = existingCandle
-                    .ToCandle(PriceType == PriceType.Bid, DateTime, interval)
+                    .ToCandle(candle.AssetPairId, PriceType, DateTime, interval)
                     .MergeWith(candle);
 
                 Candles.Remove(existingCandle);
@@ -177,11 +177,11 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        public void MergeCandle(CandleItem candle, TimeInterval interval)
-        {
-            var fc = candle.ToCandle(PriceType == PriceType.Bid, DateTime, interval);
-            MergeCandle(fc, interval);
-        }
+        //public void MergeCandle(CandleHistoryItem candleHistory, TimeInterval interval)
+        //{
+        //    var fc = candleHistory.ToCandle(, DateTime, interval);
+        //    MergeCandle(fc, interval);
+        //}
 
         private static string FormatRowKey(DateTime dateUtc)
         {

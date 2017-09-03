@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
@@ -21,13 +22,19 @@ namespace Lykke.Service.CandlesHistory.Controllers
     {
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
-        private readonly ApplicationSettings _settings;
+        private readonly AppSettings _settings;
+        private readonly IShutdownManager _shutdownManager;
 
-        public CandlesHistoryController(ICandlesManager candlesManager, IAssetPairsManager assetPairsManager, ApplicationSettings settings)
+        public CandlesHistoryController(
+            ICandlesManager candlesManager,
+            IAssetPairsManager assetPairsManager,
+            AppSettings settings,
+            IShutdownManager shutdownManager)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
             _settings = settings;
+            _shutdownManager = shutdownManager;
         }
 
         /// <summary>
@@ -44,6 +51,16 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
+            if (_shutdownManager.IsShuttingDown)
+            {
+                return StatusCode((int) HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
+            }
+
+            if (_shutdownManager.IsShuttedDown)
+            {
+                return StatusCode((int) HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
+            }
+            
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
             assetPairId = assetPairId.ToUpperInvariant();
@@ -79,7 +96,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 History = candles.Select(c => new CandlesHistoryResponseModel.Candle
                 {
-                    DateTime = c.DateTime,
+                    DateTime = c.Timestamp,
                     Open = c.Open,
                     Close = c.Close,
                     High = c.High,

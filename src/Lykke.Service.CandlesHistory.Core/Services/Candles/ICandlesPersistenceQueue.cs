@@ -1,14 +1,13 @@
-﻿using Lykke.Domain.Prices;
-using Lykke.Domain.Prices.Contracts;
+﻿using System.Collections.Immutable;
+using Autofac;
+using Common;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
-    public interface ICandlesPersistenceQueue
+    public interface ICandlesPersistenceQueue : IStartable, IStopable, IHaveState<IImmutableList<ICandle>>
     {
-        int PersistTasksQueueLength { get; }
-        int CandlesToPersistQueueLength { get; }
-
-        void Persist();
-        void EnqueCandle(IFeedCandle candle, string assetPairId, PriceType priceType, TimeInterval timeInterval);
+        bool DispatchCandlesToPersist();
+        void EnqueueCandle(ICandle candle);
     }
 }

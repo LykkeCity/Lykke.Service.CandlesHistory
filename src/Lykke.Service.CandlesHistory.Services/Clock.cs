@@ -3,7 +3,7 @@ using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandlesHistory.Services
 {
-    public class DateTimeProvider : IDateTimeProvider
+    public class Clock : IClock
     {
         public DateTime UtcNow => DateTime.UtcNow;
     }
