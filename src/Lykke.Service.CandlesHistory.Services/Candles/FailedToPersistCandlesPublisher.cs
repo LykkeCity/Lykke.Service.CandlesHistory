@@ -6,6 +6,7 @@ using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -14,10 +15,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         IDisposable
     {
         private readonly ILog _log;
-        private readonly AppSettings.RabbitSettings _settings;
+        private readonly RabbitSettings _settings;
         private RabbitMqPublisher<FailedCandlesEnvelope> _publisher;
 
-        public FailedToPersistCandlesPublisher(ILog log, AppSettings.RabbitSettings settings)
+        public FailedToPersistCandlesPublisher(ILog log, RabbitSettings settings)
         {
             _log = log;
             _settings = settings;

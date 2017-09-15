@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -22,18 +23,18 @@ namespace Lykke.Service.CandlesHistory.Controllers
     {
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
-        private readonly AppSettings _settings;
+        private readonly Dictionary<string, string> _candleHistoryAssetConnections;
         private readonly IShutdownManager _shutdownManager;
 
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
-            AppSettings settings,
+            Dictionary<string, string> candleHistoryAssetConnections,
             IShutdownManager shutdownManager)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
-            _settings = settings;
+            _candleHistoryAssetConnections = candleHistoryAssetConnections;
             _shutdownManager = shutdownManager;
         }
 
@@ -81,7 +82,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create("From date should be early than To date"));
             }
-            if (!_settings.CandleHistoryAssetConnections.ContainsKey(assetPairId))
+            if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Connection string for asset pair not configured"));
             }
