@@ -44,6 +44,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_log).SingleInstance();
                         
             builder.RegisterInstance(_candlesHistorySettings).SingleInstance();
+            builder.RegisterInstance(_candleHistoryAssetConnections).SingleInstance();
 
             builder.RegisterType<Clock>().As<IClock>();
 
