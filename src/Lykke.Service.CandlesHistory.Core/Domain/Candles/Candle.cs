@@ -13,5 +13,20 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         public double Close { get; set; }
         public double High { get; set; }
         public double Low { get; set; }
+
+        public static Candle Create(ICandle candle)
+        {
+            return new Candle
+            {
+                AssetPairId = candle.AssetPairId,
+                PriceType = candle.PriceType,
+                TimeInterval = candle.TimeInterval,
+                Timestamp = candle.Timestamp,
+                Open = candle.Open,
+                Close = candle.Close,
+                Low = candle.Low,
+                High = candle.High
+            };
+        }
     }
 }

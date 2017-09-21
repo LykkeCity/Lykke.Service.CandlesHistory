@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lykke.Common" Version="1.1.95" />
+    <PackageReference Include="Lykke.Common" Version="1.1.97" />
     <PackageReference Include="Lykke.Domain.Prices" Version="0.9.11" />
-    <PackageReference Include="Lykke.RabbitMqBroker" Version="1.0.80" />
+    <PackageReference Include="Lykke.RabbitMqBroker" Version="2.2.2" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
   </ItemGroup>
 

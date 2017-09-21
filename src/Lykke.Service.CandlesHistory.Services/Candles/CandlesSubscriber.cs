@@ -46,28 +46,24 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;
-        private readonly RabbitSettingsWithDeadLetter _rabbitSettings;
+        private readonly string _rabbitConnectionString;
 
         private RabbitMqSubscriber<CandleMessage> _subscriber;
 
-        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, RabbitSettingsWithDeadLetter rabbitSettings)
+        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, string rabbitConnectionString)
         {
             _log = log;
             _candlesManager = candlesManager;
-            _rabbitSettings = rabbitSettings;
+            _rabbitConnectionString = rabbitConnectionString;
         }
 
         public void Start()
         {
-            var settings = new RabbitMqSubscriptionSettings
-            {
-                ConnectionString = _rabbitSettings.ConnectionString,
-                QueueName = $"{_rabbitSettings.ExchangeName}.candleshistory",
-                ExchangeName = _rabbitSettings.ExchangeName,
-                DeadLetterExchangeName = _rabbitSettings.DeadLetterExchangeName,
-                RoutingKey = "",
-                IsDurable = true
-            };
+            //TODO: check settings
+            var settings = RabbitMqSubscriptionSettings
+                .CreateForSubscriber(_rabbitConnectionString, "candles", "candleshistory")
+                .MakeDurable()
+                .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
 
             try
             {
@@ -91,7 +87,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public void Stop()
         {
-            _subscriber.Stop();
+            _subscriber?.Stop();
         }
 
         private async Task ProcessCandleAsync(CandleMessage candle)

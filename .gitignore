@@ -287,3 +287,5 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 /client/Lykke.Service.CandlesHistory.Client/Service.CandlesHistory.json
+
+**/appsettings.*.json

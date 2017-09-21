@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader.Attributes;
@@ -12,11 +13,24 @@ namespace Lykke.Service.CandlesHistory
         [Optional]
         public CandlesHistorySettings MtCandlesHistory { get; set; }
         public SlackNotificationsSettings SlackNotifications { get; set; }
-        [Optional]
-        public Dictionary<string, string> CandleHistoryAssetConnections { get; set; }
-        [Optional]
-        public Dictionary<string, string> MtCandleHistoryAssetConnections { get; set; }
 
-        public AssetsSettings Assets { get; set; }        
+        [Optional]
+        public Dictionary<string, string> CandleHistoryAssetConnections
+        {
+            get => _candleHistoryAssetConnections;
+            set => _candleHistoryAssetConnections = new Dictionary<string, string>(value, StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        [Optional]
+        public Dictionary<string, string> MtCandleHistoryAssetConnections
+        {
+            get => _mtCandleHistoryAssetConnections;
+            set => _mtCandleHistoryAssetConnections = new Dictionary<string, string>(value, StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        public AssetsSettings Assets { get; set; }
+
+        private Dictionary<string, string> _candleHistoryAssetConnections;
+        private Dictionary<string, string> _mtCandleHistoryAssetConnections;
     }
 }

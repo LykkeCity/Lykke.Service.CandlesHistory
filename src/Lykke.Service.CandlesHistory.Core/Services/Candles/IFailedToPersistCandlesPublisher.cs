@@ -6,6 +6,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface IFailedToPersistCandlesPublisher : IStartable
     {
-        Task ProduceAsync(FailedCandlesEnvelope failedCandlesEnvelope);
+        Task ProduceAsync(IFailedCandlesEnvelope failedCandlesEnvelope);
     }
 }

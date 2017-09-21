@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
-using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
