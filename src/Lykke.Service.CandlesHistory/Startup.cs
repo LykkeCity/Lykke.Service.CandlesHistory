@@ -3,7 +3,6 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
-using Lykke.AzureQueueIntegration;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
@@ -17,6 +16,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
+using Lykke.Service.CandlesHistory.Services.Settings;
+using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -62,7 +63,10 @@ namespace Lykke.Service.CandlesHistory
                 ? settings.Nested(x => x.CandleHistoryAssetConnections)
                 : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
-            Log = CreateLogWithSlack(services, settings);
+            Log = CreateLogWithSlack(
+                services, 
+                settings.CurrentValue.SlackNotifications, 
+                candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
             
             builder.RegisterModule(new ApiModule(
                 candlesHistory.CurrentValue, 
@@ -147,7 +151,7 @@ namespace Lykke.Service.CandlesHistory
             }
         }
 
-        private static ILog CreateLogWithSlack(IServiceCollection services, IReloadingManager<AppSettings> settings)
+        private static ILog CreateLogWithSlack(IServiceCollection services, SlackNotificationsSettings slackSettings, IReloadingManager<string> dbLogConnectionStringManager)
         {
             var consoleLogger = new LogToConsole();
             var aggregateLogger = new AggregateLogger();
@@ -157,11 +161,10 @@ namespace Lykke.Service.CandlesHistory
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log
             var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
             {
-                ConnectionString = settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                QueueName = settings.CurrentValue.SlackNotifications.AzureQueue.QueueName
+                ConnectionString = slackSettings.AzureQueue.ConnectionString,
+                QueueName = slackSettings.AzureQueue.QueueName
             }, aggregateLogger);
 
-            var dbLogConnectionStringManager = settings.Nested(x => x.CandlesHistory.Db.LogsConnectionString);
             var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
             // Creating azure storage logger, which logs own messages to concole log
