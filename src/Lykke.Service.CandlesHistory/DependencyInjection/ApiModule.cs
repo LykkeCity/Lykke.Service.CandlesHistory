@@ -9,7 +9,6 @@ using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories;
-using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -27,21 +26,24 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
     public class ApiModule : Module
     {
         private readonly IServiceCollection _services;
-        private readonly IReloadingManager<CandlesHistorySettings> _settings;
-        private readonly IReloadingManager<AssetsSettings> _assetSettings;
+        private readonly CandlesHistorySettings _settings;
+        private readonly AssetsSettings _assetSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
+        private readonly IReloadingManager<DbSettings> _dbSettings;
         private readonly ILog _log;
 
         public ApiModule(
-            IReloadingManager<CandlesHistorySettings> settings, 
-            IReloadingManager<AssetsSettings> assetSettings,  
+            CandlesHistorySettings settings,
+            AssetsSettings assetSettings,  
             IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
+            IReloadingManager<DbSettings> dbSettings,
             ILog log)
         {
             _services = new ServiceCollection();
             _settings = settings;
             _assetSettings = assetSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
+            _dbSettings = dbSettings;
             _log = log;
         }
 
@@ -53,10 +55,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                         
             builder.RegisterType<Clock>().As<IClock>();
 
-            //TODO: registering for CandlesHistoryController, is it ok?
-            builder.RegisterInstance(
-                _candleHistoryAssetConnections.CurrentValue
-            ).AsSelf();
+            // For CandlesHistoryController
+            builder.RegisterInstance(_candleHistoryAssetConnections.CurrentValue)
+                .AsSelf();
 
             RegisterAssets(builder);
             RegisterCandles(builder);
@@ -67,8 +68,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private void RegisterAssets(ContainerBuilder builder)
         {
             _services.UseAssetsClient(AssetServiceSettings.Create(
-                new Uri(_assetSettings.CurrentValue.ServiceUrl),
-                _settings.CurrentValue.AssetsCache.ExpirationPeriod));
+                new Uri(_assetSettings.ServiceUrl),
+                _settings.AssetsCache.ExpirationPeriod));
 
             builder.RegisterType<AssetPairsManager>()
                 .As<IAssetPairsManager>();
@@ -82,9 +83,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesHistoryRepository>()
                 .As<ICandlesHistoryRepository>()
-                .WithParameter(
-                    new TypedParameter(typeof(IImmutableDictionary<string, string>),
-                        _candleHistoryAssetConnections.CurrentValue.ToImmutableDictionary()))
+                .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
                 .SingleInstance();
 
             builder.RegisterType<StartupManager>()
@@ -96,7 +95,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesSubscriber>()
                 .As<ICandlesSubscriber>()
-                .WithParameter(TypedParameter.From(_settings.CurrentValue.Rabbit.CandlesSubscription))
+                .WithParameter(TypedParameter.From(_settings.Rabbit.CandlesSubscription))
                 .SingleInstance();
 
             builder.RegisterType<CandlesManager>()
@@ -106,42 +105,42 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<CandlesCacheService>()
                 .As<ICandlesCacheService>()
                 .As<IHaveState<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
-                .WithParameter(new TypedParameter(typeof(int), _settings.CurrentValue.HistoryTicksCacheSize))
+                .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
             builder.RegisterType<CandlesPersistenceManager>()
                 .As<ICandlesPersistenceManager>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.CurrentValue.Persistence));
+                .WithParameter(TypedParameter.From(_settings.Persistence));
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
                 .As<IHaveState<IImmutableList<ICandle>>>()
-                .WithParameter(TypedParameter.From(_settings.CurrentValue.Persistence))
+                .WithParameter(TypedParameter.From(_settings.Persistence))
                 .SingleInstance();
 
             builder.RegisterType<QueueMonitor>()
                 .As<IStartable>()
                 .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.CurrentValue.QueueMonitor))
+                .WithParameter(TypedParameter.From(_settings.QueueMonitor))
                 .AutoActivate();
 
             builder.RegisterType<FailedToPersistCandlesPublisher>()
                 .As<IFailedToPersistCandlesPublisher>()
                 .As<IStartable>()
-                .WithParameter(TypedParameter.From(_settings.CurrentValue.Rabbit.FailedToPersistPublication))
+                .WithParameter(TypedParameter.From(_settings.Rabbit.FailedToPersistPublication))
                 .WithParameter(TypedParameter.From<IPublishingQueueRepository<IFailedCandlesEnvelope>>(
                     new BlobPublishingQueueRepository<FailedCandlesEnvelope, IFailedCandlesEnvelope>(
-                        AzureBlobStorage.Create(_settings.ConnectionString(x => x.Db.SnapshotsConnectionString)))))
+                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString)))))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheInitalizationService>()
-                .WithParameter(new TypedParameter(typeof(int), _settings.CurrentValue.HistoryTicksCacheSize))
+                .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .As<ICandlesCacheInitalizationService>();
 
             builder.RegisterType<CandlesCacheSnapshotRepository>()
                 .As<ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_settings.ConnectionString(x => x.Db.SnapshotsConnectionString))));
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
 
             builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .As<ISnapshotSerializer>()
@@ -149,7 +148,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
                 .As<ISnapshotRepository<IImmutableList<ICandle>>>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_settings.ConnectionString(x => x.Db.SnapshotsConnectionString))));
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
 
             builder.RegisterType<SnapshotSerializer<IImmutableList<ICandle>>>()
                 .As<ISnapshotSerializer>()

@@ -3,6 +3,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
+using Lykke.AzureQueueIntegration;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
@@ -64,9 +65,10 @@ namespace Lykke.Service.CandlesHistory
             Log = CreateLogWithSlack(services, settings);
             
             builder.RegisterModule(new ApiModule(
-                candlesHistory, 
-                settings.Nested(x => x.Assets),
+                candlesHistory.CurrentValue, 
+                settings.CurrentValue.Assets, 
                 candleHistoryAssetConnection,
+                candlesHistory.Nested(x => x.Db), 
                 Log));
             builder.Populate(services);
             ApplicationContainer = builder.Build();
@@ -153,7 +155,7 @@ namespace Lykke.Service.CandlesHistory
             aggregateLogger.AddLog(consoleLogger);
 
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log
-            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueIntegration.AzureQueueSettings
+            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
             {
                 ConnectionString = settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
                 QueueName = settings.CurrentValue.SlackNotifications.AzureQueue.QueueName

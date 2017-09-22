@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
@@ -11,17 +10,18 @@ using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.SettingsReader;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
     public class CandlesHistoryRepository : ICandlesHistoryRepository
     {
         private readonly ILog _log;
-        private readonly IImmutableDictionary<string, string> _assetConnectionStrings;
+        private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
         private readonly ConcurrentDictionary<string, CandleHistoryAssetPairRepository> _assetPairRepositories;
 
-        public CandlesHistoryRepository(ILog log, IImmutableDictionary<string, string> assetConnectionStrings)
+        public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
@@ -31,7 +31,7 @@ namespace Lykke.Service.CandleHistory.Repositories
 
         public bool CanStoreAssetPair(string assetPairId)
         {
-            return _assetConnectionStrings.ContainsKey(assetPairId);
+            return _assetConnectionStrings.CurrentValue.ContainsKey(assetPairId);
         }
 
         /// <summary>
@@ -111,14 +111,13 @@ namespace Lykke.Service.CandleHistory.Repositories
 
         private INoSQLTableStorage<CandleHistoryEntity> CreateStorage(string assetPairId, string tableName)
         {
-            if (!_assetConnectionStrings.TryGetValue(assetPairId, out string assetConnectionString) ||
+            if (!_assetConnectionStrings.CurrentValue.TryGetValue(assetPairId, out var assetConnectionString) ||
                 string.IsNullOrEmpty(assetConnectionString))
             {
                 throw new ConfigurationException($"Connection string for asset pair '{assetPairId}' is not specified.");
             }
 
-            //TODO: not sure how to corect pass IReloadingManager for this
-            var storage = new AzureTableStorage<CandleHistoryEntity>(assetConnectionString, tableName, _log);
+            var storage = AzureTableStorage<CandleHistoryEntity>.Create(_assetConnectionStrings.ConnectionString(x => x[assetPairId]), tableName, _log);
 
             // Create and preload table info
             storage.GetDataAsync(assetPairId, "1900-01-01").Wait();

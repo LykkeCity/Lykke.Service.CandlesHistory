@@ -25,9 +25,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public void Start()
         {
-            //TODO: check settings
             var settings = RabbitMqSubscriptionSettings
-                .CreateForPublisher(_rabbitConnectionString, "candleshistory", "failedtopersist")
+                .CreateForPublisher(_rabbitConnectionString, "lykke.candleshistory", "failedtopersist")
                 .MakeDurable()
                 .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
 
