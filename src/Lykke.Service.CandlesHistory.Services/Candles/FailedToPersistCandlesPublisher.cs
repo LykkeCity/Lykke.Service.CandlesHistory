@@ -13,20 +13,23 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     {
         private readonly ILog _log;
         private readonly IPublishingQueueRepository<IFailedCandlesEnvelope> _publishingQueueRepository;
-        private readonly string _rabbitConnectionString;
+        private readonly RabbitEndpointSettings _settings;
         private RabbitMqPublisher<IFailedCandlesEnvelope> _publisher;
 
-        public FailedToPersistCandlesPublisher(ILog log, IPublishingQueueRepository<IFailedCandlesEnvelope> publishingQueueRepository, string rabbitConnectionString)
+        public FailedToPersistCandlesPublisher(
+            ILog log, 
+            IPublishingQueueRepository<IFailedCandlesEnvelope> publishingQueueRepository, 
+            RabbitEndpointSettings settings)
         {
             _log = log;
             _publishingQueueRepository = publishingQueueRepository;
-            _rabbitConnectionString = rabbitConnectionString;
+            _settings = settings;
         }
 
         public void Start()
         {
             var settings = RabbitMqSubscriptionSettings
-                .CreateForPublisher(_rabbitConnectionString, "lykke.candleshistory", "failedtopersist")
+                .CreateForPublisher(_settings.ConnectionString, $"{_settings.Namespace}.candleshistory", "failedtopersist")
                 .MakeDurable()
                 .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
 

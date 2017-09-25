@@ -46,21 +46,21 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;
-        private readonly string _rabbitConnectionString;
+        private readonly RabbitEndpointSettings _settings;
 
         private RabbitMqSubscriber<CandleMessage> _subscriber;
 
-        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, string rabbitConnectionString)
+        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, RabbitEndpointSettings settings)
         {
             _log = log;
             _candlesManager = candlesManager;
-            _rabbitConnectionString = rabbitConnectionString;
+            _settings = settings;
         }
 
         public void Start()
         {
             var settings = RabbitMqSubscriptionSettings
-                .CreateForSubscriber(_rabbitConnectionString, "candles", "candleshistory")
+                .CreateForSubscriber(_settings.ConnectionString, _settings.Namespace, "candles", _settings.Namespace, "candleshistory")
                 .MakeDurable()
                 .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
 
