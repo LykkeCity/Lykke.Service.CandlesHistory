@@ -3,8 +3,7 @@
     public class CandlesHistorySettings
     {        
         public AssetsCacheSettings AssetsCache { get; set; }
-        public RabbitSettingsWithDeadLetter CandlesSubscription { get; set; }
-        public RabbitSettings FailedToPersistPublication { get; set; }
+        public RabbitSettings Rabbit { get; set; }
         public int HistoryTicksCacheSize { get; set; }
         public QueueMonitorSettings QueueMonitor { get; set; }
         public PersistenceSettings Persistence { get; set; }

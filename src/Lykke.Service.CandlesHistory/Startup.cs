@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
@@ -7,9 +6,7 @@ using Common.Log;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
-using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Services;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
@@ -17,7 +14,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
@@ -28,7 +24,9 @@ namespace Lykke.Service.CandlesHistory
     public class Startup
     {
         public IHostingEnvironment HostingEnvironment { get; }
-        public IContainer ApplicationContainer { get; set; }
+        public IContainer ApplicationContainer { get; private set; }
+        public IConfigurationRoot Configuration { get; }
+        public ILog Log { get; private set; }
 
         public Startup(IHostingEnvironment env)
         {
@@ -42,9 +40,6 @@ namespace Lykke.Service.CandlesHistory
             HostingEnvironment = env;
         }
 
-        public IConfigurationRoot Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             services.AddMvc()
@@ -59,44 +54,127 @@ namespace Lykke.Service.CandlesHistory
                 options.DefaultLykkeConfiguration("v1", "Candles history service");
             });
 
-            var settings = HttpSettingsLoader.Load<AppSettings>();
-            
-            var candlesHistory = settings.CandlesHistory ?? settings.MtCandlesHistory;      
-            var candleHistoryAssetConnection = (settings.CandleHistoryAssetConnections ?? settings.MtCandleHistoryAssetConnections).ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
-
-            var log = CreateLog(services, candlesHistory, settings.SlackNotifications);
             var builder = new ContainerBuilder();
+            var settings = Configuration.LoadSettings<AppSettings>();
+            var candlesHistory = settings.CurrentValue.CandlesHistory != null 
+                ? settings.Nested(x => x.CandlesHistory)
+                : settings.Nested(x => x.MtCandlesHistory);
+            var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null 
+                ? settings.Nested(x => x.CandleHistoryAssetConnections)
+                : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
-            builder.RegisterModule(new ApiModule(candlesHistory, candleHistoryAssetConnection, settings.Assets, log));
+            Log = CreateLogWithSlack(
+                services, 
+                settings.CurrentValue.SlackNotifications, 
+                candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
+            
+            builder.RegisterModule(new ApiModule(
+                candlesHistory.CurrentValue, 
+                settings.CurrentValue.Assets, 
+                candleHistoryAssetConnection,
+                candlesHistory.Nested(x => x.Db), 
+                Log));
             builder.Populate(services);
-
             ApplicationContainer = builder.Build();
 
             return new AutofacServiceProvider(ApplicationContainer);
         }
 
-        private static ILog CreateLog(IServiceCollection services, CandlesHistorySettings candlesHistorySettings, SlackNotificationsSettings slackNotificationsSettings)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
         {
-            var appSettings = candlesHistorySettings;
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
+
+            app.UseMvc();
+            app.UseSwagger();
+            app.UseSwaggerUi();
+            app.UseStaticFiles();
+
+            appLifetime.ApplicationStarted.Register(StartApplication);
+            appLifetime.ApplicationStopping.Register(StopApplication);
+            appLifetime.ApplicationStopped.Register(CleanUp);
+        }
+
+        private void StartApplication()
+        {
+            try
+            {
+                Console.WriteLine("Starting...");
+
+                var startupManager = ApplicationContainer.Resolve<IStartupManager>();
+
+                startupManager.StartAsync().Wait();
+
+                Console.WriteLine("Started");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteFatalErrorAsync(nameof(Startup), nameof(StartApplication), "", ex);
+            }
+        }
+
+        private void StopApplication()
+        {
+            try
+            {
+                Console.WriteLine("Stopping...");
+
+                var shutdownManager = ApplicationContainer.Resolve<IShutdownManager>();
+
+                shutdownManager.ShutdownAsync().Wait();
+
+                Console.WriteLine("Stopped");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteFatalErrorAsync(nameof(Startup), nameof(StopApplication), "", ex);
+            }
+        }
+
+        private void CleanUp()
+        {
+            try
+            {
+                Console.WriteLine("Cleaning up...");
+
+                ApplicationContainer.Dispose();
+
+                Console.WriteLine("Cleaned up");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteFatalErrorAsync(nameof(Startup), nameof(CleanUp), "", ex);
+            }
+        }
+
+        private static ILog CreateLogWithSlack(IServiceCollection services, SlackNotificationsSettings slackSettings, IReloadingManager<string> dbLogConnectionStringManager)
+        {
             var consoleLogger = new LogToConsole();
             var aggregateLogger = new AggregateLogger();
 
             aggregateLogger.AddLog(consoleLogger);
 
+            // Creating slack notification service, which logs own azure queue processing messages to aggregate log
             var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
             {
-                ConnectionString = slackNotificationsSettings.AzureQueue.ConnectionString,
-                QueueName = slackNotificationsSettings.AzureQueue.QueueName
+                ConnectionString = slackSettings.AzureQueue.ConnectionString,
+                QueueName = slackSettings.AzureQueue.QueueName
             }, aggregateLogger);
 
-            if (!string.IsNullOrEmpty(appSettings.Db.LogsConnectionString) &&
-                !(appSettings.Db.LogsConnectionString.StartsWith("${") && appSettings.Db.LogsConnectionString.EndsWith("}")))
+            var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
+
+            // Creating azure storage logger, which logs own messages to concole log
+            if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") && dbLogConnectionString.EndsWith("}")))
             {
                 const string appName = "Lykke.Service.CandlesHistory";
 
                 var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
                     appName,
-                    AzureTableStorage<LogEntity>.Create(() => appSettings.Db.LogsConnectionString, "CandlesHistoryServiceLogs", consoleLogger),
+                    AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "CandlesHistoryServiceLogs", consoleLogger),
                     consoleLogger);
 
                 var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(appName, slackService, consoleLogger);
@@ -113,55 +191,6 @@ namespace Lykke.Service.CandlesHistory
             }
 
             return aggregateLogger;
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime appLifetime)
-        {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
-            app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
-
-            appLifetime.ApplicationStarted.Register(StartApplication);
-            appLifetime.ApplicationStopping.Register(StopApplication);
-            appLifetime.ApplicationStopped.Register(CleanUp);
-
-            app.UseMvc();
-            app.UseSwagger();
-            app.UseSwaggerUi();
-            app.UseStaticFiles();
-        }
-
-        private void StartApplication()
-        {
-            Console.WriteLine("Starting...");
-
-            var startupManager = ApplicationContainer.Resolve<IStartupManager>();
-
-            startupManager.StartAsync().Wait();
-
-            Console.WriteLine("Started");
-        }
-
-        private void StopApplication()
-        {
-            Console.WriteLine("Stopping...");
-
-            var shutdownManager = ApplicationContainer.Resolve<IShutdownManager>();
-
-            shutdownManager.ShutdownAsync().Wait();
-
-            Console.WriteLine("Stopped");
-        }
-
-        private void CleanUp()
-        {
-            Console.WriteLine("Cleaning up...");
-
-            ApplicationContainer.Dispose();
-
-            Console.WriteLine("Cleaned up");
         }
     }
 }
