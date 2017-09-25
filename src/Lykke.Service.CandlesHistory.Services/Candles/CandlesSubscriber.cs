@@ -10,6 +10,7 @@ using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
 using Newtonsoft.Json;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -45,11 +46,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;
-        private readonly AppSettings.RabbitSettingsWithDeadLetter _rabbitSettings;
+        private readonly RabbitSettingsWithDeadLetter _rabbitSettings;
 
         private RabbitMqSubscriber<CandleMessage> _subscriber;
 
-        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, AppSettings.RabbitSettingsWithDeadLetter rabbitSettings)
+        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, RabbitSettingsWithDeadLetter rabbitSettings)
         {
             _log = log;
             _candlesManager = candlesManager;

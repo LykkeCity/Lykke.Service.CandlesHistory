@@ -4,7 +4,6 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
-using Lykke.AzureQueueIntegration;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
@@ -21,6 +20,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
+using Lykke.Service.CandlesHistory.Services.Settings;
+using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -59,13 +60,14 @@ namespace Lykke.Service.CandlesHistory
             });
 
             var settings = HttpSettingsLoader.Load<AppSettings>();
+            
+            var candlesHistory = settings.CandlesHistory ?? settings.MtCandlesHistory;      
+            var candleHistoryAssetConnection = (settings.CandleHistoryAssetConnections ?? settings.MtCandleHistoryAssetConnections).ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
 
-            settings.CandleHistoryAssetConnections = settings.CandleHistoryAssetConnections.ToDictionary(i => i.Key.ToUpperInvariant(), i => i.Value);
-
-            var log = CreateLog(services, settings);
+            var log = CreateLog(services, candlesHistory, settings.SlackNotifications);
             var builder = new ContainerBuilder();
 
-            builder.RegisterModule(new ApiModule(settings, log));
+            builder.RegisterModule(new ApiModule(candlesHistory, candleHistoryAssetConnection, settings.Assets, log));
             builder.Populate(services);
 
             ApplicationContainer = builder.Build();
@@ -73,9 +75,9 @@ namespace Lykke.Service.CandlesHistory
             return new AutofacServiceProvider(ApplicationContainer);
         }
 
-        private static ILog CreateLog(IServiceCollection services, AppSettings settings)
+        private static ILog CreateLog(IServiceCollection services, CandlesHistorySettings candlesHistorySettings, SlackNotificationsSettings slackNotificationsSettings)
         {
-            var appSettings = settings.CandlesHistory;
+            var appSettings = candlesHistorySettings;
             var consoleLogger = new LogToConsole();
             var aggregateLogger = new AggregateLogger();
 
@@ -83,8 +85,8 @@ namespace Lykke.Service.CandlesHistory
 
             var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
             {
-                ConnectionString = settings.SlackNotifications.AzureQueue.ConnectionString,
-                QueueName = settings.SlackNotifications.AzureQueue.QueueName
+                ConnectionString = slackNotificationsSettings.AzureQueue.ConnectionString,
+                QueueName = slackNotificationsSettings.AzureQueue.QueueName
             }, aggregateLogger);
 
             if (!string.IsNullOrEmpty(appSettings.Db.LogsConnectionString) &&

@@ -10,6 +10,7 @@ using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -21,7 +22,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
-        private readonly AppSettings.PersistenceSettings _settings;
+        private readonly PersistenceSettings _settings;
 
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
@@ -30,7 +31,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
             IHealthService healthService,
-            AppSettings.PersistenceSettings settings) :
+            PersistenceSettings settings) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
