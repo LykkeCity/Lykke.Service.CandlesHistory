@@ -117,12 +117,15 @@ namespace Lykke.Service.CandleHistory.Repositories
                 throw new ConfigurationException($"Connection string for asset pair '{assetPairId}' is not specified.");
             }
 
-            var storage = AzureTableStorage<CandleHistoryEntity>.Create(_assetConnectionStrings.ConnectionString(x => x[assetPairId]), tableName, _log);
+            var storage = AzureTableStorage<CandleHistoryEntity>.Create(
+                _assetConnectionStrings.ConnectionString(x => x[assetPairId]), 
+                tableName, 
+                _log);
 
             // Create and preload table info
             storage.GetDataAsync(assetPairId, "1900-01-01").Wait();
 
-            return new RetryOnFailureAzureTableStorageDecorator<CandleHistoryEntity>(storage, 5, 5, TimeSpan.FromSeconds(10));
+            return storage;
         }
     }
 }
