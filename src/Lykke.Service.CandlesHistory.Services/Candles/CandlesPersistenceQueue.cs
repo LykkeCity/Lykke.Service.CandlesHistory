@@ -21,7 +21,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
-        private readonly PersistenceSettings _settings;
 
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
@@ -29,8 +28,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             ICandlesHistoryRepository repository,
             IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
-            IHealthService healthService,
-            PersistenceSettings settings) :
+            IHealthService healthService) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
@@ -38,7 +36,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _failedToPersistCandlesPublisher = failedToPersistCandlesPublisher;
             _log = log;
             _healthService = healthService;
-            _settings = settings;
             _candlesToDispatch = new ConcurrentQueue<ICandle>();
         }
 
