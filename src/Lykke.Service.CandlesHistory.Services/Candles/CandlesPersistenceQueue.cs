@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
-using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -78,9 +77,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             var candles = new List<ICandle>(candlesCount);
 
-            for (var i = 0; i < Math.Min(candlesCount, _settings.MaxBatchSize); i++)
+            for (var i = 0; i < candlesCount; i++)
             {
-                if (_candlesToDispatch.TryDequeue(out ICandle candle))
+                if (_candlesToDispatch.TryDequeue(out var candle))
                 {
                     candles.Add(candle);
                 }
