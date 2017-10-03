@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -60,7 +60,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 foreach (var timeInterval in Constants.StoredIntervals)
                 {
                     var alignedToDate = toDate.RoundTo(timeInterval);
-                    var alignedFromDate = alignedToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
+                    // HACK: Day and month ticks are starts from 1, AddIntervalTicks takes this into account,
+                    // so compensate it here
+                    var ticksToRewind = timeInterval == TimeInterval.Day || timeInterval == TimeInterval.Month
+                        ? _amountOfCandlesToStore + 1
+                        : _amountOfCandlesToStore;
+                    var alignedFromDate = alignedToDate.AddIntervalTicks(-ticksToRewind, timeInterval);
                     var candles = await _candlesHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate);
                     
                     _candlesCacheService.Initialize(assetPair.Id, priceType, timeInterval, candles.ToArray());
