@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
@@ -42,112 +43,129 @@ namespace Lykke.Service.CandlesHistory
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc()
-                .AddJsonOptions(options =>
+            try
+            {
+                services.AddMvc()
+                    .AddJsonOptions(options =>
+                    {
+                        options.SerializerSettings.Converters.Add(new StringEnumConverter());
+                        options.SerializerSettings.ContractResolver =
+                            new Newtonsoft.Json.Serialization.DefaultContractResolver();
+                    });
+
+                services.AddSwaggerGen(options =>
                 {
-                    options.SerializerSettings.Converters.Add(new StringEnumConverter());
-                    options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver();
+                    options.DefaultLykkeConfiguration("v1", "Candles history service");
                 });
 
-            services.AddSwaggerGen(options =>
+                var builder = new ContainerBuilder();
+                var settings = Configuration.LoadSettings<AppSettings>();
+                var candlesHistory = settings.CurrentValue.CandlesHistory != null
+                    ? settings.Nested(x => x.CandlesHistory)
+                    : settings.Nested(x => x.MtCandlesHistory);
+                var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
+                    ? settings.Nested(x => x.CandleHistoryAssetConnections)
+                    : settings.Nested(x => x.MtCandleHistoryAssetConnections);
+
+                Log = CreateLogWithSlack(
+                    services,
+                    settings.CurrentValue.SlackNotifications,
+                    candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
+
+                builder.RegisterModule(new ApiModule(
+                    candlesHistory.CurrentValue,
+                    settings.CurrentValue.Assets,
+                    candleHistoryAssetConnection,
+                    candlesHistory.Nested(x => x.Db),
+                    Log));
+                builder.Populate(services);
+                ApplicationContainer = builder.Build();
+
+                return new AutofacServiceProvider(ApplicationContainer);
+            }
+            catch (Exception ex)
             {
-                options.DefaultLykkeConfiguration("v1", "Candles history service");
-            });
-
-            var builder = new ContainerBuilder();
-            var settings = Configuration.LoadSettings<AppSettings>();
-            var candlesHistory = settings.CurrentValue.CandlesHistory != null 
-                ? settings.Nested(x => x.CandlesHistory)
-                : settings.Nested(x => x.MtCandlesHistory);
-            var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null 
-                ? settings.Nested(x => x.CandleHistoryAssetConnections)
-                : settings.Nested(x => x.MtCandleHistoryAssetConnections);
-
-            Log = CreateLogWithSlack(
-                services, 
-                settings.CurrentValue.SlackNotifications, 
-                candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
-            
-            builder.RegisterModule(new ApiModule(
-                candlesHistory.CurrentValue, 
-                settings.CurrentValue.Assets, 
-                candleHistoryAssetConnection,
-                candlesHistory.Nested(x => x.Db), 
-                Log));
-            builder.Populate(services);
-            ApplicationContainer = builder.Build();
-
-            return new AutofacServiceProvider(ApplicationContainer);
+                Log?.WriteFatalErrorAsync(nameof(Startup), nameof(ConfigureServices), "", ex).Wait();
+                throw;
+            }
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
-
-            app.UseMvc();
-            app.UseSwagger();
-            app.UseSwaggerUi();
-            app.UseStaticFiles();
-
-            appLifetime.ApplicationStarted.Register(StartApplication);
-            appLifetime.ApplicationStopping.Register(StopApplication);
-            appLifetime.ApplicationStopped.Register(CleanUp);
-        }
-
-        private void StartApplication()
-        {
             try
             {
-                Console.WriteLine("Starting...");
+                if (env.IsDevelopment())
+                {
+                    app.UseDeveloperExceptionPage();
+                }
 
-                var startupManager = ApplicationContainer.Resolve<IStartupManager>();
+                app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
 
-                startupManager.StartAsync().Wait();
+                app.UseMvc();
+                app.UseSwagger();
+                app.UseSwaggerUi();
+                app.UseStaticFiles();
 
-                Console.WriteLine("Started");
+                appLifetime.ApplicationStarted.Register(() => StartApplication().Wait());
+                appLifetime.ApplicationStopping.Register(() => StopApplication().Wait());
+                appLifetime.ApplicationStopped.Register(() => CleanUp().Wait());
             }
             catch (Exception ex)
             {
-                Log.WriteFatalErrorAsync(nameof(Startup), nameof(StartApplication), "", ex);
+                Log?.WriteFatalErrorAsync(nameof(Startup), nameof(Configure), "", ex).Wait();
+                throw;
             }
         }
 
-        private void StopApplication()
+        private async Task StartApplication()
         {
             try
             {
-                Console.WriteLine("Stopping...");
+                await ApplicationContainer.Resolve<IStartupManager>().StartAsync();
 
-                var shutdownManager = ApplicationContainer.Resolve<IShutdownManager>();
-
-                shutdownManager.ShutdownAsync().Wait();
-
-                Console.WriteLine("Stopped");
+                await Log.WriteMonitorAsync("", "", "Started");
             }
             catch (Exception ex)
             {
-                Log.WriteFatalErrorAsync(nameof(Startup), nameof(StopApplication), "", ex);
+                await Log.WriteFatalErrorAsync(nameof(Startup), nameof(StartApplication), "", ex);
+                throw;
             }
         }
 
-        private void CleanUp()
+        private async Task StopApplication()
         {
             try
             {
-                Console.WriteLine("Cleaning up...");
+                await ApplicationContainer.Resolve<IShutdownManager>().ShutdownAsync();
+            }
+            catch (Exception ex)
+            {
+                if (Log != null)
+                {
+                    await Log.WriteFatalErrorAsync(nameof(Startup), nameof(StopApplication), "", ex);
+                }
+                throw;
+            }
+        }
+
+        private async Task CleanUp()
+        {
+            try
+            {
+                if (Log != null)
+                {
+                    await Log.WriteMonitorAsync("", "", "Terminating");
+                }
 
                 ApplicationContainer.Dispose();
-
-                Console.WriteLine("Cleaned up");
             }
             catch (Exception ex)
             {
-                Log.WriteFatalErrorAsync(nameof(Startup), nameof(CleanUp), "", ex);
+                if (Log != null)
+                {
+                    await Log.WriteFatalErrorAsync(nameof(Startup), nameof(CleanUp), "", ex);
+                }
+                throw;
             }
         }
 

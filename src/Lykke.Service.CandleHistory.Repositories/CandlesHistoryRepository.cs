@@ -1,11 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
-using AzureStorage.Tables.Decorators;
 using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
@@ -19,14 +18,14 @@ namespace Lykke.Service.CandleHistory.Repositories
         private readonly ILog _log;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
-        private readonly ConcurrentDictionary<string, CandleHistoryAssetPairRepository> _assetPairRepositories;
+        private readonly ConcurrentDictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
 
         public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
 
-            _assetPairRepositories = new ConcurrentDictionary<string, CandleHistoryAssetPairRepository>();
+            _assetPairRepositories = new ConcurrentDictionary<string, AssetPairCandlesHistoryRepository>();
         }
 
         public bool CanStoreAssetPair(string assetPairId)
@@ -93,17 +92,17 @@ namespace Lykke.Service.CandleHistory.Repositories
             _assetPairRepositories[key] = null;
         }
 
-        private CandleHistoryAssetPairRepository GetRepo(string assetPairId, TimeInterval timeInterval)
+        private AssetPairCandlesHistoryRepository GetRepo(string assetPairId, TimeInterval timeInterval)
         {
             var tableName = timeInterval.ToString().ToLowerInvariant();
             var key = $"{assetPairId.ToLowerInvariant()}_{tableName}";
 
-            if (!_assetPairRepositories.TryGetValue(key, out CandleHistoryAssetPairRepository repo) || repo == null)
+            if (!_assetPairRepositories.TryGetValue(key, out AssetPairCandlesHistoryRepository repo) || repo == null)
             {
                 return _assetPairRepositories.AddOrUpdate(
                     key: key,
-                    addValueFactory: k => new CandleHistoryAssetPairRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)),
-                    updateValueFactory: (k, oldRepo) => oldRepo ?? new CandleHistoryAssetPairRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)));
+                    addValueFactory: k => new AssetPairCandlesHistoryRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)),
+                    updateValueFactory: (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)));
             }
 
             return repo;

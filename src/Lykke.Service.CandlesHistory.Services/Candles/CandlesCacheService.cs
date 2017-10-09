@@ -107,6 +107,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 state.Select(i => KeyValuePair.Create(i.Key, new LinkedList<ICandle>(i.Value))));
         }
 
+        public string DescribeState(IImmutableDictionary<string, IImmutableList<ICandle>> state)
+        {
+            return $"Assets: {state.Count}, Total Candles: {state.Values.Sum(list => list.Count)}";
+        }
+
         private static LinkedList<ICandle> AddNewCandlesHistory(ICandle candle)
         {
             var history = new LinkedList<ICandle>();

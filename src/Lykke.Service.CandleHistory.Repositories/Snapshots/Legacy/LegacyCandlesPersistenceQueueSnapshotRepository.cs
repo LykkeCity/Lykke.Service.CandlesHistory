@@ -1,8 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using Lykke.Service.CandlesHistory.Core.Domain;
@@ -10,42 +9,24 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Snapshots.Legacy
 {
-    public class CandlesPersistenceQueueSnapshotRepository : ISnapshotRepository<IImmutableList<ICandle>>
+    [Obsolete("Used for snapshot migration")]
+    public class LegacyCandlesPersistenceQueueSnapshotRepository : ISnapshotRepository<IImmutableList<ICandle>>
     {
         private const string Container = "PersistenceQueueSnapshot";
         private const string Key = "Singleton";
 
         private readonly IBlobStorage _storage;
 
-        public CandlesPersistenceQueueSnapshotRepository(IBlobStorage storage)
+        public LegacyCandlesPersistenceQueueSnapshotRepository(IBlobStorage storage)
         {
             _storage = storage;
         }
 
-        public async Task SaveAsync(IImmutableList<ICandle> state)
+        public Task SaveAsync(IImmutableList<ICandle> state)
         {
-            using (var stream = new MemoryStream())
-            {
-                using (var writer = new BsonDataWriter(stream)
-                {
-                    DateTimeKindHandling = DateTimeKind.Utc
-                })
-                {
-                    var serializer = new JsonSerializer();
-                    var model = state.Select(CandleSnapshotEntity.Create);
-
-                    serializer.Serialize(writer, model);
-
-                    await writer.FlushAsync();
-                    await stream.FlushAsync();
-
-                    stream.Seek(0, SeekOrigin.Begin);
-
-                    await _storage.SaveBlobAsync(Container, Key, stream);
-                }
-            }
+            throw new NotImplementedException();
         }
 
         public async Task<IImmutableList<ICandle>> TryGetAsync()
@@ -68,7 +49,7 @@ namespace Lykke.Service.CandleHistory.Repositories
                 })
                 {
                     var serializer = new JsonSerializer();
-                    var model = serializer.Deserialize<IEnumerable<CandleSnapshotEntity>>(reader);
+                    var model = serializer.Deserialize<IEnumerable<LegacySnapshotCandleEntity>>(reader);
 
                     return model.ToImmutableList<ICandle>();
                 }

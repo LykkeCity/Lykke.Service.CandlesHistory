@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -9,7 +9,6 @@ using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -61,6 +60,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candlesToDispatch = new ConcurrentQueue<ICandle>(state);
 
             _healthService.TraceSetPersistenceQueueState(state.Count);
+        }
+
+        public string DescribeState(IImmutableList<ICandle> state)
+        {
+            return $"Candles: {state.Count}";
         }
 
         public bool DispatchCandlesToPersist()
