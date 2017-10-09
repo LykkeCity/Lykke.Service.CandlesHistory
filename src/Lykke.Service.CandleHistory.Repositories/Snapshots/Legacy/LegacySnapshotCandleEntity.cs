@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Snapshots.Legacy
 {
-    public class CandleSnapshotEntity : ICandle
+    [Obsolete("Used for snapshot migration")]
+    public class LegacySnapshotCandleEntity : ICandle
     {
         [JsonProperty("a")]
         public string AssetPairId { get; set; }
@@ -31,9 +32,9 @@ namespace Lykke.Service.CandleHistory.Repositories
         [JsonProperty("l")]
         public double Low { get; set; }
 
-        public static CandleSnapshotEntity Create(ICandle candle)
+        public static LegacySnapshotCandleEntity Create(ICandle candle)
         {
-            return new CandleSnapshotEntity
+            return new LegacySnapshotCandleEntity
             {
                 AssetPairId = candle.AssetPairId,
                 PriceType = candle.PriceType,

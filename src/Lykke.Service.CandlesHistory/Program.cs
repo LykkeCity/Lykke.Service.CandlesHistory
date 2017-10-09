@@ -1,29 +1,51 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Lykke.Service.CandlesHistory
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine($"Lykke.Service.CandlesHistory version {Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion}");
 #if DEBUG
             Console.WriteLine("Is DEBUG");
 #else
             Console.WriteLine("Is RELEASE");
-#endif           
+#endif
+            try
+            {
+                var host = new WebHostBuilder()
+                    .UseKestrel()
+                    .UseUrls("http://*:5000")
+                    .UseContentRoot(Directory.GetCurrentDirectory())
+                    .UseStartup<Startup>()
+                    .UseApplicationInsights()
+                    .Build();
 
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseUrls("http://*:5000")
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseStartup<Startup>()
-                .UseApplicationInsights()
-                .Build();
+                host.Run();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Fatal error:");
+                Console.WriteLine(ex);
 
-            host.Run();
+                // Lets devops to see startup error in console between restarts in the Kubernetes
+                var delay = TimeSpan.FromMinutes(1);
+
+                Console.WriteLine();
+                Console.WriteLine($"Process will be terminated in {delay}. Press any key to terminate immediately.");
+
+                Task.WhenAny(
+                        Task.Delay(delay),
+                        Task.Run(() =>
+                        {
+                            Console.ReadKey(true);
+                        }))
+                    .Wait();
+            }
 
             Console.WriteLine("Terminated");
         }

@@ -12,13 +12,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     public class FailedToPersistCandlesPublisher : IFailedToPersistCandlesPublisher, IDisposable
     {
         private readonly ILog _log;
-        private readonly IPublishingQueueRepository<IFailedCandlesEnvelope> _publishingQueueRepository;
+        private readonly IPublishingQueueRepository _publishingQueueRepository;
         private readonly RabbitEndpointSettings _settings;
         private RabbitMqPublisher<IFailedCandlesEnvelope> _publisher;
 
         public FailedToPersistCandlesPublisher(
             ILog log, 
-            IPublishingQueueRepository<IFailedCandlesEnvelope> publishingQueueRepository, 
+            IPublishingQueueRepository publishingQueueRepository, 
             RabbitEndpointSettings settings)
         {
             _log = log;

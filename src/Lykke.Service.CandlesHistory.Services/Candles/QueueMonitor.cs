@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Common;
 using Common.Log;
-using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Services.Settings;
 
