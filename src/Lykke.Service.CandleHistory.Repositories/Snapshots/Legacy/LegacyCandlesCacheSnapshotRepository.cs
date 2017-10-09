@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using Lykke.Service.CandlesHistory.Core.Domain;
@@ -9,42 +8,24 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Snapshots.Legacy
 {
-    public class CandlesCacheSnapshotRepository : ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>
+    [Obsolete("Used for snapshot migration")]
+    public class LegacyCandlesCacheSnapshotRepository : ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>
     {
         private const string Container = "CacheSnapshot";
         private const string Key = "Singleton";
 
         private readonly IBlobStorage _storage;
 
-        public CandlesCacheSnapshotRepository(IBlobStorage storage)
+        public LegacyCandlesCacheSnapshotRepository(IBlobStorage storage)
         {
             _storage = storage;
         }
 
-        public async Task SaveAsync(IImmutableDictionary<string, IImmutableList<ICandle>> state)
+        public Task SaveAsync(IImmutableDictionary<string, IImmutableList<ICandle>> state)
         {
-            using (var stream = new MemoryStream())
-            {
-                using (var writer = new BsonDataWriter(stream)
-                {
-                    DateTimeKindHandling = DateTimeKind.Utc
-                })
-                {
-                    var serializer = new JsonSerializer();
-                    var model = state.ToImmutableDictionary(i => i.Key, i => i.Value.Select(CandleSnapshotEntity.Create));
-
-                    serializer.Serialize(writer, model);
-
-                    await writer.FlushAsync();
-                    await stream.FlushAsync();
-
-                    stream.Seek(0, SeekOrigin.Begin);
-
-                    await _storage.SaveBlobAsync(Container, Key, stream);
-                }
-            }
+            throw new NotImplementedException();
         }
 
         public async Task<IImmutableDictionary<string, IImmutableList<ICandle>>> TryGetAsync()
@@ -66,7 +47,7 @@ namespace Lykke.Service.CandleHistory.Repositories
                 })
                 {
                     var serializer = new JsonSerializer();
-                    var model = serializer.Deserialize<ImmutableDictionary<string, CandleSnapshotEntity[]>>(reader);
+                    var model = serializer.Deserialize<ImmutableDictionary<string, LegacySnapshotCandleEntity[]>>(reader);
 
                     return model.ToImmutableDictionary(i => i.Key, i => (IImmutableList<ICandle>)i.Value.ToImmutableList<ICandle>());
                 }

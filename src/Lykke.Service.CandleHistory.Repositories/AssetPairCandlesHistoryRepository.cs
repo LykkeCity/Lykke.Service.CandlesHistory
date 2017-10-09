@@ -10,13 +10,13 @@ using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Lykke.Service.CandleHistory.Repositories
 {
-    internal sealed class CandleHistoryAssetPairRepository
+    internal sealed class AssetPairCandlesHistoryRepository
     {
         private readonly string _assetPairId;
         private readonly TimeInterval _timeInterval;
         private readonly INoSQLTableStorage<CandleHistoryEntity> _tableStorage;
 
-        public CandleHistoryAssetPairRepository(
+        public AssetPairCandlesHistoryRepository(
             string assetPairId,
             TimeInterval timeInterval,
             INoSQLTableStorage<CandleHistoryEntity> tableStorage)
