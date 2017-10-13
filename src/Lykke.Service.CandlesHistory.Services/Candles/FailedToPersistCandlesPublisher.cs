@@ -30,8 +30,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var settings = RabbitMqSubscriptionSettings
                 .CreateForPublisher(_settings.ConnectionString, $"{_settings.Namespace}.candleshistory", "failedtopersist")
-                .MakeDurable()
-                .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
+                .MakeDurable();
 
             _publisher = new RabbitMqPublisher<IFailedCandlesEnvelope>(settings)
                 .SetSerializer(new JsonMessageSerializer<IFailedCandlesEnvelope>())
