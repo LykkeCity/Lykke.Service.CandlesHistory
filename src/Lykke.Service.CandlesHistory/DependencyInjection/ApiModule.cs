@@ -9,7 +9,7 @@ using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories;
-using Lykke.Service.CandleHistory.Repositories.Snapshots.Migration;
+using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -138,7 +138,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .As<ICandlesCacheInitalizationService>();
 
-            builder.RegisterType<CandlesCacheSnapshotMigrationRepository>()
+            builder.RegisterType<CandlesCacheSnapshotRepository>()
                 .As<ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
 
@@ -146,7 +146,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ISnapshotSerializer>()
                 .AsSelf();
 
-            builder.RegisterType<CandlesPersistenceQueueSnapshotMigrationRepository>()
+            builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
                 .As<ISnapshotRepository<IImmutableList<ICandle>>>()
                 .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
 
