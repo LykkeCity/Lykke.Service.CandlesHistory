@@ -60,14 +60,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var settings = RabbitMqSubscriptionSettings
                 .CreateForSubscriber(_settings.ConnectionString, _settings.Namespace, "candles", _settings.Namespace, "candleshistory")
-                .MakeDurable()
-                .DelayTheRecconectionForA(delay: TimeSpan.FromSeconds(20));
+                .MakeDurable();
 
             try
             {
                 _subscriber = new RabbitMqSubscriber<CandleMessage>(settings,
                         new ResilientErrorHandlingStrategy(_log, settings,
-                            retryTimeout: TimeSpan.FromSeconds(10),
+                            retryTimeout: TimeSpan.FromSeconds(5),
+                            retryNum: int.MaxValue,
                             next: new DeadQueueErrorHandlingStrategy(_log, settings)))
                     .SetMessageDeserializer(new JsonMessageDeserializer<CandleMessage>())
                     .SetMessageReadStrategy(new MessageReadQueueStrategy())
@@ -103,9 +103,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 await _candlesManager.ProcessCandleAsync(candle);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                await _log.WriteErrorAsync(nameof(CandlesSubscriber), nameof(ProcessCandleAsync), null, ex);
+                await _log.WriteWarningAsync(nameof(CandlesSubscriber), nameof(ProcessCandleAsync), candle.ToJson(), "Failed to process candle");
+                throw;
             }
         }
 
