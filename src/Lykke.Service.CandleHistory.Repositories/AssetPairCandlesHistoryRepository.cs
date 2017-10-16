@@ -89,5 +89,10 @@ namespace Lykke.Service.CandleHistory.Repositories
                 .SelectMany(c => c)
                 .Where(c => c.Timestamp >= from && c.Timestamp < to);
         }
+
+        public async Task<DateTime?> GetTopRecordDateTimeAsync()
+        {
+            return (await _tableStorage.GetTopRecordAsync(CandleHistoryEntity.GeneratePartitionKey(PriceType.Ask)))?.DateTime;
+        }
     }
 }

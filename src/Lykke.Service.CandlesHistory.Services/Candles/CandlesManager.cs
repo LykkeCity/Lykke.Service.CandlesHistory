@@ -8,6 +8,7 @@ using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Extensions;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {

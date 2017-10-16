@@ -1,9 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Extensions;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
@@ -195,7 +197,12 @@ namespace Lykke.Service.CandleHistory.Repositories
                 throw new ArgumentNullException(nameof(value));
             }
 
-            return DateTime.SpecifyKind(DateTime.ParseExact(value, "s", System.Globalization.DateTimeFormatInfo.InvariantInfo), kind);
+            if (!DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.None, out var date))
+            {
+                date = new DateTime(long.Parse(value));
+            }
+
+            return DateTime.SpecifyKind(date, kind);
         }
     }
 }

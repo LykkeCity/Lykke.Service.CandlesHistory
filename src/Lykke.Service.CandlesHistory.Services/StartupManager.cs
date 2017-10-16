@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
@@ -49,14 +49,14 @@ namespace Lykke.Service.CandlesHistory.Services
                     _persistenceQueueSnapshotSerializer.DeserializeAsync()
                 };
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Deserializing cache...");
+                //await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Deserializing cache...");
 
-                if (!await _candlesCacheSnapshotSerializer.DeserializeAsync())
-                {
-                    await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Initializing cache from history async...");
+                //if (!await _candlesCacheSnapshotSerializer.DeserializeAsync())
+                //{
+                //    await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Initializing cache from history async...");
 
-                    tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
-                }
+                //    tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
+                //}
 
                 await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Waiting for async tasks...");
 

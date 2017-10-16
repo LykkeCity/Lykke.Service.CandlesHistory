@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Blob;
+using AzureStorage.Tables;
 using Common.Log;
 using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
@@ -154,6 +155,29 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ISnapshotSerializer>()
                 .AsSelf()
                 .PreserveExistingDefaults();
+
+            builder.RegisterType<FeedHistoryRepository>()
+                .As<IFeedHistoryRepository>()
+                .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(_dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                .SingleInstance();
+
+            builder.RegisterType<ProcessedCandlesRepository>()
+                .As<IProcessedCandlesRepository>()
+                .WithParameter(TypedParameter.From(AzureTableStorage<ProcesssedCandleEntity>.Create(_dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "ProcessedCandles", _log)))
+                .SingleInstance();
+
+            builder.RegisterType<FeedBidAskHistoryRepository>()
+                .As<IFeedBidAskHistoryRepository>()
+                .WithParameter(TypedParameter.From(AzureTableStorage<FeedBidAskHistoryEntity>.Create(_dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "FeedBidAskHistory", _log)))
+                .SingleInstance();
+
+            builder.RegisterType<CandlesMigrationManager>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<CandleMigrationService>()
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }
