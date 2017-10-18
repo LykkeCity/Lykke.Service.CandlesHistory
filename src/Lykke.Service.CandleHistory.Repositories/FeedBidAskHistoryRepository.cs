@@ -129,7 +129,7 @@ namespace Lykke.Service.CandleHistory.Repositories
             {
                 var yieldResult = new List<IFeedBidAskHistory>();
 
-                foreach (var historyItem in chunk.Where(item => item.DateTime >= startDate && item.DateTime <= endDate))
+                foreach (var historyItem in chunk.SkipWhile(item => item.DateTime >= startDate).TakeWhile(item => item.DateTime <= endDate))
                 {
                     yieldResult.Add(historyItem.ToDomain());
                 }

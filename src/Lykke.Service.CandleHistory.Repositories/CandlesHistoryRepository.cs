@@ -84,12 +84,12 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        public async Task<DateTime?> GetTopRecordDateTimeAsync(string assetPairId, TimeInterval interval)
+        public async Task<DateTime?> GetTopRecordDateTimeAsync(string assetPairId, TimeInterval interval, PriceType priceType)
         {
             var repo = GetRepo(assetPairId, interval);
             try
             {
-                return await repo.GetTopRecordDateTimeAsync();
+                return await repo.GetTopRecordDateTimeAsync(priceType);
             }
             catch
             {

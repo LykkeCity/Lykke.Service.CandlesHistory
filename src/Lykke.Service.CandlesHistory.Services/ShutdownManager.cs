@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -18,7 +17,6 @@ namespace Lykke.Service.CandlesHistory.Services
         private readonly IEnumerable<ISnapshotSerializer> _snapshotSerializers;
         private readonly ICandlesPersistenceQueue _persistenceQueue;
         private readonly ICandlesPersistenceManager _persistenceManager;
-        private readonly object _lock;
         
         public ShutdownManager(
             ILog log,
@@ -27,73 +25,39 @@ namespace Lykke.Service.CandlesHistory.Services
             ICandlesPersistenceQueue persistenceQueue,
             ICandlesPersistenceManager persistenceManager)
         {
-            _log = log;
+            _log = log.CreateComponentScope(nameof(ShutdownManager));
             _candlesSubcriber = candlesSubscriber;
             _snapshotSerializers = snapshotSerializers;
             _persistenceQueue = persistenceQueue;
             _persistenceManager = persistenceManager;
-
-            _lock = new object();
         }
 
         public async Task ShutdownAsync()
         {
-            if (IsShuttedDown)
-            {
-                return;
-            }
+            // TODO: Migration candles generator snapshot saving
 
-            lock (_lock)
-            {
-                if (IsShuttedDown)
-                {
-                    return;
-                }
+            IsShuttingDown = true;
 
-                while (IsShuttingDown)
-                {
-                    Task.Delay(TimeSpan.FromMilliseconds(100)).Wait();
-                }
-
-                if (IsShuttedDown)
-                {
-                    return;
-                }
-
-                IsShuttingDown = true;
-            }
-
-            try
-            {
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Stopping persistence manager...");
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping persistence manager...");
                 
-                _persistenceManager.Stop();
+            _persistenceManager.Stop();
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Stopping persistence queue...");
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping persistence queue...");
                 
-                _persistenceQueue.Stop();
+            _persistenceQueue.Stop();
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Stopping candles subscriber...");
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping candles subscriber...");
                 
-                _candlesSubcriber.Stop();
+            _candlesSubcriber.Stop();
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Serializing state...");
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Serializing state...");
 
-                await Task.WhenAll(_snapshotSerializers.Select(s => s.SerializeAsync()));
+            await Task.WhenAll(_snapshotSerializers.Select(s => s.SerializeAsync()));
 
-                await _log.WriteInfoAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", "Shutted down");
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Shutted down");
 
-                IsShuttedDown = true;
-            }
-            catch (Exception ex)
-            {
-                await _log.WriteErrorAsync(nameof(ShutdownManager), nameof(ShutdownAsync), "", ex);
-                throw;
-            }
-            finally
-            {
-                IsShuttingDown = false;
-            }
+            IsShuttedDown = true;
+            IsShuttingDown = false;
         }
     }
 }

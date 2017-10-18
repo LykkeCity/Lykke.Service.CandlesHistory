@@ -90,9 +90,9 @@ namespace Lykke.Service.CandleHistory.Repositories
                 .Where(c => c.Timestamp >= from && c.Timestamp < to);
         }
 
-        public async Task<DateTime?> GetTopRecordDateTimeAsync()
+        public async Task<DateTime?> GetTopRecordDateTimeAsync(PriceType priceType)
         {
-            return (await _tableStorage.GetTopRecordAsync(CandleHistoryEntity.GeneratePartitionKey(PriceType.Ask)))?.DateTime;
+            return (await _tableStorage.GetTopRecordAsync(CandleHistoryEntity.GeneratePartitionKey(priceType)))?.DateTime;
         }
     }
 }

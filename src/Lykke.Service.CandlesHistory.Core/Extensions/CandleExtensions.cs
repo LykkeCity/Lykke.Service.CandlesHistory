@@ -88,9 +88,14 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 throw new InvalidOperationException($"Can't create mid candle of different asset pairs. candle1={askCandle.ToJson()}, candle2={bidCandle.ToJson()}");
             }
 
-            if (askCandle.PriceType == bidCandle.PriceType)
+            if (askCandle.PriceType != PriceType.Ask)
             {
-                throw new InvalidOperationException($"Can't create mid candle of candles with the same price type. candle1={askCandle.ToJson()}, candle2={bidCandle.ToJson()}");
+                throw new InvalidOperationException($"Ask candle should has according price type. candle={askCandle.ToJson()}");
+            }
+
+            if (bidCandle.PriceType != PriceType.Bid)
+            {
+                throw new InvalidOperationException($"Bid candle should has according price type. candle={bidCandle.ToJson()}");
             }
 
             if (askCandle.TimeInterval != bidCandle.TimeInterval)
@@ -110,7 +115,7 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 High = (askCandle.High + bidCandle.High) / 2,
                 Low = (askCandle.Low + bidCandle.Low) / 2,
                 AssetPairId = askCandle.AssetPairId,
-                PriceType = askCandle.PriceType,
+                PriceType = PriceType.Mid,
                 TimeInterval = askCandle.TimeInterval,
                 Timestamp = askCandle.Timestamp
             };

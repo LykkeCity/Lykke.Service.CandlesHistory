@@ -6,7 +6,7 @@ using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Extensions;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles
+namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
 {
     public class CandleMigrationService
     {
@@ -29,26 +29,21 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public async Task<DateTime> GetStartDateAsync(string assetPair, PriceType priceType)
         {
-            DateTime startDate;
-
             var processedCandle = await _processedCandlesRepository.GetProcessedCandleAsync(assetPair, priceType);
 
             if (processedCandle != null)
             {
-                startDate = processedCandle.Date;
-            }
-            else
-            {
-                var topAsk = await _feedHistoryRepository.GetTopRecordAsync(assetPair);
-                startDate = topAsk?.DateTime ?? DateTime.UtcNow;
+                return processedCandle.Date;
             }
 
-            return startDate;
+            var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair);
+
+            return oldestFeedHistory?.DateTime ?? DateTime.UtcNow;
         }
 
-        public async Task<DateTime> GetEndDateAsync(string assetPair)
+        public async Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType)
         {
-            var date = await _candlesHistoryRepository.GetTopRecordDateTimeAsync(assetPair, TimeInterval.Sec);
+            var date = await _candlesHistoryRepository.GetTopRecordDateTimeAsync(assetPair, TimeInterval.Sec, priceType);
 
             return date ?? DateTime.UtcNow;
         }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Common.Log;
@@ -28,7 +27,7 @@ namespace Lykke.Service.CandlesHistory.Services
             ICandlesPersistenceQueue persistenceQueue,
             ICandlesPersistenceManager persistenceManager)
         {
-            _log = log;
+            _log = log.CreateComponentScope(nameof(StartupManager));
             _candlesSubscriber = candlesSubscriber;
             _candlesCacheSnapshotSerializer = candlesCacheSnapshotSerializer;
             _persistenceQueueSnapshotSerializer = persistenceQueueSnapshotSerializer;
@@ -39,47 +38,43 @@ namespace Lykke.Service.CandlesHistory.Services
 
         public async Task StartAsync()
         {
-            try
+            // TODO: Migration candles generator snapshot loading
+
+            // TODO: Continue migration
+
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing persistence queue async...");
+
+            var tasks = new List<Task>
             {
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "",
-                    "Deserializing persistence queue async...");
+                _persistenceQueueSnapshotSerializer.DeserializeAsync()
+            };
 
-                var tasks = new List<Task>
-                {
-                    _persistenceQueueSnapshotSerializer.DeserializeAsync()
-                };
+            //await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing cache...");
 
-                //await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Deserializing cache...");
+            //if (!await _candlesCacheSnapshotSerializer.DeserializeAsync())
+            //{
+            //    await _log.WriteInfoAsync(nameof(StartAsync), "", "Initializing cache from history async...");
 
-                //if (!await _candlesCacheSnapshotSerializer.DeserializeAsync())
-                //{
-                //    await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Initializing cache from history async...");
+            //    tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
+            //}
 
-                //    tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
-                //}
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Waiting for async tasks...");
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Waiting for async tasks...");
+            await Task.WhenAll(tasks);
 
-                await Task.WhenAll(tasks);
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting persistence queue...");
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Starting persistence queue...");
+            _persistenceQueue.Start();
 
-                _persistenceQueue.Start();
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting persistence manager...");
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Starting persistence manager...");
+            _persistenceManager.Start();
 
-                _persistenceManager.Start();
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting candles subscriber...");
 
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Starting candles subscriber...");
+            _candlesSubscriber.Start();
 
-                _candlesSubscriber.Start();
-
-                await _log.WriteInfoAsync(nameof(StartupManager), nameof(StartAsync), "", "Started up");
-            }
-            catch (Exception ex)
-            {
-                await _log.WriteFatalErrorAsync(nameof(StartupManager), nameof(StartAsync), "", ex);
-            }
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Started up");
         }
     }
 }

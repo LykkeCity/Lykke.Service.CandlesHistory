@@ -19,6 +19,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,19 +157,27 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .AsSelf()
                 .PreserveExistingDefaults();
 
+            RegisterCandlesMigration(builder);
+        }
+
+        private void RegisterCandlesMigration(ContainerBuilder builder)
+        {
             builder.RegisterType<FeedHistoryRepository>()
                 .As<IFeedHistoryRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(_dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
+                    _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
                 .SingleInstance();
 
             builder.RegisterType<ProcessedCandlesRepository>()
                 .As<IProcessedCandlesRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<ProcesssedCandleEntity>.Create(_dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "ProcessedCandles", _log)))
+                .WithParameter(TypedParameter.From(AzureTableStorage<ProcesssedCandleEntity>.Create(
+                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "ProcessedCandles", _log)))
                 .SingleInstance();
 
             builder.RegisterType<FeedBidAskHistoryRepository>()
                 .As<IFeedBidAskHistoryRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<FeedBidAskHistoryEntity>.Create(_dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "FeedBidAskHistory", _log)))
+                .WithParameter(TypedParameter.From(AzureTableStorage<FeedBidAskHistoryEntity>.Create(
+                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "FeedBidAskHistory", _log)))
                 .SingleInstance();
 
             builder.RegisterType<CandlesMigrationManager>()

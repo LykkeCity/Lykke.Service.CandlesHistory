@@ -10,6 +10,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval);
         Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, TimeInterval interval, PriceType priceType, DateTime from, DateTime to);
         bool CanStoreAssetPair(string assetPairId);
-        Task<DateTime?> GetTopRecordDateTimeAsync(string assetPairId, TimeInterval interval);
+        Task<DateTime?> GetTopRecordDateTimeAsync(string assetPairId, TimeInterval interval, PriceType priceType);
     }
 }

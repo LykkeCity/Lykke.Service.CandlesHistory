@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles
+namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
 {
-    public class CandlesGenerator
+    public class MigrationCandlesGenerator
     {
         public class Candle : IEquatable<Candle>, ICandle
         {
@@ -123,38 +122,26 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly Dictionary<string, Candle> _candles;
 
-        public CandlesGenerator()
+        public MigrationCandlesGenerator()
         {
             _candles = new Dictionary<string, Candle>();
         }
 
-        public CandleMergeResult Merge(ICandle candle, TimeInterval timeInterval, string type)
+        public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval, PriceType priceType)
         {
-            var key = GetKey(timeInterval, type);
+            var key = GetKey(timeInterval, priceType);
             var newCandle = _candles.TryGetValue(key, out Candle oldCandle) ?
                 Candle.Create(oldCandle, candle) :
                 Candle.Create(candle, timeInterval);
 
             _candles[key] = newCandle;
 
-            return new CandleMergeResult(oldCandle, oldCandle != null && !newCandle.Timestamp.Equals(oldCandle.Timestamp));
+            return new MigrationCandleMergeResult(oldCandle, oldCandle != null && !newCandle.Timestamp.Equals(oldCandle.Timestamp));
         }
 
-        private static string GetKey(TimeInterval timeInterval, string type)
+        private static string GetKey(TimeInterval timeInterval, PriceType type)
         {
             return $"{type}-{timeInterval}";
-        }
-    }
-
-    public class CandleMergeResult
-    {
-        public ICandle Candle { get; }
-        public bool WasChanged { get; }
-
-        public CandleMergeResult(ICandle candle, bool wasChanged)
-        {
-            Candle = candle;
-            WasChanged = wasChanged;
         }
     }
 }

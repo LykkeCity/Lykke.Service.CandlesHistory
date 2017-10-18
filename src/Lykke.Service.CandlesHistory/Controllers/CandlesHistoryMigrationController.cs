@@ -1,4 +1,4 @@
-﻿using Lykke.Service.CandlesHistory.Services.Candles;
+﻿using Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -15,12 +15,14 @@ namespace Lykke.Service.CandlesHistory.Controllers
         }
 
 
-        [HttpGet]
+        [HttpPost]
         [Route("migrateCandles/{assetPair}")]
         public IActionResult Migration(string assetPair)
         {
             var result = _candlesMigrationManager.Migrate(assetPair);
             return Ok(result);
         }
+
+        // TODO: Display progress
     }
 }
