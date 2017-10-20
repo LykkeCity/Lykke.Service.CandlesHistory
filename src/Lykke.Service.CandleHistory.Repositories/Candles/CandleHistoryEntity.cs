@@ -10,7 +10,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class CandleHistoryEntity : ITableEntity
     {

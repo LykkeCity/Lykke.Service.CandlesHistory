@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Lykke.Domain.Prices;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 
 namespace Lykke.Service.CandlesHistory.Core.Extensions
 {

@@ -3,7 +3,7 @@ using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class CandleHistoryItem
     {

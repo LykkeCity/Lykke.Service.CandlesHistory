@@ -3,20 +3,32 @@ using System.Collections.Generic;
 using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
     public class CandlesMigrationManager : IDisposable
     {
+        public IReadOnlyDictionary<string, AssetPairMigrationHealthService> Health => _assetHealthServices;
+
+        private readonly MigrationCandlesGenerator _candlesGenerator;
         private readonly CandleMigrationService _candleMigrationService;
         private readonly ICandlesManager _candlesManager;
         private readonly ILog _log;
-        private readonly Dictionary<string, AssetPairMigrationManager> _assetManagers = new Dictionary<string, AssetPairMigrationManager>();
+        private readonly Dictionary<string, AssetPairMigrationManager> _assetManagers;
+        private readonly Dictionary<string, AssetPairMigrationHealthService> _assetHealthServices;
 
-        public CandlesMigrationManager(CandleMigrationService candleMigrationService, ICandlesManager candlesManager, ILog log)
+        public CandlesMigrationManager(
+            MigrationCandlesGenerator candlesGenerator,
+            CandleMigrationService candleMigrationService, 
+            ICandlesManager candlesManager, 
+            ILog log)
         {
+            _candlesGenerator = candlesGenerator;
             _candleMigrationService = candleMigrationService;
             _candlesManager = candlesManager;
             _log = log;
+
+            _assetManagers = new Dictionary<string, AssetPairMigrationManager>();
+            _assetHealthServices = new Dictionary<string, AssetPairMigrationHealthService>();
         }
 
         public string Migrate(string assetPair)
@@ -28,26 +40,30 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
                     return $"{assetPair} already being processed";
                 }
 
+                var assetHealthService = new AssetPairMigrationHealthService();
                 var assetManager = new AssetPairMigrationManager(
+                    _candlesGenerator,
+                    assetHealthService,
                     assetPair, 
                     _log, 
                     _candleMigrationService, 
                     _candlesManager, 
-                    OnCompleteMigration);
+                    OnMigrationStopped);
 
                 assetManager.Start();
 
+                _assetHealthServices.Add(assetPair, assetHealthService);
                 _assetManagers.Add(assetPair, assetManager);
                 
                  return $"{assetPair} processing is started";
             }
         }
 
-        private void OnCompleteMigration(string asssetPair)
+        private void OnMigrationStopped(string assetPair)
         {
             lock (_assetManagers)
             {
-                _assetManagers.Remove(asssetPair);
+                _assetManagers.Remove(assetPair);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿namespace Lykke.Service.CandleHistory.Repositories
+﻿namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class ConfigurationException : System.Exception
     {

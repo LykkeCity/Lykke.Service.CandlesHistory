@@ -4,24 +4,25 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Extensions;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
     public class CandleMigrationService
     {
-        private readonly IProcessedCandlesRepository _processedCandlesRepository;
+        private readonly IMigrationProgressRepository _migrationProgressRepository;
         private readonly IFeedHistoryRepository _feedHistoryRepository;
         private readonly IFeedBidAskHistoryRepository _feedBidAskHistoryRepository;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
 
         public CandleMigrationService(
-            IProcessedCandlesRepository processedCandlesRepository,
+            IMigrationProgressRepository migrationProgressRepository,
             IFeedHistoryRepository feedHistoryRepository,
             IFeedBidAskHistoryRepository feedBidAskHistoryRepository,
             ICandlesHistoryRepository candlesHistoryRepository)
         {
-            _processedCandlesRepository = processedCandlesRepository;
+            _migrationProgressRepository = migrationProgressRepository;
             _feedHistoryRepository = feedHistoryRepository;
             _feedBidAskHistoryRepository = feedBidAskHistoryRepository;
             _candlesHistoryRepository = candlesHistoryRepository;
@@ -29,11 +30,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
 
         public async Task<DateTime> GetStartDateAsync(string assetPair, PriceType priceType)
         {
-            var processedCandle = await _processedCandlesRepository.GetProcessedCandleAsync(assetPair, priceType);
+            var processedDate = await _migrationProgressRepository.GetProcessedDateAsync(assetPair, priceType);
 
-            if (processedCandle != null)
+            if (processedDate != null)
             {
-                return processedCandle.Date;
+                return processedDate.Value;
             }
 
             var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair);
@@ -63,12 +64,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
             return _feedBidAskHistoryRepository.GetHistoryByChunkAsync(assetPair, startDate, endDate, callback);
         }
 
-        public async Task AddHistoryBidAskByChunkAsync(string assetPair, DateTime date, List<ICandle> askCandles, List<ICandle> bidCandles)
+        public async Task SaveBidAskHistoryAsync(string assetPair, DateTime date, List<ICandle> askCandles, List<ICandle> bidCandles)
         {
-            await _feedBidAskHistoryRepository.AddHistoryItemAsync(assetPair, date, askCandles, bidCandles);
+            await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, date, askCandles, bidCandles);
         }
 
-        public List<ICandle> GenerateMissedCandles(IFeedHistory feedHistory, TimeInterval interval)
+        // TODO: Should generate missed candles not only inside one minute, but even across chunks
+        public List<ICandle> GenerateMissedCandles(IFeedHistory feedHistory)
         {
             var candles = feedHistory.Candles.ToList();
 
@@ -81,13 +83,18 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
             var result = GenerateCandles(candles.ToList());
 
             return result.Select(item =>
-                item.ToCandle(feedHistory.AssetPair, feedHistory.PriceType, feedHistory.DateTime, interval))
+                item.ToCandle(feedHistory.AssetPair, feedHistory.PriceType, feedHistory.DateTime, TimeInterval.Sec))
                 .ToList();
         }
 
-        public async Task SetProcessedCandleAsync(string assetPair, PriceType priceType, DateTime date)
+        public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
         {
-            await _processedCandlesRepository.AddProcessedCandleAsync(assetPair, priceType, date);
+            await _migrationProgressRepository.SetProcessedDateAsync(assetPair, priceType, date);
+        }
+
+        public async Task RemoveProcessedDateAsync(string assetPair)
+        {
+            await _migrationProgressRepository.RemoveProcessedDateAsync(assetPair);
         }
 
         private void GenerateFirstCandle(IList<FeedHistoryItem> candles)

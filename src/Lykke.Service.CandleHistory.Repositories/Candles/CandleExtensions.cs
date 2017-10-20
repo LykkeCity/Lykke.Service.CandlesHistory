@@ -1,10 +1,7 @@
-﻿using System;
-using System.Linq;
-using Common;
-using Lykke.Domain.Prices;
+﻿using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     internal static class CandleExtensions
     {

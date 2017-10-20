@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
-    public class MigrationCandlesGenerator
+    public class MigrationCandlesGenerator : IHaveState<IImmutableDictionary<string, ICandle>>
     {
         public class Candle : IEquatable<Candle>, ICandle
         {
@@ -120,17 +123,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
             }
         }
 
-        private readonly Dictionary<string, Candle> _candles;
+        private Dictionary<string, Candle> _candles;
 
         public MigrationCandlesGenerator()
         {
             _candles = new Dictionary<string, Candle>();
         }
 
-        public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval, PriceType priceType)
+        public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval)
         {
-            var key = GetKey(timeInterval, priceType);
-            var newCandle = _candles.TryGetValue(key, out Candle oldCandle) ?
+            var key = GetKey(timeInterval, candle.PriceType);
+            var newCandle = _candles.TryGetValue(key, out var oldCandle) ?
                 Candle.Create(oldCandle, candle) :
                 Candle.Create(candle, timeInterval);
 
@@ -143,5 +146,26 @@ namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
         {
             return $"{type}-{timeInterval}";
         }
+
+        public IImmutableDictionary<string, ICandle> GetState()
+        {
+            return _candles.ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
+        }
+
+        public void SetState(IImmutableDictionary<string, ICandle> state)
+        {
+            if (_candles.Count > 0)
+            {
+                throw new InvalidOperationException("Candles generator state already not empty");
+            }
+
+            _candles = state.ToDictionary(i => i.Key, i => Candle.Create(i.Value));
+        }
+
+        public string DescribeState(IImmutableDictionary<string, ICandle> state)
+        {
+            return $"Candles count: {state.Count}";
+        }
+
     }
 }

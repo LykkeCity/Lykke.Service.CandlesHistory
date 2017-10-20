@@ -9,17 +9,19 @@ using Common.Log;
 using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
-using Lykke.Service.CandleHistory.Repositories;
+using Lykke.Service.CandleHistory.Repositories.Candles;
+using Lykke.Service.CandleHistory.Repositories.HistoryMigration;
 using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
@@ -168,9 +170,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                     _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
                 .SingleInstance();
 
-            builder.RegisterType<ProcessedCandlesRepository>()
-                .As<IProcessedCandlesRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<ProcesssedCandleEntity>.Create(
+            builder.RegisterType<MigrationProgressRepository>()
+                .As<IMigrationProgressRepository>()
+                .WithParameter(TypedParameter.From(AzureTableStorage<MigrationProgressEntity>.Create(
                     _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "ProcessedCandles", _log)))
                 .SingleInstance();
 
@@ -186,6 +188,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandleMigrationService>()
                 .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<MigrationCandlesGenerator>()
+                .AsSelf()
+                .As<IHaveState<IImmutableDictionary<string, ICandle>>>()
                 .SingleInstance();
         }
     }

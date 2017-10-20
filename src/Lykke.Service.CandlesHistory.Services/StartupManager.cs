@@ -40,7 +40,7 @@ namespace Lykke.Service.CandlesHistory.Services
         {
             // TODO: Migration candles generator snapshot loading
 
-            // TODO: Continue migration
+            // TODO: Continue migrations which were in progress when app was shutted down
 
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing persistence queue async...");
 

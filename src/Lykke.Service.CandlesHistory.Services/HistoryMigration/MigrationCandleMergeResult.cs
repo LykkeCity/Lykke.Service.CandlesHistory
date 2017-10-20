@@ -1,6 +1,6 @@
 ﻿using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
-namespace Lykke.Service.CandlesHistory.Services.Candles.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
     public class MigrationCandleMergeResult
     {

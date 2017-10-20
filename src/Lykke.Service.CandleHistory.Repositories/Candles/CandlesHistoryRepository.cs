@@ -11,7 +11,7 @@ using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.SettingsReader;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class CandlesHistoryRepository : ICandlesHistoryRepository
     {

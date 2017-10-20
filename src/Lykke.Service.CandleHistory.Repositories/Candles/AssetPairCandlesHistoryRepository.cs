@@ -8,7 +8,7 @@ using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     internal sealed class AssetPairCandlesHistoryRepository
     {
