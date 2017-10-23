@@ -73,29 +73,23 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Candle processing
 
         [TestMethod]
-        public void Only_candle_for_existing_enabled_asset_pairs_with_connection_string_are_processed()
+        public void Only_candle_for_asset_pairs_with_connection_string_are_processed()
         {
             // Arrange
             var quote1 = new TestCandle { AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First() };
-            var quote2 = new TestCandle { AssetPairId = "USDRUB", TimeInterval = StoredIntervals.First() };
             var quote3 = new TestCandle { AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First() };
 
             // Act
             _manager.ProcessCandle(quote1);
-            _manager.ProcessCandle(quote2);
             _manager.ProcessCandle(quote3);
 
             // Assert
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
             _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
 
-            _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Never, "No asset pair");
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-            _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
 
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Never, "No asset pair");
             _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
         }
 
         #endregion
@@ -108,13 +102,6 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
                 _manager.GetCandlesAsync("EURRUB", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
-        }
-
-        [TestMethod]
-        public async Task Getting_candles_of_asset_pair_that_doesnt_exists_throws()
-        {
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
-                _manager.GetCandlesAsync("USDRUB", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
         }
 
         [TestMethod]
