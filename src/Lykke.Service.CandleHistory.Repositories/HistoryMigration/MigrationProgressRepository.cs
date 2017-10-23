@@ -22,13 +22,16 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
                 MigrationProgressEntity.GenerateRowKey(priceType)))?.Date;
         }
 
-        public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
+        public Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
         {
-            await _tableStorage.InsertOrReplaceAsync(MigrationProgressEntity.Create(assetPair, priceType, date));
+            return Task.CompletedTask;
+            // await _tableStorage.InsertOrReplaceAsync(MigrationProgressEntity.Create(assetPair, priceType, date));
         }
 
-        public async Task RemoveProcessedDateAsync(string assetPair)
+        public Task RemoveProcessedDateAsync(string assetPair)
         {
+            return Task.CompletedTask;
+            /*
             await Task.WhenAll(
                 _tableStorage.DeleteIfExistAsync(
                     MigrationProgressEntity.GeneratePartitionKey(assetPair),
@@ -39,6 +42,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
                 _tableStorage.DeleteIfExistAsync(
                     MigrationProgressEntity.GeneratePartitionKey(assetPair),
                     MigrationProgressEntity.GenerateRowKey(PriceType.Mid)));
+                    */
         }
     }
 }

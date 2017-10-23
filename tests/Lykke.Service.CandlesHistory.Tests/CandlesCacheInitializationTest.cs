@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -88,7 +88,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _dateTimeProviderMock.SetupGet(p => p.UtcNow).Returns(now);
             _historyRepositoryMock
                 .Setup(r => r.GetCandlesAsync(It.IsAny<string>(), It.IsAny<TimeInterval>(), It.IsAny<PriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new[] { new Candle(), new Candle() });
+                .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new[] { new TestCandle(), new TestCandle() });
 
             // Act
             await _service.InitializeCacheAsync();

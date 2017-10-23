@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Blob;
@@ -11,8 +10,8 @@ using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandleHistory.Repositories.HistoryMigration;
+using Lykke.Service.CandleHistory.Repositories.HistoryMigration.Snapshots;
 using Lykke.Service.CandleHistory.Repositories.Snapshots;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -98,6 +97,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<IShutdownManager>()
                 .SingleInstance();
 
+            builder.RegisterType<SnapshotSerializer>()
+                .As<ISnapshotSerializer>();
+
             builder.RegisterType<CandlesSubscriber>()
                 .As<ICandlesSubscriber>()
                 .WithParameter(TypedParameter.From(_settings.Rabbit.CandlesSubscription))
@@ -109,7 +111,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesCacheService>()
                 .As<ICandlesCacheService>()
-                .As<IHaveState<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
@@ -120,7 +121,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
-                .As<IHaveState<IImmutableList<ICandle>>>()
                 .SingleInstance();
 
             builder.RegisterType<QueueMonitor>()
@@ -143,21 +143,12 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandlesCacheInitalizationService>();
 
             builder.RegisterType<CandlesCacheSnapshotRepository>()
-                .As<ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
+                .As<ICandlesCacheSnapshotRepository>()
                 .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
-
-            builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
-                .As<ISnapshotSerializer>()
-                .AsSelf();
 
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
-                .As<ISnapshotRepository<IImmutableList<ICandle>>>()
+                .As<ICandlesPersistenceQueueSnapshotRepository>()
                 .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
-
-            builder.RegisterType<SnapshotSerializer<IImmutableList<ICandle>>>()
-                .As<ISnapshotSerializer>()
-                .AsSelf()
-                .PreserveExistingDefaults();
 
             RegisterCandlesMigration(builder);
         }
@@ -173,13 +164,13 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<MigrationProgressRepository>()
                 .As<IMigrationProgressRepository>()
                 .WithParameter(TypedParameter.From(AzureTableStorage<MigrationProgressEntity>.Create(
-                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "ProcessedCandles", _log)))
+                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "CandlesHistoryProgress", _log)))
                 .SingleInstance();
 
             builder.RegisterType<FeedBidAskHistoryRepository>()
                 .As<IFeedBidAskHistoryRepository>()
                 .WithParameter(TypedParameter.From(AzureTableStorage<FeedBidAskHistoryEntity>.Create(
-                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "FeedBidAskHistory", _log)))
+                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "BidAskCandlesHistory", _log)))
                 .SingleInstance();
 
             builder.RegisterType<CandlesMigrationManager>()
@@ -192,8 +183,19 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<MigrationCandlesGenerator>()
                 .AsSelf()
-                .As<IHaveState<IImmutableDictionary<string, ICandle>>>()
                 .SingleInstance();
+
+            builder.RegisterType<MissedCandlesGenerator>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<MigrationCandlesGeneratorSnapshotRepository>()
+                .As<IMigrationCandlesGeneratorSnapshotRepository>()
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
+
+            builder.RegisterType<MissedCandlesGeneratorSnapshotRepository>()
+                .As<IMissedCandlesGeneratorSnapshotRepository>()
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
     {
         public static double NextDouble(this Random random, double minValue, double maxValue)
         {
-            return Math.Round(random.NextDouble() * (maxValue - minValue) + minValue, minValue.Places());
+            return random.NextDouble() * (maxValue - minValue) + minValue;
         }
 
         public static int RandomSign(this Random rnd)

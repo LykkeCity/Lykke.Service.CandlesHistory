@@ -46,17 +46,15 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 throw new InvalidOperationException($"Can't merge candles with different timestamps. Source={prevCandle.ToJson()}, update={nextCandle.ToJson()}");
             }
 
-            return new Candle
-            {
-                Open = prevCandle.Open,
-                Close = nextCandle.Close,
-                High = Math.Max(prevCandle.High, nextCandle.High),
-                Low = Math.Min(prevCandle.Low, nextCandle.Low),
-                AssetPairId = prevCandle.AssetPairId,
-                PriceType = prevCandle.PriceType,
-                TimeInterval = prevCandle.TimeInterval,
-                Timestamp = newTimestamp ?? prevCandle.Timestamp
-            };
+            return new Candle(
+                open: prevCandle.Open,
+                close: nextCandle.Close,
+                high: Math.Max(prevCandle.High, nextCandle.High),
+                low: Math.Min(prevCandle.Low, nextCandle.Low),
+                assetPair: prevCandle.AssetPairId,
+                priceType: prevCandle.PriceType,
+                timeInterval: prevCandle.TimeInterval,
+                timestamp: newTimestamp ?? prevCandle.Timestamp);
         }
 
         /// <summary>
@@ -108,17 +106,15 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 throw new InvalidOperationException($"Can't create mid candle from candles with different timestamps. candle1={askCandle.ToJson()}, candle2={bidCandle.ToJson()}");
             }
 
-            return new Candle
-            {
-                Open = (askCandle.Open + bidCandle.Open) / 2,
-                Close = (askCandle.Close + bidCandle.Close) / 2,
-                High = (askCandle.High + bidCandle.High) / 2,
-                Low = (askCandle.Low + bidCandle.Low) / 2,
-                AssetPairId = askCandle.AssetPairId,
-                PriceType = PriceType.Mid,
-                TimeInterval = askCandle.TimeInterval,
-                Timestamp = askCandle.Timestamp
-            };
+            return new Candle(
+                open: (askCandle.Open + bidCandle.Open) / 2,
+                close: (askCandle.Close + bidCandle.Close) / 2,
+                high: (askCandle.High + bidCandle.High) / 2,
+                low: (askCandle.Low + bidCandle.Low) / 2,
+                assetPair: askCandle.AssetPairId,
+                priceType: PriceType.Mid,
+                timeInterval: askCandle.TimeInterval,
+                timestamp: askCandle.Timestamp);
         }
 
         public static List<ICandle> CreateMidCandles(this ICandle[] askCandles, ICandle[] bidCandles)

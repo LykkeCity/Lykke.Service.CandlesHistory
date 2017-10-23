@@ -1,4 +1,5 @@
-﻿using Lykke.Service.CandlesHistory.Services.HistoryMigration;
+﻿using System.Threading.Tasks;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -17,9 +18,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
         [HttpPost]
         [Route("{assetPair}")]
-        public IActionResult Migrate(string assetPair)
+        public async Task<IActionResult> Migrate(string assetPair)
         {
-            var result = _candlesMigrationManager.Migrate(assetPair);
+            var result = await _candlesMigrationManager.MigrateAsync(assetPair);
             return Ok(result);
         }
 

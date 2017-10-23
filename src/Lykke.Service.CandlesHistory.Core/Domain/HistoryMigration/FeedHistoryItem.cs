@@ -25,17 +25,15 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
 
         public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime, TimeInterval timeInterval)
         {
-            return new Candle
-            {
-                Open = Open,
-                Close = Close,
-                High = High,
-                Low = Low,
-                AssetPairId = assetPairId,
-                PriceType = priceType,
-                TimeInterval = timeInterval,
-                Timestamp = baseTime.AddIntervalTicks(Tick, timeInterval)
-            };
+            return new Candle(
+                open: Open,
+                close: Close,
+                high: High,
+                low: Low,
+                assetPair: assetPairId,
+                priceType: priceType,
+                timeInterval: timeInterval,
+                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
         }
     }
 }

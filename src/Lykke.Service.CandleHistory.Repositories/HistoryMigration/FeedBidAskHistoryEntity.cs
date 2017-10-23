@@ -43,19 +43,28 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
             return date.ToString("s");
         }
 
-        public static FeedBidAskHistoryEntity Create(string assetPair, DateTime date, List<ICandle> askCandles, List<ICandle> bidCandles)
+        public static FeedBidAskHistoryEntity Create(string assetPair, DateTime date, IEnumerable<ICandle> askCandles, IEnumerable<ICandle> bidCandles)
         {
+            if (date.Second != 0)
+            {
+                throw new InvalidOperationException($"{nameof(FeedBidAskHistoryEntity)} date should be rounded to the minutes: {assetPair}:{date:O}");
+            }
+
             var entity = new FeedBidAskHistoryEntity
             {
                 PartitionKey = GeneratePartitionKey(assetPair),
                 RowKey = GenerateRowKey(date),
             };
 
-            if (askCandles != null && askCandles.Any())
+            if (askCandles != null)
+            {
                 entity.AskCandles = askCandles.Select(item => item.ToItem(TimeInterval.Sec)).ToArray();
+            }
 
-            if (bidCandles != null && bidCandles.Any())
+            if (bidCandles != null)
+            {
                 entity.BidCandles = bidCandles.Select(item => item.ToItem(TimeInterval.Sec)).ToArray();
+            }
 
             return entity;
         }

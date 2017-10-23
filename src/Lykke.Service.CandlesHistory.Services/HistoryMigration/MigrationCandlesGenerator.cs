@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
+using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
@@ -123,33 +124,37 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        private Dictionary<string, Candle> _candles;
+        private ConcurrentDictionary<string, Candle> _candles;
 
         public MigrationCandlesGenerator()
         {
-            _candles = new Dictionary<string, Candle>();
+            _candles = new ConcurrentDictionary<string, Candle>();
         }
 
         public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval)
         {
-            var key = GetKey(timeInterval, candle.PriceType);
-            var newCandle = _candles.TryGetValue(key, out var oldCandle) ?
-                Candle.Create(oldCandle, candle) :
-                Candle.Create(candle, timeInterval);
+            var key = GetKey(candle.AssetPairId, timeInterval, candle.PriceType);
 
-            _candles[key] = newCandle;
+            Candle oldCandle = null;
+            var newCandle = _candles.AddOrUpdate(key,
+                addValueFactory: k => Candle.Create(candle, timeInterval),
+                updateValueFactory: (k, old) =>
+                {
+                    oldCandle = old;
+                    return Candle.Create(oldCandle, candle);
+                });
 
-            return new MigrationCandleMergeResult(oldCandle, oldCandle != null && !newCandle.Timestamp.Equals(oldCandle.Timestamp));
+            return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));
         }
 
-        private static string GetKey(TimeInterval timeInterval, PriceType type)
+        private static string GetKey(string assetPair, TimeInterval timeInterval, PriceType type)
         {
-            return $"{type}-{timeInterval}";
+            return $"{assetPair}-{type}-{timeInterval}";
         }
 
         public IImmutableDictionary<string, ICandle> GetState()
         {
-            return _candles.ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
+            return _candles.ToArray().ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
         }
 
         public void SetState(IImmutableDictionary<string, ICandle> state)
@@ -159,7 +164,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 throw new InvalidOperationException("Candles generator state already not empty");
             }
 
-            _candles = state.ToDictionary(i => i.Key, i => Candle.Create(i.Value));
+            _candles = new ConcurrentDictionary<string, Candle>(state.ToDictionary(
+                i => i.Key,
+                i => Candle.Create(i.Value)));
         }
 
         public string DescribeState(IImmutableDictionary<string, ICandle> state)
@@ -167,5 +174,15 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return $"Candles count: {state.Count}";
         }
 
+        public void RemoveAssetPair(string assetPair)
+        {
+            foreach (var priceType in Constants.StoredPriceTypes)
+            {
+                foreach (var timeInterval in Constants.StoredIntervals)
+                {
+                    _candles.TryRemove(GetKey(assetPair, timeInterval, priceType), out var candle);
+                }
+            }
+        }
     }
 }

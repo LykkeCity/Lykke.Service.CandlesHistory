@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
@@ -28,7 +28,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _candlesHistoryRepository = candlesHistoryRepository;
         }
 
-        public async Task<DateTime> GetStartDateAsync(string assetPair, PriceType priceType)
+        public async Task<DateTime?> GetStartDateAsync(string assetPair, PriceType priceType)
         {
             var processedDate = await _migrationProgressRepository.GetProcessedDateAsync(assetPair, priceType);
 
@@ -39,14 +39,18 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair);
 
-            return oldestFeedHistory?.DateTime ?? DateTime.UtcNow;
+            return oldestFeedHistory?.DateTime;
         }
 
-        public async Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType)
+        public async Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType, DateTime now)
         {
-            var date = await _candlesHistoryRepository.GetTopRecordDateTimeAsync(assetPair, TimeInterval.Sec, priceType);
+            var date = await _candlesHistoryRepository.GetFirstCandleDateTimeAsync(
+                assetPair, 
+                TimeInterval.Sec,
+                priceType);
 
-            return date ?? DateTime.UtcNow;
+            // Sec candles packed into the minute rows, so round to the minute
+            return date ?? now.RoundTo(TimeInterval.Sec);
         }
 
         public async Task<IFeedHistory> GetFeedHistoryItemAsync(string assetPair, PriceType priceType, string rowKey)
@@ -54,37 +58,42 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return await _feedHistoryRepository.GetCandle(assetPair, priceType, rowKey);
         }
 
-        public Task GetCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate, Func<IEnumerable<IFeedHistory>, PriceType, Task> callback)
+        public Task GetFeedHistoryCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate,
+            Func<IEnumerable<IFeedHistory>, PriceType, Task> callback)
         {
             return _feedHistoryRepository.GetCandlesByChunkAsync(assetPair, priceType, startDate, endDate, callback);
         }
 
-        public Task GetHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate, Func<IEnumerable<IFeedBidAskHistory>, Task> callback)
+        public Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
+            Func<IEnumerable<IFeedBidAskHistory>, Task> callback)
         {
             return _feedBidAskHistoryRepository.GetHistoryByChunkAsync(assetPair, startDate, endDate, callback);
         }
 
-        public async Task SaveBidAskHistoryAsync(string assetPair, DateTime date, List<ICandle> askCandles, List<ICandle> bidCandles)
+        public async Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
         {
-            await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, date, askCandles, bidCandles);
-        }
+            var grouppedCandles = candles.GroupBy(c => c.Timestamp.RoundToMinute());
 
-        // TODO: Should generate missed candles not only inside one minute, but even across chunks
-        public List<ICandle> GenerateMissedCandles(IFeedHistory feedHistory)
-        {
-            var candles = feedHistory.Candles.ToList();
+            switch (priceType)
+            {
+                case PriceType.Bid:
+                    foreach (var minuteGroup in grouppedCandles)
+                    {
+                        await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, minuteGroup.Key, null, minuteGroup);
 
-            if (candles[0].Tick != 1)
-                GenerateFirstCandle(candles);
+                    }
+                    break;
 
-            if (candles[candles.Count - 1].Tick != 59)
-                GenerateLastCandle(candles);
+                case PriceType.Ask:
+                    foreach (var minuteGroup in grouppedCandles)
+                    {
+                        await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, minuteGroup.Key, minuteGroup, null);
+                    }
+                    break;
 
-            var result = GenerateCandles(candles.ToList());
-
-            return result.Select(item =>
-                item.ToCandle(feedHistory.AssetPair, feedHistory.PriceType, feedHistory.DateTime, TimeInterval.Sec))
-                .ToList();
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(priceType), priceType, "Only ask or bid price types are available");
+            }
         }
 
         public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
@@ -95,49 +104,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public async Task RemoveProcessedDateAsync(string assetPair)
         {
             await _migrationProgressRepository.RemoveProcessedDateAsync(assetPair);
-        }
-
-        private void GenerateFirstCandle(IList<FeedHistoryItem> candles)
-        {
-            int places = candles[0].Open.Places();
-
-            var rnd = new Random();
-            var delta = candles.Count == 1 ? rnd.RandomSign() * 4 / Math.Pow(10, places) : candles[0].Open - candles[1].Open;
-            var value = Math.Round(candles[0].Open + delta, places);
-            candles.Insert(0, new FeedHistoryItem(value, value, value, value, 1));
-        }
-
-        private void GenerateLastCandle(IList<FeedHistoryItem> candles)
-        {
-            int places = candles[candles.Count - 1].Open.Places();
-
-            var delta = candles[candles.Count - 1].Open - candles[candles.Count - 2].Open;
-            var value = Math.Round(candles[candles.Count - 1].Open + delta, places);
-            candles.Add(new FeedHistoryItem(value, value, value, value, 59));
-        }
-
-        private List<FeedHistoryItem> GenerateCandles(List<FeedHistoryItem> candles)
-        {
-            var rnd = new Random();
-            var result = new List<FeedHistoryItem>();
-
-            for (var i = 0; i < candles.Count - 1; i++)
-            {
-                var firstTick = candles[i].Tick;
-                var lastTick = candles[i + 1].Tick;
-
-                for (var s = firstTick + 1; s < lastTick; s++)
-                {
-                    double min = Math.Min(candles[i + 1].Open, candles[i].Open);
-                    double max = Math.Max(candles[i + 1].Open, candles[i].Open);
-                    var value = rnd.NextDouble(min, max);
-                    var newCandle = new FeedHistoryItem(value, value, value, value, s);
-                    result.Add(newCandle);
-                }
-            }
-
-            candles.AddRange(result);
-            return candles.OrderBy(item => item.Tick).ToList();
         }
     }
 }

@@ -4,27 +4,29 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
+using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using MessagePack;
 
-namespace Lykke.Service.CandleHistory.Repositories.Snapshots
+namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.Snapshots
 {
-    public class CandlesCacheSnapshotRepository : ICandlesCacheSnapshotRepository
+    public class MigrationCandlesGeneratorSnapshotRepository : IMigrationCandlesGeneratorSnapshotRepository
     {
-        private const string Key = "CandlesCache";
+        private const string Key = "MigrationCandlesGenerator";
 
         private readonly IBlobStorage _storage;
 
-        public CandlesCacheSnapshotRepository(IBlobStorage storage)
+        public MigrationCandlesGeneratorSnapshotRepository(IBlobStorage storage)
         {
             _storage = storage;
         }
 
-        public async Task SaveAsync(IImmutableDictionary<string, IImmutableList<ICandle>> state)
+        public async Task SaveAsync(IImmutableDictionary<string, ICandle> state)
         {
             using (var stream = new MemoryStream())
             {
-                var model = state.ToDictionary(i => i.Key, i => i.Value.Select(SnapshotCandleEntity.Create));
+                var model = state.ToDictionary(i => i.Key, i => SnapshotCandleEntity.Create(i.Value));
 
                 MessagePackSerializer.Serialize(stream, model);
 
@@ -35,7 +37,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
             }
         }
 
-        public async Task<IImmutableDictionary<string, IImmutableList<ICandle>>> TryGetAsync()
+        public async Task<IImmutableDictionary<string, ICandle>> TryGetAsync()
         {
             if (!await _storage.HasBlobAsync(Constants.SnapshotsContainer, Key))
             {
@@ -44,9 +46,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 
             using (var stream = await _storage.GetAsync(Constants.SnapshotsContainer, Key))
             {
-                var model = MessagePackSerializer.Deserialize<Dictionary<string, IEnumerable<SnapshotCandleEntity>>>(stream);
+                var model = MessagePackSerializer.Deserialize<Dictionary<string, SnapshotCandleEntity>>(stream);
 
-                return model.ToImmutableDictionary(i => i.Key, i => (IImmutableList<ICandle>) i.Value.ToImmutableList<ICandle>());
+                return model.ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
             }
         }
     }

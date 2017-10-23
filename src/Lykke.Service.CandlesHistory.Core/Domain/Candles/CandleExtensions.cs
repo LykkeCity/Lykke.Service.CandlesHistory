@@ -84,17 +84,15 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
 
             if (count > 0)
             {
-                return new Candle
-                {
-                    Open = open,
-                    Close = close,
-                    High = high,
-                    Low = low,
-                    AssetPairId = assetPairId,
-                    PriceType = priceType,
-                    TimeInterval = timeInterval,
-                    Timestamp = newTimestamp ?? timestamp
-                };
+                return new Candle(
+                    open: open,
+                    close: close,
+                    high: high,
+                    low: low,
+                    assetPair: assetPairId,
+                    priceType: priceType,
+                    timeInterval: timeInterval,
+                    timestamp: newTimestamp ?? timestamp);
             }
 
             return null;

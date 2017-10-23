@@ -19,8 +19,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         }
 
         public IReadOnlyList<ProgressHistoryItem> OverallProgressHistory => _overallProgressHistory;
-        public DateTime AskStartDate { get; private set; }
-        public DateTime BidStartDate { get; private set; }
+        public DateTime? AskStartDate { get; private set; }
+        public DateTime? BidStartDate { get; private set; }
         public DateTime AskEndDate { get; private set; }
         public DateTime BidEndDate { get; private set; }
         public DateTime CurrentAskDate { get; private set; }
@@ -39,7 +39,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _overallProgressHistory.Add(new ProgressHistoryItem(progress));
         }
 
-        public void UpdateStartDates(DateTime askStartDate, DateTime bidStartDate)
+        public void UpdateStartDates(DateTime? askStartDate, DateTime? bidStartDate)
         {
             AskStartDate = askStartDate;
             BidStartDate = bidStartDate;

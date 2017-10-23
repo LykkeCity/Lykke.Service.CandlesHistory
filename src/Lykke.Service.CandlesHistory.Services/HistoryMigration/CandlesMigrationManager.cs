@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -10,53 +13,80 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public IReadOnlyDictionary<string, AssetPairMigrationHealthService> Health => _assetHealthServices;
 
         private readonly MigrationCandlesGenerator _candlesGenerator;
+        private readonly MissedCandlesGenerator _missedCandlesGenerator;
         private readonly CandleMigrationService _candleMigrationService;
-        private readonly ICandlesManager _candlesManager;
+        private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
+        private readonly ICachedAssetsService _assetPairsManager;
+        private readonly ICandlesHistoryRepository _candlesHistoryRepository;
         private readonly ILog _log;
         private readonly Dictionary<string, AssetPairMigrationManager> _assetManagers;
         private readonly Dictionary<string, AssetPairMigrationHealthService> _assetHealthServices;
 
         public CandlesMigrationManager(
             MigrationCandlesGenerator candlesGenerator,
+            MissedCandlesGenerator missedCandlesGenerator,
             CandleMigrationService candleMigrationService, 
-            ICandlesManager candlesManager, 
+            ICandlesPersistenceQueue candlesPersistenceQueue,
+            ICachedAssetsService cachedAssetsService,
+            ICandlesHistoryRepository candlesHistoryRepository,
             ILog log)
         {
             _candlesGenerator = candlesGenerator;
+            _missedCandlesGenerator = missedCandlesGenerator;
             _candleMigrationService = candleMigrationService;
-            _candlesManager = candlesManager;
+            _candlesPersistenceQueue = candlesPersistenceQueue;
+            _assetPairsManager = cachedAssetsService;
+            _candlesHistoryRepository = candlesHistoryRepository;
             _log = log;
 
             _assetManagers = new Dictionary<string, AssetPairMigrationManager>();
             _assetHealthServices = new Dictionary<string, AssetPairMigrationHealthService>();
         }
 
-        public string Migrate(string assetPair)
+        public async Task<string> MigrateAsync(string assetPairId)
         {
+            if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
+            {
+                return $"Connection string for the asset pair '{assetPairId}' not configuer";
+            }
+
+            var assetPair = await _assetPairsManager.TryGetAssetPairAsync(assetPairId);
+
+            if (assetPair == null)
+            {
+                return $"Asset pair '{assetPairId}' not found";
+            }
+
             lock (_assetManagers)
             {
-                if (_assetManagers.ContainsKey(assetPair))
+                if (_assetManagers.ContainsKey(assetPairId))
                 {
-                    return $"{assetPair} already being processed";
+                    return $"{assetPairId} already being processed";
                 }
 
                 var assetHealthService = new AssetPairMigrationHealthService();
                 var assetManager = new AssetPairMigrationManager(
+                    _candlesPersistenceQueue,
                     _candlesGenerator,
+                    _missedCandlesGenerator,
                     assetHealthService,
                     assetPair, 
                     _log, 
                     _candleMigrationService, 
-                    _candlesManager, 
                     OnMigrationStopped);
 
                 assetManager.Start();
 
-                _assetHealthServices.Add(assetPair, assetHealthService);
-                _assetManagers.Add(assetPair, assetManager);
+                _assetHealthServices.Add(assetPairId, assetHealthService);
+                _assetManagers.Add(assetPairId, assetManager);
                 
-                 return $"{assetPair} processing is started";
+                 return $"{assetPairId} processing is started";
             }
+        }
+
+        public void Resume()
+        {
+            // TODO: Implement it if needed
         }
 
         private void OnMigrationStopped(string assetPair)
@@ -64,6 +94,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             lock (_assetManagers)
             {
                 _assetManagers.Remove(assetPair);
+                _candlesGenerator.RemoveAssetPair(assetPair);
+                _missedCandlesGenerator.RemoveAssetPair(assetPair);
             }
         }
 

@@ -10,7 +10,7 @@ using MessagePack;
 
 namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 {
-    public class CandlesPersistenceQueueSnapshotRepository : ISnapshotRepository<IImmutableList<ICandle>>
+    public class CandlesPersistenceQueueSnapshotRepository : ICandlesPersistenceQueueSnapshotRepository
     {
         private const string Key = "CandlesPersistenceQueue";
 

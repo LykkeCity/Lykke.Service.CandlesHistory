@@ -1,6 +1,5 @@
 ﻿using System;
 using Lykke.Domain.Prices;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
 {
@@ -15,46 +14,31 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         public double High { get; set; }
         public double Low { get; set; }
 
+        public Candle(string assetPair, PriceType priceType, TimeInterval timeInterval, DateTime timestamp, double open, double close, double high, double low)
+        {
+            AssetPairId = assetPair;
+            PriceType = priceType;
+            TimeInterval = timeInterval;
+            Timestamp = timestamp;
+            Open = open;
+            Close = close;
+            High = high;
+            Low = low;
+        }
+
         public static Candle Create(ICandle candle)
         {
-            return new Candle
-            {
-                AssetPairId = candle.AssetPairId,
-                PriceType = candle.PriceType,
-                TimeInterval = candle.TimeInterval,
-                Timestamp = candle.Timestamp,
-                Open = candle.Open,
-                Close = candle.Close,
-                Low = candle.Low,
-                High = candle.High
-            };
-        }
+            return new Candle(
 
-        public static Candle Create(ICandle candle, TimeInterval interval)
-        {
-            return new Candle
-            {
-                AssetPairId = candle.AssetPairId,
-                PriceType = candle.PriceType,
-                TimeInterval = interval,
-                Timestamp = candle.Timestamp,
-                Open = candle.Open,
-                Close = candle.Close,
-                Low = candle.Low,
-                High = candle.High
-            };
-        }
-
-        public static Candle Create(ICandle oldCandle, ICandle newCandle)
-        {
-            var intervalTimestamp = newCandle.Timestamp.RoundTo(oldCandle.TimeInterval);
-
-            // Start new candle?
-            if (intervalTimestamp != oldCandle.Timestamp)
-                return Create(newCandle);
-
-            // Merge candles
-            return Create(oldCandle.MergeWith(newCandle));
+                assetPair: candle.AssetPairId,
+                priceType: candle.PriceType,
+                timeInterval: candle.TimeInterval,
+                timestamp: candle.Timestamp,
+                open: candle.Open,
+                close: candle.Close,
+                high: candle.High,
+                low: candle.Low
+            );
         }
     }
 }

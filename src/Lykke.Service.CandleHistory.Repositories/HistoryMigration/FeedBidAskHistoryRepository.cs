@@ -17,7 +17,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
             _tableStorage = tableStorage;
         }
 
-        public async Task SaveHistoryItemAsync(string assetPair, DateTime date, List<ICandle> askCandles, List<ICandle> bidCandles)
+        public async Task SaveHistoryItemAsync(string assetPair, DateTime date, IEnumerable<ICandle> askCandles, IEnumerable<ICandle> bidCandles)
         {
             await _tableStorage.InsertOrMergeAsync(FeedBidAskHistoryEntity.Create(assetPair, date, askCandles, bidCandles));
         }
