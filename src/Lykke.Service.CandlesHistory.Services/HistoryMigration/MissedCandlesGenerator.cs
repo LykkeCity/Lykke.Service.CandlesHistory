@@ -145,15 +145,19 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             double startPrice, 
             double endPrice)
         {
+            //Console.WriteLine($"Generating missed candles: {exclusiveStartDate} - {exclusiveEndDate}, {startPrice} - {endPrice}");
+
+            var prevPrice = startPrice;
+
             for (var timestamp = exclusiveStartDate.AddSeconds(1); timestamp < exclusiveEndDate; timestamp = timestamp.AddSeconds(1))
             {
-                var min = Math.Min(startPrice, endPrice);
-                var max = Math.Max(startPrice, endPrice);
+                var min = Math.Min(prevPrice, endPrice);
+                var max = Math.Max(prevPrice, endPrice);
                 var halfDeviation = (max - min) / min * 2; // % of mid
 
-                if (halfDeviation < 0.0001)
+                if (halfDeviation < 0.01)
                 {
-                    halfDeviation = 0.0001;
+                    halfDeviation = 0.01;
                 }
 
                 var mid = _rnd.NextDouble(min, max);
@@ -164,6 +168,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 var low = Math.Min(lowHigh1, lowHigh2);
                 var high = Math.Max(lowHigh1, lowHigh2);
 
+                //Console.WriteLine($"Generated candle: {timestamp}, {open}, {close}, {low}, {high}");
+                
                 var newCandle = new Candle(
                     assetPair: assetPair.Id,
                     priceType: priceType,
