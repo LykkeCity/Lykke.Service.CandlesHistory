@@ -211,7 +211,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return;
                 }
 
-                if (feedHistory.AskCandles.Any() && feedHistory.BidCandles.Any())
+                if (feedHistory.AskCandles != null && feedHistory.BidCandles != null)
                 {
                     var midSecCandles = feedHistory.AskCandles.CreateMidCandles(feedHistory.BidCandles);
 

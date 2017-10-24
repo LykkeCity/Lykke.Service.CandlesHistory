@@ -19,8 +19,8 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
         public DateTimeOffset Timestamp { get; set; }
         public string ETag { get; set; }
         public string AssetPair => PartitionKey;
-        public CandleHistoryItem[] BidCandles { get; set; } = Array.Empty<CandleHistoryItem>();
-        public CandleHistoryItem[] AskCandles { get; set; } = Array.Empty<CandleHistoryItem>();
+        public CandleHistoryItem[] BidCandles { get; set; }
+        public CandleHistoryItem[] AskCandles { get; set; }
 
         public DateTime DateTime
         {
@@ -54,18 +54,10 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
             {
                 PartitionKey = GeneratePartitionKey(assetPair),
                 RowKey = GenerateRowKey(date),
+                AskCandles = askCandles?.Select(item => item.ToItem(TimeInterval.Sec)).ToArray(),
+                BidCandles = bidCandles?.Select(item => item.ToItem(TimeInterval.Sec)).ToArray(),
             };
-
-            if (askCandles != null)
-            {
-                entity.AskCandles = askCandles.Select(item => item.ToItem(TimeInterval.Sec)).ToArray();
-            }
-
-            if (bidCandles != null)
-            {
-                entity.BidCandles = bidCandles.Select(item => item.ToItem(TimeInterval.Sec)).ToArray();
-            }
-
+            
             return entity;
         }
 
@@ -75,8 +67,8 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
             {
                 AssetPair = AssetPair,
                 DateTime = DateTime,
-                AskCandles = AskCandles.Select(item => item.ToCandle(AssetPair, PriceType.Ask, DateTime, TimeInterval.Sec)).ToArray(),
-                BidCandles = BidCandles.Select(item => item.ToCandle(AssetPair, PriceType.Bid, DateTime, TimeInterval.Sec)).ToArray()
+                AskCandles = AskCandles?.Select(item => item.ToCandle(AssetPair, PriceType.Ask, DateTime, TimeInterval.Sec)).ToArray(),
+                BidCandles = BidCandles?.Select(item => item.ToCandle(AssetPair, PriceType.Bid, DateTime, TimeInterval.Sec)).ToArray()
             };
         }
 
@@ -105,14 +97,17 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
 
         public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            var askCandles = JsonConvert.SerializeObject(AskCandles);
-            var bidCandles = JsonConvert.SerializeObject(BidCandles);
+            var dict = new Dictionary<string, EntityProperty>();
 
-            var dict = new Dictionary<string, EntityProperty>
+            if (AskCandles != null)
             {
-                {"AskCandles", new EntityProperty(askCandles)},
-                {"BidCandles", new EntityProperty(bidCandles)}
-            };
+                dict.Add("AskCandles", new EntityProperty(JsonConvert.SerializeObject(AskCandles)));
+            }
+
+            if (BidCandles != null)
+            {
+                dict.Add("BidCandles", new EntityProperty(JsonConvert.SerializeObject(BidCandles)));
+            }
 
             return dict;
         }
