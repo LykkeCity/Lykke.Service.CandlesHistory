@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Common.Log;
 using Lykke.Domain.Prices;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -28,14 +29,18 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public DateTime CurrentMidDate { get; private set; }
         
         private readonly List<ProgressHistoryItem> _overallProgressHistory;
-
-        public AssetPairMigrationHealthService()
+        private readonly ILog _log;
+        
+        public AssetPairMigrationHealthService(ILog log)
         {
+            _log = log;
             _overallProgressHistory = new List<ProgressHistoryItem>();
         }
 
         public void UpdateOverallProgress(string progress)
         {
+            _log.WriteInfoAsync(nameof(AssetPairMigrationHealthService), nameof(UpdateOverallProgress), "", progress);
+
             _overallProgressHistory.Add(new ProgressHistoryItem(progress));
         }
 

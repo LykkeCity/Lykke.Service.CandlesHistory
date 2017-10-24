@@ -64,7 +64,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return $"{assetPairId} already being processed";
                 }
 
-                var assetHealthService = new AssetPairMigrationHealthService();
+                var assetHealthService = new AssetPairMigrationHealthService(_log);
                 var assetManager = new AssetPairMigrationManager(
                     _candlesPersistenceQueue,
                     _candlesGenerator,
