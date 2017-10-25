@@ -135,7 +135,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.Rabbit.FailedToPersistPublication))
                 .WithParameter(TypedParameter.From<IPublishingQueueRepository>(
                     new MessagePackBlobPublishingQueueRepository(
-                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString)))))
+                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10)))))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheInitalizationService>()
@@ -144,11 +144,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesCacheSnapshotRepository>()
                 .As<ICandlesCacheSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
 
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
                 .As<ICandlesPersistenceQueueSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
 
             RegisterCandlesMigration(builder);
         }
