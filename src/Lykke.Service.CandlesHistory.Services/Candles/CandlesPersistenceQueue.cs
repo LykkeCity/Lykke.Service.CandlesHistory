@@ -110,7 +110,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
             finally
             {
-                _healthService.TraceCandlesBatchPersisted();
+                _healthService.TraceCandlesBatchPersisted(candles.Count);
             }
 #if DEBUG
             await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 

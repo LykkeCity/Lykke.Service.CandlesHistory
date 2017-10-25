@@ -17,7 +17,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services
      
         void TraceEnqueueCandle();
         void TraceCandlesBatchDispatched(int candlesCount);
-        void TraceCandlesBatchPersisted();
+        void TraceCandlesBatchPersisted(int candlesCount);
 
         void TraceSetPersistenceQueueState(int amountOfCandlesToDispatch);
     }
