@@ -76,9 +76,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return false;
             }
 
-            // 10 millions still works on dev and is 5556 asset pair (ask, bid, mid) updates per second, which seems enough
-            candlesCount = Math.Min(candlesCount, 10000000);
-
             var candles = new List<ICandle>(candlesCount);
 
             for (var i = 0; i < candlesCount; i++)
