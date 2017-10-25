@@ -182,12 +182,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 throw new InvalidOperationException($"Failed to parse RowKey '{value}' as DateTime");
             }
 
-            if (date.Kind != DateTimeKind.Utc)
-            {
-                throw new InvalidOperationException($"RowKey '{value}' DateTime should be UTC");
-            }
-
-            return date;
+            return DateTime.SpecifyKind(date, DateTimeKind.Utc);
         }
     }
 }
