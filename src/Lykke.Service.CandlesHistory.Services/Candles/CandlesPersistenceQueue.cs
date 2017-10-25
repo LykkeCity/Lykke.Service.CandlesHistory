@@ -168,6 +168,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 }
                 catch (Exception ex)
                 {
+                    await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(InsertAssetPairCandlesAsync), "", ex);
+
                     await _failedToPersistCandlesPublisher.ProduceAsync(new FailedCandlesEnvelope
                     {
                         ProcessingMoment = DateTime.UtcNow,

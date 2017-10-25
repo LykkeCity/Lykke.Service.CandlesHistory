@@ -5,7 +5,6 @@ using System.Linq;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
@@ -22,6 +21,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
             PartitionKey = partitionKey;
             RowKey = rowKey;
+            Candles = new List<CandleHistoryItem>();
         }
 
         #region ITableEntity properties
