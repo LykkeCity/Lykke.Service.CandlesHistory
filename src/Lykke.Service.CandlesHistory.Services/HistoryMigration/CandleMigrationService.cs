@@ -72,28 +72,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         public async Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
         {
-            var grouppedCandles = candles.GroupBy(c => c.Timestamp.RoundToMinute());
-
-            switch (priceType)
-            {
-                case PriceType.Bid:
-                    foreach (var minuteGroup in grouppedCandles)
-                    {
-                        await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, minuteGroup.Key, null, minuteGroup);
-
-                    }
-                    break;
-
-                case PriceType.Ask:
-                    foreach (var minuteGroup in grouppedCandles)
-                    {
-                        await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, minuteGroup.Key, minuteGroup, null);
-                    }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(priceType), priceType, "Only ask or bid price types are available");
-            }
+            await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, candles, priceType);
         }
 
         public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)

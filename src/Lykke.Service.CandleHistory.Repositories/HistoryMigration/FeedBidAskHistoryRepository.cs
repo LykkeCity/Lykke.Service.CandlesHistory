@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
+using Common;
+using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -18,9 +20,13 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
             _tableStorage = tableStorage;
         }
 
-        public async Task SaveHistoryItemAsync(string assetPair, DateTime date, IEnumerable<ICandle> askCandles, IEnumerable<ICandle> bidCandles)
+        public async Task SaveHistoryItemAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
         {
-            await _tableStorage.InsertOrMergeAsync(FeedBidAskHistoryEntity.Create(assetPair, date, askCandles, bidCandles));
+            var entities = candles
+                .GroupBy(c => c.Timestamp.RoundToMinute())
+                .Select(g => FeedBidAskHistoryEntity.Create(assetPair, g.Key, g, priceType));
+
+            await _tableStorage.InsertOrMergeBatchAsync(entities);
         }
 
         public Task GetHistoryByChunkAsync(string assetPair, DateTime startDate, DateTime endDate, Func<IEnumerable<IFeedBidAskHistory>, Task> chunkCallback)

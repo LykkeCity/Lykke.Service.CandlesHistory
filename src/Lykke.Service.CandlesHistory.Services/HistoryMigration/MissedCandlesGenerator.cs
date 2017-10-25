@@ -137,7 +137,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return $"Candles count: {state.Count}";
         }
 
-        private IEnumerable<ICandle> GenerateCandles(
+        public IEnumerable<ICandle> GenerateCandles(
             IAssetPair assetPair, 
             PriceType priceType, 
             DateTime exclusiveStartDate, 

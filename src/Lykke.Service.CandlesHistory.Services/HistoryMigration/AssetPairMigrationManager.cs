@@ -54,9 +54,67 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _cts = new CancellationTokenSource();
         }
 
+        public void StartRandom(DateTime start, DateTime end, double startPrice, double endPrice)
+        {
+            Task.Run(() => RandomizeAsync(start, end, startPrice, endPrice).Wait());
+        }
+
         public void Start()
         {
             Task.Run(() => MigrateAsync().Wait());
+        }
+
+        private async Task RandomizeAsync(DateTime start, DateTime end, double startPrice, double endPrice)
+        {
+            try
+            {
+                _healthService.UpdateOverallProgress($"Randomizing bid and ask candles in the dates range {start} - {end} and prices {startPrice} - {endPrice}");
+                _healthService.UpdateStartDates(start, start);
+                _healthService.UpdateEndDates(end, end);
+
+                await Task.WhenAll(
+                    RandomizeCandlesAsync(PriceType.Ask, start, end, startPrice, endPrice),
+                    RandomizeCandlesAsync(PriceType.Bid, start, end, startPrice, endPrice));
+
+                _healthService.UpdateOverallProgress("Generating mid history");
+
+                await GenerateMidHistoryAsync(start, start, end, end);
+                
+                await _candleMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
+
+                _healthService.UpdateOverallProgress("Done");
+            }
+            catch (Exception ex)
+            {
+                _healthService.UpdateOverallProgress($"Failed: {ex}");
+
+                await _log.WriteErrorAsync(nameof(AssetPairMigrationManager), nameof(MigrateAsync), _assetPair.Id, ex);
+            }
+            finally
+            {
+                try
+                {
+                    _onStoppedAction.Invoke(_assetPair.Id);
+                }
+                catch (Exception ex)
+                {
+                    await _log.WriteErrorAsync(nameof(AssetPairMigrationManager), nameof(MigrateAsync), _assetPair.Id, ex);
+                }
+            }
+        }
+
+        private async Task RandomizeCandlesAsync(PriceType priceType, DateTime start, DateTime end, double startPrice, double endPrice)
+        {
+            var secCandles = _missedCandlesGenerator
+                .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice)
+                .ToArray();
+
+            if (ProcessSecCandles(secCandles))
+            {
+                return;
+            }
+
+            await _candleMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
         }
 
         private async Task MigrateAsync()
