@@ -160,13 +160,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 try
                 {
-                    var mergedCandles = group
-                        .GroupBy(c => c.Timestamp)
-                        .Select(g => g.MergeAll())
-                        .ToArray();
-
                     await _repository.InsertOrMergeAsync(
-                        mergedCandles,
+                        group.ToArray(),
                         assetPairId,
                         group.Key.PriceType,
                         group.Key.TimeInterval);

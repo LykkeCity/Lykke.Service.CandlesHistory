@@ -34,5 +34,16 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 timeInterval: timeInterval,
                 timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
         }
+
+        /// <summary>
+        /// Merges candle change with the same asset pair, price type, time interval and timestamp
+        /// </summary>
+        /// <param name="candleChange">Candle change</param>
+        public void InplaceMergeWith(ICandle candleChange)
+        {
+            Close = candleChange.Close;
+            High = Math.Max(High, candleChange.High);
+            Low = Math.Min(Low, candleChange.Low);
+        }
     }
 }

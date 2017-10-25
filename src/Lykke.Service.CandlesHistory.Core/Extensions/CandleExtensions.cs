@@ -10,51 +10,94 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
     public static class CandleExtensions
     {
         /// <summary>
-        /// Merges two candles placed in chronological order
+        /// Merges all of candles placed in chronological order
         /// </summary>
-        /// <param name="prevCandle">Previous candle</param>
-        /// <param name="nextCandle">Next candle</param>
+        /// <param name="candles">Candles in hronological order</param>
         /// <param name="newTimestamp">
         /// <see cref="ICandle.Timestamp"/> of merged candle, if not specified, 
-        /// then <see cref="ICandle.Timestamp"/> of both candles should be equal, 
+        /// then <see cref="ICandle.Timestamp"/> of all candles should be equals, 
         /// and it will be used as merged candle <see cref="ICandle.Timestamp"/>
         /// </param>
-        public static ICandle MergeWith(this ICandle prevCandle, ICandle nextCandle, DateTime? newTimestamp = null)
+        /// <returns>Merged candle, or null, if no candles to merge</returns>
+        public static ICandle MergeAll(this IEnumerable<ICandle> candles, DateTime? newTimestamp = null)
         {
-            if (prevCandle == null || nextCandle == null)
+            if (candles == null)
             {
-                return prevCandle ?? nextCandle;
+                return null;
             }
 
-            if (prevCandle.AssetPairId != nextCandle.AssetPairId)
+            var open = 0d;
+            var close = 0d;
+            var high = 0d;
+            var low = 0d;
+            var assetPairId = string.Empty;
+            var priceType = PriceType.Unspecified;
+            var timeInterval = TimeInterval.Unspecified;
+            var timestamp = DateTime.MinValue;
+            var count = 0;
+
+            using (var enumerator = candles.GetEnumerator())
             {
-                throw new InvalidOperationException($"Can't merge candles of different asset pairs. Source={prevCandle.ToJson()}, update={nextCandle.ToJson()}");
+                while (enumerator.MoveNext())
+                {
+                    var candle = enumerator.Current;
+
+                    if (count == 0)
+                    {
+                        open = candle.Open;
+                        close = candle.Close;
+                        high = candle.High;
+                        low = candle.Low;
+                        assetPairId = candle.AssetPairId;
+                        priceType = candle.PriceType;
+                        timeInterval = candle.TimeInterval;
+                        timestamp = candle.Timestamp;
+                    }
+                    else
+                    {
+                        if (assetPairId != candle.AssetPairId)
+                        {
+                            throw new InvalidOperationException($"Can't merge candles of different asset pairs. Current candle={candle.ToJson()}");
+                        }
+
+                        if (priceType != candle.PriceType)
+                        {
+                            throw new InvalidOperationException($"Can't merge candles of different price types. Current candle={candle.ToJson()}");
+                        }
+
+                        if (timeInterval != candle.TimeInterval)
+                        {
+                            throw new InvalidOperationException($"Can't merge candles of different time intervals. Current candle={candle.ToJson()}");
+                        }
+
+                        if (!newTimestamp.HasValue && timestamp != candle.Timestamp)
+                        {
+                            throw new InvalidOperationException($"Can't merge candles with different timestamps. Current candle={candle.ToJson()}");
+                        }
+
+                        close = candle.Close;
+                        high = Math.Max(high, candle.High);
+                        low = Math.Min(low, candle.Low);
+                    }
+
+                    count++;
+                }
             }
 
-            if (prevCandle.PriceType != nextCandle.PriceType)
+            if (count > 0)
             {
-                throw new InvalidOperationException($"Can't merge candles of different price types. Source={prevCandle.ToJson()}, update={nextCandle.ToJson()}");
+                return new Candle(
+                    open: open,
+                    close: close,
+                    high: high,
+                    low: low,
+                    assetPair: assetPairId,
+                    priceType: priceType,
+                    timeInterval: timeInterval,
+                    timestamp: newTimestamp ?? timestamp);
             }
 
-            if (prevCandle.TimeInterval != nextCandle.TimeInterval)
-            {
-                throw new InvalidOperationException($"Can't merge candles of different time intervals. Source={prevCandle.ToJson()}, update={nextCandle.ToJson()}");
-            }
-
-            if (!newTimestamp.HasValue && prevCandle.Timestamp != nextCandle.Timestamp)
-            {
-                throw new InvalidOperationException($"Can't merge candles with different timestamps. Source={prevCandle.ToJson()}, update={nextCandle.ToJson()}");
-            }
-
-            return new Candle(
-                open: prevCandle.Open,
-                close: nextCandle.Close,
-                high: Math.Max(prevCandle.High, nextCandle.High),
-                low: Math.Min(prevCandle.Low, nextCandle.Low),
-                assetPair: prevCandle.AssetPairId,
-                priceType: prevCandle.PriceType,
-                timeInterval: prevCandle.TimeInterval,
-                timestamp: newTimestamp ?? prevCandle.Timestamp);
+            return null;
         }
 
         /// <summary>

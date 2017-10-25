@@ -43,18 +43,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 return;
             }
 
-            foreach (var candle in candles)
-            {
-                if (candle.AssetPairId != assetPairId)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid AssetPriceId", nameof(candles));
-                }
-                if (candle.TimeInterval != timeInterval)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid TimeInterval", nameof(candles));
-                }
-            }
-
             var repo = GetRepo(assetPairId, timeInterval);
             try
             {

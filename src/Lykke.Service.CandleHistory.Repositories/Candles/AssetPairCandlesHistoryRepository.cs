@@ -27,12 +27,20 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         }
 
         /// <summary>
-        /// Assumed that all candles have the same PriceType, Timeinterval and Timestamp
+        /// Assumed that all candles have the same AssetPair, PriceType, and Timeinterval
         /// </summary>
         public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, PriceType priceType)
         {
             foreach (var candle in candles)
             {
+                if (candle.AssetPairId != _assetPairId)
+                {
+                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid AssetPriceId", nameof(candles));
+                }
+                if (candle.TimeInterval != _timeInterval)
+                {
+                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid TimeInterval", nameof(candles));
+                }
                 if (candle.PriceType != priceType)
                 {
                     throw new ArgumentException($"Candle {candle.ToJson()} has invalid PriceType", nameof(candles));
@@ -40,27 +48,33 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
 
             var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
-            
-            // Group by row
-            var groups = candles.GroupBy(candle => CandleHistoryEntity.GenerateRowKey(candle.Timestamp, _timeInterval));
 
-            foreach (var group in groups)
+            var candleByRows = candles
+                .GroupBy(candle => CandleHistoryEntity.GenerateRowKey(candle.Timestamp, _timeInterval))
+                .ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+            // updates existing entities
+
+            var existingEntities = (await _tableStorage.GetDataAsync(partitionKey, candleByRows.Keys)).ToArray();
+
+            foreach (var entity in existingEntities)
             {
-                await InsertOrMergeAsync(group, partitionKey, group.Key, _timeInterval);
+                entity.MergeCandles(candleByRows[entity.RowKey], _timeInterval);
             }
-        }
 
-        private async Task InsertOrMergeAsync(IEnumerable<ICandle> candle, string partitionKey, string rowKey, TimeInterval timeInterval)
-        {
-            // Read row
-            var entity = await _tableStorage.GetDataAsync(partitionKey, rowKey) ??
-                         new CandleHistoryEntity(partitionKey, rowKey);
+            // creates new entities
 
-            // Merge all candles
-            entity.MergeCandles(candle, timeInterval);
+            var newEntityKeys = candleByRows.Keys.Except(existingEntities.Select(e => e.RowKey));
+            var newEntities = newEntityKeys.Select(k => new CandleHistoryEntity(partitionKey, k)).ToArray();
 
-            // Update
-            await _tableStorage.InsertOrMergeAsync(entity);
+            foreach (var entity in newEntities)
+            {
+                entity.MergeCandles(candleByRows[entity.RowKey], _timeInterval);
+            }
+
+            // save changes
+
+            await _tableStorage.InsertOrReplaceBatchAsync(existingEntities.Concat(newEntities));
         }
 
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(PriceType priceType, TimeInterval interval, DateTime from, DateTime to)
