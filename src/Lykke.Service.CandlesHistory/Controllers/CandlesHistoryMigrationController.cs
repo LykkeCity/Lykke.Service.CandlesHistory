@@ -23,7 +23,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 new DateTime(2017, 09, 01, 00, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
                 new DateTime(2017, 09, 30, 00, 00, 00, 00, DateTimeKind.Utc).AddSeconds(1),
                 1.3212,
-                1.1321);
+                1.1321,
+                0.1);
             return Ok(result);
         }
 

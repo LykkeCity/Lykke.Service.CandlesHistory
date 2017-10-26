@@ -54,9 +54,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _cts = new CancellationTokenSource();
         }
 
-        public void StartRandom(DateTime start, DateTime end, double startPrice, double endPrice)
+        public void StartRandom(DateTime start, DateTime end, double startPrice, double endPrice, double spread)
         {
-            Task.Run(() => RandomizeAsync(start, end, startPrice, endPrice).Wait());
+            Task.Run(() => RandomizeAsync(start, end, startPrice, endPrice, spread).Wait());
         }
 
         public void Start()
@@ -64,7 +64,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             Task.Run(() => MigrateAsync().Wait());
         }
 
-        private async Task RandomizeAsync(DateTime start, DateTime end, double startPrice, double endPrice)
+        private async Task RandomizeAsync(DateTime start, DateTime end, double startPrice, double endPrice, double spread)
         {
             try
             {
@@ -73,8 +73,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 _healthService.UpdateEndDates(end, end);
 
                 await Task.WhenAll(
-                    RandomizeCandlesAsync(PriceType.Ask, start, end, startPrice, endPrice),
-                    RandomizeCandlesAsync(PriceType.Bid, start, end, startPrice, endPrice));
+                    RandomizeCandlesAsync(PriceType.Ask, start, end, startPrice, endPrice, spread),
+                    RandomizeCandlesAsync(PriceType.Bid, start, end, startPrice, endPrice, spread));
 
                 _healthService.UpdateOverallProgress("Generating mid history");
 
@@ -103,10 +103,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        private async Task RandomizeCandlesAsync(PriceType priceType, DateTime start, DateTime end, double startPrice, double endPrice)
+        private async Task RandomizeCandlesAsync(PriceType priceType, DateTime start, DateTime end, double startPrice, double endPrice, double spread)
         {
             var secCandles = _missedCandlesGenerator
-                .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice)
+                .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice, spread)
                 .ToArray();
 
             if (ProcessSecCandles(secCandles))
