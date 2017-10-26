@@ -74,7 +74,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 var json = property.StringValue;
                 if (!string.IsNullOrEmpty(json))
                 {
-                    Candles = JsonConvert.DeserializeObject<List<CandleHistoryItem>>(json);
+                    Candles = new List<CandleHistoryItem>(60);
+                    Candles.AddRange(JsonConvert.DeserializeObject<IEnumerable<CandleHistoryItem>>(json));
                 }
             }
         }
@@ -150,19 +151,31 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             // 2. If found - merge, else - add to list
 
             var tick = candle.Timestamp.GetIntervalTick(interval);
-            var existingCandle = Candles
-                .SkipWhile(x => x.Tick < tick)
-                .TakeWhile(x => x.Tick == tick)
-                .SingleOrDefault();
 
-            if (existingCandle != null)
+            // Considering that Candles is ordered by Tick
+            for(var i = 0; i < Candles.Count; ++i)
             {
-                existingCandle.InplaceMergeWith(candle);
+                var currentCandle = Candles[i];
+
+                // While currentCandle.Tick < tick - just skipping
+                
+                // That's it, merge to existing candle
+                if (currentCandle.Tick == tick)
+                {
+                    currentCandle.InplaceMergeWith(candle);
+                    return;
+                }
+
+                // No candle is found but there are some candles after, so we should insert candle right before them
+                if (currentCandle.Tick > tick)
+                {
+                    Candles.Insert(i, candle.ToItem(tick));
+                    return;
+                }
             }
-            else
-            {
-                Candles.Add(candle.ToItem(tick));
-            }
+
+            // No candle is found, and no candles after, so just add to the end
+            Candles.Add(candle.ToItem(tick));
         }
 
         private static string FormatRowKey(DateTime dateUtc)
