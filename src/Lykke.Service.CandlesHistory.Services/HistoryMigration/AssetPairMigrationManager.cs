@@ -109,7 +109,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice, spread)
                 .ToArray();
 
-            if (ProcessSecCandles(secCandles))
+            if (ProcessSecCandles(secCandles, priceType))
             {
                 return;
             }
@@ -214,7 +214,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, priceType, endDateTime);
 
-            if (ProcessSecCandles(secCandles))
+            if (ProcessSecCandles(secCandles, priceType))
             {
                 return;
             }
@@ -248,7 +248,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, feedHistory);
 
-                if (ProcessSecCandles(secCandles))
+                if (ProcessSecCandles(secCandles, priceType))
                 {
                     return;
                 }
@@ -273,7 +273,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     var midSecCandles = feedHistory.AskCandles.CreateMidCandles(feedHistory.BidCandles);
 
-                    if (!ProcessSecCandles(midSecCandles))
+                    if (!ProcessSecCandles(midSecCandles, PriceType.Mid))
                     {
                         return;
                     }
@@ -283,8 +283,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        private bool ProcessSecCandles(IEnumerable<ICandle> secCandles)
+        private bool ProcessSecCandles(IEnumerable<ICandle> secCandles, PriceType priceType)
         {
+            var changedIntervals = new HashSet<TimeInterval>();
+
             foreach (var candle in secCandles)
             {
                 foreach (var interval in _intervalsToGenerate)
@@ -294,13 +296,18 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         return true;
                     }
 
-                    var result = _candlesGenerator.Merge(candle, interval);
-
-                    if (result.WasChanged)
+                    if (_candlesGenerator.Merge(candle, interval))
                     {
-                        _candlesPersistenceQueue.EnqueueCandle(result.Candle);
+                        changedIntervals.Add(interval);
                     }
                 }
+
+                _candlesPersistenceQueue.EnqueueCandle(candle);
+            }
+
+            foreach (var changedInterval in changedIntervals)
+            {
+                var candle = _candlesGenerator.Get(_assetPair.Id, changedInterval, priceType);
 
                 _candlesPersistenceQueue.EnqueueCandle(candle);
             }
