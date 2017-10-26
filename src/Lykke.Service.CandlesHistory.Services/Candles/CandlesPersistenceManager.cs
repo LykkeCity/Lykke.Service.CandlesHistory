@@ -36,12 +36,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var now = DateTime.UtcNow;
 
-            if (_healthService.CandlesToDispatchQueueLength > 100000 ||
+            if (_healthService.CandlesToDispatchQueueLength > _settings.CandlesToDispatchLengthThreshold ||
                 now - _lastDispatchMoment > _settings.PersistPeriod)
             {
-                if (_healthService.BatchesToPersistQueueLength < 10)
+                if (_healthService.BatchesToPersistQueueLength < _settings.MaxBatchesToPersistQueueLength)
                 {
-                    _persistenceQueue.DispatchCandlesToPersist();
+                    _persistenceQueue.DispatchCandlesToPersist(_settings.MaxBatchSize);
                     _lastDispatchMoment = now;
                 }
             }

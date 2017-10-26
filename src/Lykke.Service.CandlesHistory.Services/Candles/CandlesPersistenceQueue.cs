@@ -67,7 +67,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return $"Candles: {state.Count}";
         }
 
-        public bool DispatchCandlesToPersist()
+        public bool DispatchCandlesToPersist(int maxBatchSize)
         {
             var candlesCount = _candlesToDispatch.Count;
 
@@ -75,6 +75,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 return false;
             }
+
+            candlesCount = Math.Min(candlesCount, maxBatchSize);
 
             var candles = new List<ICandle>(candlesCount);
 
