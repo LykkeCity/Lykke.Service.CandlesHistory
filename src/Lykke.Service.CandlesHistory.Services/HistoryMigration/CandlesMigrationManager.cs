@@ -43,7 +43,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _assetHealthServices = new Dictionary<string, AssetPairMigrationHealthService>();
         }
 
-        public async Task<string> RandomAsync(string assetPairId, DateTime start, DateTime end, double startPrice, double endPrice)
+        public async Task<string> RandomAsync(string assetPairId, DateTime start, DateTime end, double startPrice, double endPrice, double spread)
         {
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
@@ -75,7 +75,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     _candleMigrationService,
                     OnMigrationStopped);
 
-                assetManager.StartRandom(start, end, startPrice, endPrice);
+                assetManager.StartRandom(start, end, startPrice, endPrice, spread);
 
                 _assetHealthServices.Add(assetPairId, assetHealthService);
                 _assetManagers.Add(assetPairId, assetManager);
