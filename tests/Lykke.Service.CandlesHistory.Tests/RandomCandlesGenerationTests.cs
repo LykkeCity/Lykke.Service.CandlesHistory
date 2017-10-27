@@ -26,7 +26,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         private Mock<ICandlesMigrationService> _migrationServiceMock;
         private Mock<ICachedAssetsService> _cachedAssetServiceMock;
         private CandlesMigrationManager _manager;
-        
+
         [TestInitialize]
         public void InitializeTest()
         {
@@ -39,7 +39,7 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             _cachedAssetServiceMock
                 .Setup(x => x.TryGetAssetPairAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Func<string, CancellationToken, IAssetPair>((a, c)  => new AssetPairResponseModel
+                .ReturnsAsync(new Func<string, CancellationToken, IAssetPair>((a, c) => new AssetPairResponseModel
                 {
                     Id = a,
                     Accuracy = 5,
@@ -122,7 +122,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.IsAny<DateTime>(),
                     It.IsAny<DateTime>(),
                     It.IsNotNull<Func<IEnumerable<IFeedBidAskHistory>, Task>>()))
-                .Returns(new Func<string, DateTime, DateTime, Func<IEnumerable<IFeedBidAskHistory>,  Task>, Task>(
+                .Returns(new Func<string, DateTime, DateTime, Func<IEnumerable<IFeedBidAskHistory>, Task>, Task>(
                     (assetPair, startDate, endDate, chunkProcessor) =>
                     {
                         return chunkProcessor(bidAskHistory.Values);
@@ -154,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Assert.AreEqual(expectedCount, persistedCandleCounter[(timeInterval, priceType)], $"{timeInterval}, {priceType}");
             }
 
-            foreach (var priceType in new[] {PriceType.Ask, PriceType.Bid})
+            foreach (var priceType in new[] { PriceType.Ask, PriceType.Bid })
             {
                 CheckCandles(priceType, TimeInterval.Sec, 60 * 60 * 24);
                 CheckCandles(priceType, TimeInterval.Minute, 60 * 24);
@@ -176,3 +176,4 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
     }
 }
+
