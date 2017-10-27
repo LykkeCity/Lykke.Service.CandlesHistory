@@ -11,6 +11,7 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Extensions;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -20,7 +21,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private readonly AssetPairMigrationHealthService _healthService;
         private readonly IAssetPair _assetPair;
         private readonly ILog _log;
-        private readonly CandleMigrationService _candleMigrationService;
+        private readonly ICandleMigrationService _candleMigrationService;
         private readonly Action<string> _onStoppedAction;
         private readonly CancellationTokenSource _cts;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
@@ -39,7 +40,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             AssetPairMigrationHealthService healthService,
             IAssetPair assetPair,
             ILog log,
-            CandleMigrationService candleMigrationService,
+            ICandleMigrationService candleMigrationService,
             Action<string> onStoppedAction)
         {
             _candlesPersistenceQueue = candlesPersistenceQueue;
@@ -109,7 +110,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice, spread)
                 .ToArray();
 
-            if (ProcessSecCandles(secCandles, priceType))
+            if (ProcessSecCandles(secCandles))
             {
                 return;
             }
@@ -214,7 +215,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, priceType, endDateTime);
 
-            if (ProcessSecCandles(secCandles, priceType))
+            if (ProcessSecCandles(secCandles))
             {
                 return;
             }
@@ -248,7 +249,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, feedHistory);
 
-                if (ProcessSecCandles(secCandles, priceType))
+                if (ProcessSecCandles(secCandles))
                 {
                     return;
                 }
@@ -273,7 +274,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     var midSecCandles = feedHistory.AskCandles.CreateMidCandles(feedHistory.BidCandles);
 
-                    if (!ProcessSecCandles(midSecCandles, PriceType.Mid))
+                    if (ProcessSecCandles(midSecCandles))
                     {
                         return;
                     }
@@ -283,9 +284,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        private bool ProcessSecCandles(IEnumerable<ICandle> secCandles, PriceType priceType)
+        private bool ProcessSecCandles(IEnumerable<ICandle> secCandles)
         {
-            var changedIntervals = new HashSet<TimeInterval>();
+            var changedCandles = new Dictionary<(TimeInterval interval, DateTime timestamp), ICandle>();
 
             foreach (var candle in secCandles)
             {
@@ -296,20 +297,20 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         return true;
                     }
 
-                    if (_candlesGenerator.Merge(candle, interval))
+                    var mergingResult = _candlesGenerator.Merge(candle, interval);
+
+                    if (mergingResult.WasChanged)
                     {
-                        changedIntervals.Add(interval);
+                        changedCandles[(interval, mergingResult.Candle.Timestamp)] = mergingResult.Candle;
                     }
                 }
 
                 _candlesPersistenceQueue.EnqueueCandle(candle);
             }
 
-            foreach (var changedInterval in changedIntervals)
+            foreach (var changedCandle in changedCandles.Values)
             {
-                var candle = _candlesGenerator.Get(_assetPair.Id, changedInterval, priceType);
-
-                _candlesPersistenceQueue.EnqueueCandle(candle);
+                _candlesPersistenceQueue.EnqueueCandle(changedCandle);
             }
 
             return false;

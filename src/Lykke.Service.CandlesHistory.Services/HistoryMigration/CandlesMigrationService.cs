@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
-    public class CandleMigrationService
+    public class CandlesMigrationService : ICandleMigrationService
     {
         private readonly IMigrationProgressRepository _migrationProgressRepository;
         private readonly IFeedHistoryRepository _feedHistoryRepository;
         private readonly IFeedBidAskHistoryRepository _feedBidAskHistoryRepository;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
 
-        public CandleMigrationService(
+        public CandlesMigrationService(
             IMigrationProgressRepository migrationProgressRepository,
             IFeedHistoryRepository feedHistoryRepository,
             IFeedBidAskHistoryRepository feedBidAskHistoryRepository,
@@ -51,11 +50,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             // Sec candles packed into the minute rows, so round to the minute
             return date ?? now.RoundTo(TimeInterval.Sec);
-        }
-
-        public async Task<IFeedHistory> GetFeedHistoryItemAsync(string assetPair, PriceType priceType, string rowKey)
-        {
-            return await _feedHistoryRepository.GetCandle(assetPair, priceType, rowKey);
         }
 
         public Task GetFeedHistoryCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate,

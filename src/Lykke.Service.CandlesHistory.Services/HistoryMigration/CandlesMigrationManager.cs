@@ -5,6 +5,7 @@ using Common.Log;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
@@ -14,7 +15,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         private readonly MigrationCandlesGenerator _candlesGenerator;
         private readonly MissedCandlesGenerator _missedCandlesGenerator;
-        private readonly CandleMigrationService _candleMigrationService;
+        private readonly ICandleMigrationService _candleMigrationService;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly ICachedAssetsService _assetPairsManager;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
@@ -25,7 +26,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public CandlesMigrationManager(
             MigrationCandlesGenerator candlesGenerator,
             MissedCandlesGenerator missedCandlesGenerator,
-            CandleMigrationService candleMigrationService, 
+            ICandleMigrationService candleMigrationService, 
             ICandlesPersistenceQueue candlesPersistenceQueue,
             ICachedAssetsService cachedAssetsService,
             ICandlesHistoryRepository candlesHistoryRepository,
