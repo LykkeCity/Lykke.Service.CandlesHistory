@@ -21,7 +21,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             var result = await _candlesMigrationManager.RandomAsync(assetPair, 
                 new DateTime(2017, 10, 25, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
-                new DateTime(2017, 10, 27, 00, 00, 00, DateTimeKind.Utc),
+                new DateTime(2017, 10, 28, 00, 00, 00, DateTimeKind.Utc),
                 1.3212,
                 1.1721,
                 0.02);
