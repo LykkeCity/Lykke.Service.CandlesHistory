@@ -168,14 +168,13 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 // Interpolation parameter (0..1)
                 var t = (timestamp - start).Seconds / duration.TotalSeconds;
                 // Lineary interpolated price for current candle
-                var price = MathEx.Lerp(startPrice, endPrice, t);
+                var mid = MathEx.Lerp(startPrice, endPrice, t);
 
                 var halfSpread = spread * 0.5;
-                var min = price - halfSpread;
-                var max = price + halfSpread;
+                var min = mid - halfSpread;
+                var max = mid + halfSpread;
                 var maxCandleHalfHeight = halfSpread * 0.5;
                 
-                var mid = _rnd.NextDouble(min, max);
                 // Next candle opens at prev candle close and +/- 10% of spread
                 var open = prevClose + _rnd.NextDouble(-0.1, 0.1) * spread;
 

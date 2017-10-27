@@ -131,7 +131,14 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _candles = new ConcurrentDictionary<string, Candle>();
         }
 
-        public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval)
+        public ICandle Get(string assetPaid, TimeInterval timeInterval, PriceType priceType)
+        {
+            var key = GetKey(assetPaid, timeInterval, priceType);
+
+            return _candles[key];
+        }
+
+        public bool Merge(ICandle candle, TimeInterval timeInterval)
         {
             var key = GetKey(candle.AssetPairId, timeInterval, candle.PriceType);
 
@@ -144,7 +151,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return Candle.Create(oldCandle, candle);
                 });
 
-            return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));
+            return !newCandle.Equals(oldCandle);
         }
 
         private static string GetKey(string assetPair, TimeInterval timeInterval, PriceType type)
