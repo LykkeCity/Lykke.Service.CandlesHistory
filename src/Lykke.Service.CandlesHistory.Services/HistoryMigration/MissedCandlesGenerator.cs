@@ -166,7 +166,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
             {
                 // Interpolation parameter (0..1)
-                var t = (timestamp - start).Seconds / duration.TotalSeconds;
+                var t = (timestamp - start).TotalSeconds / duration.TotalSeconds;
 
                 // Lineary interpolated price for current candle
                 var mid = MathEx.Lerp(startPrice, endPrice, t);
