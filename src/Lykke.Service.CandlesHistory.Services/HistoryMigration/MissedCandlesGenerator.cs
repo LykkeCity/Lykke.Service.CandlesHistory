@@ -193,7 +193,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 // Max low/high deviation from open/close is 20% of candle height
                 var height = Math.Abs(open - close);
                 var high = Math.Max(open, close) + _rnd.NextDouble(0, 0.2) * height;
-                var low = Math.Min(open, close) + _rnd.NextDouble(0, 0.2) * height;
+                var low = Math.Min(open, close) - _rnd.NextDouble(0, 0.2) * height;
 
                 //Console.WriteLine($"{t:0.000} : {mid:0.000} : {min:0.000}-{max:0.000} : {open:0.000}-{close:0.000} : {low:0.000}-{high:0.000}");
 
