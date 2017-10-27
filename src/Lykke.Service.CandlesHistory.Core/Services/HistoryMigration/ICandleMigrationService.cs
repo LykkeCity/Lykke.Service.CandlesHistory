@@ -7,7 +7,7 @@ using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 
 namespace Lykke.Service.CandlesHistory.Core.Services.HistoryMigration
 {
-    public interface ICandleMigrationService
+    public interface ICandlesMigrationService
     {
         Task<DateTime?> GetStartDateAsync(string assetPair, PriceType priceType);
         Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType, DateTime now);

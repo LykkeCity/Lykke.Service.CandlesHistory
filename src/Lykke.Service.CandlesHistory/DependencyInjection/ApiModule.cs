@@ -17,6 +17,7 @@ using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
@@ -177,8 +178,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<CandleMigrationService>()
-                .AsSelf()
+            builder.RegisterType<CandlesesMigrationService>()
+                .As<ICandlesMigrationService>()
                 .SingleInstance();
 
             builder.RegisterType<MigrationCandlesGenerator>()

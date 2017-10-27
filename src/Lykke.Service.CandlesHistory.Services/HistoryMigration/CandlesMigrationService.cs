@@ -8,14 +8,14 @@ using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
-    public class CandlesMigrationService : ICandleMigrationService
+    public class CandlesesMigrationService : ICandlesMigrationService
     {
         private readonly IMigrationProgressRepository _migrationProgressRepository;
         private readonly IFeedHistoryRepository _feedHistoryRepository;
         private readonly IFeedBidAskHistoryRepository _feedBidAskHistoryRepository;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
 
-        public CandlesMigrationService(
+        public CandlesesMigrationService(
             IMigrationProgressRepository migrationProgressRepository,
             IFeedHistoryRepository feedHistoryRepository,
             IFeedBidAskHistoryRepository feedBidAskHistoryRepository,

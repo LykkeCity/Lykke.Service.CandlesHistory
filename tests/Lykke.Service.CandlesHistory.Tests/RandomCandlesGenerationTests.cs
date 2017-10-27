@@ -23,7 +23,7 @@ namespace Lykke.Service.CandlesHistory.Tests
     {
         private Mock<ICandlesPersistenceQueue> _persistenceQueueMock;
         private Mock<ICandlesHistoryRepository> _candlesHistoryRepositoryMock;
-        private Mock<ICandleMigrationService> _migrationServiceMock;
+        private Mock<ICandlesMigrationService> _migrationServiceMock;
         private Mock<ICachedAssetsService> _cachedAssetServiceMock;
         private CandlesMigrationManager _manager;
         
@@ -33,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             var logMock = new Mock<ILog>();
 
             _persistenceQueueMock = new Mock<ICandlesPersistenceQueue>();
-            _migrationServiceMock = new Mock<ICandleMigrationService>();
+            _migrationServiceMock = new Mock<ICandlesMigrationService>();
             _cachedAssetServiceMock = new Mock<ICachedAssetsService>();
             _candlesHistoryRepositoryMock = new Mock<ICandlesHistoryRepository>();
 

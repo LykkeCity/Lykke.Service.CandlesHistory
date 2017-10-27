@@ -21,7 +21,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private readonly AssetPairMigrationHealthService _healthService;
         private readonly IAssetPair _assetPair;
         private readonly ILog _log;
-        private readonly ICandleMigrationService _candleMigrationService;
+        private readonly ICandlesMigrationService _candlesMigrationService;
         private readonly Action<string> _onStoppedAction;
         private readonly CancellationTokenSource _cts;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
@@ -40,7 +40,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             AssetPairMigrationHealthService healthService,
             IAssetPair assetPair,
             ILog log,
-            ICandleMigrationService candleMigrationService,
+            ICandlesMigrationService candlesMigrationService,
             Action<string> onStoppedAction)
         {
             _candlesPersistenceQueue = candlesPersistenceQueue;
@@ -49,7 +49,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _healthService = healthService;
             _assetPair = assetPair;
             _log = log;
-            _candleMigrationService = candleMigrationService;
+            _candlesMigrationService = candlesMigrationService;
             _onStoppedAction = onStoppedAction;
 
             _cts = new CancellationTokenSource();
@@ -81,7 +81,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 await GenerateMidHistoryAsync(start, start, end, end);
                 
-                await _candleMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
+                await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
                 _healthService.UpdateOverallProgress("Done");
             }
@@ -115,7 +115,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 return;
             }
 
-            await _candleMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
+            await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
         }
 
         private async Task MigrateAsync()
@@ -149,7 +149,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     await GenerateMidHistoryAsync(askStartDate.Value, bidStartDate.Value, askEndDate, bidEndDate);
                 }
 
-                await _candleMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
+                await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
                 _healthService.UpdateOverallProgress("Done");
             }
@@ -175,8 +175,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private async Task<(DateTime? askStartDate, DateTime? bidStartDate)> GetStartDatesAsync()
         {
             var startDates = await Task.WhenAll(
-                _candleMigrationService.GetStartDateAsync(_assetPair.Id, PriceType.Ask),
-                _candleMigrationService.GetStartDateAsync(_assetPair.Id, PriceType.Bid));
+                _candlesMigrationService.GetStartDateAsync(_assetPair.Id, PriceType.Ask),
+                _candlesMigrationService.GetStartDateAsync(_assetPair.Id, PriceType.Bid));
 
             return (askStartDate: startDates[0], bidStartDate: startDates[1]);
         }
@@ -185,10 +185,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             var now = DateTime.UtcNow;
             var getAskEndDateTask = askStartDate.HasValue
-                ? _candleMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Ask, now)
+                ? _candlesMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Ask, now)
                 : Task.FromResult(DateTime.MaxValue);
             var getBidEndDateTask = bidStartDate.HasValue
-                ? _candleMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Bid, now)
+                ? _candlesMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Bid, now)
                 : Task.FromResult(DateTime.MaxValue);
             var endDates = await Task.WhenAll(getAskEndDateTask, getBidEndDateTask);
 
@@ -200,11 +200,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             DateTime? bidStartDate, DateTime bidEndDate)
         {
             var processAskCandlesTask = askStartDate.HasValue
-                ? _candleMigrationService.GetFeedHistoryCandlesByChunkAsync(_assetPair.Id, PriceType.Ask, askStartDate.Value,
+                ? _candlesMigrationService.GetFeedHistoryCandlesByChunkAsync(_assetPair.Id, PriceType.Ask, askStartDate.Value,
                     askEndDate, ProcessFeedHistoryChunkAsync)
                 : Task.CompletedTask;
             var processBidkCandlesTask = bidStartDate.HasValue
-                ? _candleMigrationService.GetFeedHistoryCandlesByChunkAsync(_assetPair.Id, PriceType.Bid, bidStartDate.Value,
+                ? _candlesMigrationService.GetFeedHistoryCandlesByChunkAsync(_assetPair.Id, PriceType.Bid, bidStartDate.Value,
                     bidEndDate, ProcessFeedHistoryChunkAsync)
                 : Task.CompletedTask;
 
@@ -220,8 +220,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 return;
             }
 
-            await _candleMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
-            await _candleMigrationService.SetProcessedDateAsync(_assetPair.Id, priceType, endDateTime);
+            await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
+            await _candlesMigrationService.SetProcessedDateAsync(_assetPair.Id, priceType, endDateTime);
         }
 
         private async Task GenerateMidHistoryAsync(DateTime askStartDate, DateTime bidStartDate, DateTime askEndDate, DateTime bidEndDate)
@@ -229,7 +229,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             var startDateMid = askStartDate < bidStartDate ? askStartDate : bidStartDate;
             var endDateMid = askEndDate > bidEndDate ? askEndDate : bidEndDate;
 
-            await _candleMigrationService.GetFeedHistoryBidAskByChunkAsync(
+            await _candlesMigrationService.GetFeedHistoryBidAskByChunkAsync(
                 _assetPair.Id,
                 startDateMid,
                 endDateMid,
@@ -254,8 +254,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return;
                 }
 
-                await _candleMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
-                await _candleMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, priceType, feedHistory.DateTime);
+                await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
+                await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, priceType, feedHistory.DateTime);
             }
         }
 
@@ -280,7 +280,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     }
                 }
 
-                await _candleMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, PriceType.Mid, feedHistory.DateTime);
+                await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, PriceType.Mid, feedHistory.DateTime);
             }
         }
 
