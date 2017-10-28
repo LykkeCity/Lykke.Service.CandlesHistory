@@ -116,15 +116,5 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 timeInterval: askCandle.TimeInterval,
                 timestamp: askCandle.Timestamp);
         }
-
-        public static List<ICandle> CreateMidCandles(this ICandle[] askCandles, ICandle[] bidCandles)
-        {
-            if (askCandles.Length != bidCandles.Length)
-            {
-                throw new InvalidOperationException($"Candles count must be the same for bid and ask candles: ask candles count={askCandles.Length}, bid candles count={bidCandles.Length}");
-            }
-
-            return askCandles.Select((candle, index) => candle.CreateMidCandle(bidCandles[index])).ToList();
-        }
     }
 }

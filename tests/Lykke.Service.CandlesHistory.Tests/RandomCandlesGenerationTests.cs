@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration;
@@ -65,7 +63,6 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             // Arrange
             var persistedCandleCounter = new Dictionary<(TimeInterval, PriceType), int>();
-            var bidAskHistory = new Dictionary<DateTime, FeedBidAskHistory>();
 
             _persistenceQueueMock
                 .Setup(x => x.EnqueueCandle(It.IsAny<ICandle>()))
@@ -81,52 +78,6 @@ namespace Lykke.Service.CandlesHistory.Tests
                         persistedCandleCounter[counterKey] = counter + 1;
                     }
                 });
-
-            _migrationServiceMock
-                .Setup(x => x.SaveBidAskHistoryAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<IEnumerable<ICandle>>(),
-                    It.IsAny<PriceType>()))
-                .Returns(
-                    new Func<string, IEnumerable<ICandle>, PriceType, Task>((assetPair, candles, priceType) =>
-                    {
-                        var entities = candles
-                            .GroupBy(c => c.Timestamp.RoundToMinute())
-                            .Select(g => new FeedBidAskHistory
-                            {
-                                AssetPair = assetPair,
-                                DateTime = g.Key,
-                                AskCandles = priceType == PriceType.Ask ? g.ToArray() : null,
-                                BidCandles = priceType == PriceType.Bid ? g.ToArray() : null
-                            });
-
-                        foreach (var entity in entities)
-                        {
-                            if (!bidAskHistory.TryGetValue(entity.DateTime, out var existingEntity))
-                            {
-                                bidAskHistory.Add(entity.DateTime, entity);
-                            }
-                            else
-                            {
-                                existingEntity.AskCandles = entity.AskCandles ?? existingEntity.AskCandles;
-                                existingEntity.BidCandles = entity.BidCandles ?? existingEntity.BidCandles;
-                            }
-                        }
-
-                        return Task.CompletedTask;
-                    }));
-
-            _migrationServiceMock
-                .Setup(x => x.GetFeedHistoryBidAskByChunkAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<DateTime>(),
-                    It.IsAny<DateTime>(),
-                    It.IsNotNull<Func<IEnumerable<IFeedBidAskHistory>, Task>>()))
-                .Returns(new Func<string, DateTime, DateTime, Func<IEnumerable<IFeedBidAskHistory>, Task>, Task>(
-                    (assetPair, startDate, endDate, chunkProcessor) =>
-                    {
-                        return chunkProcessor(bidAskHistory.Values);
-                    }));
 
             // Act
             await _manager.RandomAsync(
@@ -154,7 +105,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Assert.AreEqual(expectedCount, persistedCandleCounter[(timeInterval, priceType)], $"{timeInterval}, {priceType}");
             }
 
-            foreach (var priceType in new[] { PriceType.Ask, PriceType.Bid })
+            foreach (var priceType in new[] { PriceType.Ask, PriceType.Bid, PriceType.Mid })
             {
                 CheckCandles(priceType, TimeInterval.Sec, 60 * 60 * 24);
                 CheckCandles(priceType, TimeInterval.Minute, 60 * 24);
@@ -163,16 +114,6 @@ namespace Lykke.Service.CandlesHistory.Tests
                 CheckCandles(priceType, TimeInterval.Week, 1);
                 CheckCandles(priceType, TimeInterval.Month, 1);
             }
-
-            // For mid candles, every candle enqued so many times, 
-            // how many minutes is generated, since BidAskFeedHistory is grouped by minutes
-
-            CheckCandles(PriceType.Mid, TimeInterval.Sec, 60 * 60 * 24);
-            CheckCandles(PriceType.Mid, TimeInterval.Minute, 60 * 24);
-            CheckCandles(PriceType.Mid, TimeInterval.Hour, 60 * 24);
-            CheckCandles(PriceType.Mid, TimeInterval.Day, 60 * 24);
-            CheckCandles(PriceType.Mid, TimeInterval.Week, 60 * 24);
-            CheckCandles(PriceType.Mid, TimeInterval.Month, 60 * 24);
         }
     }
 }

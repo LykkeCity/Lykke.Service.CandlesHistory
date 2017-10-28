@@ -22,6 +22,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private readonly IAssetPair _assetPair;
         private readonly ILog _log;
         private readonly ICandlesMigrationService _candlesMigrationService;
+        private readonly BidAskHistoryService _bidAskHistoryService;
         private readonly Action<string> _onStoppedAction;
         private readonly CancellationTokenSource _cts;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
@@ -41,6 +42,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             IAssetPair assetPair,
             ILog log,
             ICandlesMigrationService candlesMigrationService,
+            BidAskHistoryService bidAskHistoryService,
             Action<string> onStoppedAction)
         {
             _candlesPersistenceQueue = candlesPersistenceQueue;
@@ -50,6 +52,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _assetPair = assetPair;
             _log = log;
             _candlesMigrationService = candlesMigrationService;
+            _bidAskHistoryService = bidAskHistoryService;
             _onStoppedAction = onStoppedAction;
 
             _cts = new CancellationTokenSource();
@@ -79,9 +82,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 _healthService.UpdateOverallProgress("Generating mid history");
 
-                await GenerateMidHistoryAsync(start, start, end, end);
+                await GenerateMidHistoryAsync();
                 
-                await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
+                //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
                 _healthService.UpdateOverallProgress("Done");
             }
@@ -115,7 +118,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 return;
             }
 
-            await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
+            _bidAskHistoryService.SaveHistory(secCandles);
+
+            await Task.CompletedTask;
         }
 
         private async Task MigrateAsync()
@@ -146,10 +151,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     _healthService.UpdateOverallProgress("Generating mid history");
                     
-                    await GenerateMidHistoryAsync(askStartDate.Value, bidStartDate.Value, askEndDate, bidEndDate);
+                    await GenerateMidHistoryAsync();
                 }
 
-                await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
+                //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
                 _healthService.UpdateOverallProgress("Done");
             }
@@ -220,20 +225,39 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 return;
             }
 
-            await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
-            await _candlesMigrationService.SetProcessedDateAsync(_assetPair.Id, priceType, endDateTime);
+            _bidAskHistoryService.SaveHistory(secCandles);
+            //await _candlesMigrationService.SetProcessedDateAsync(_assetPair.Id, priceType, endDateTime);
+
+            await Task.CompletedTask;
         }
 
-        private async Task GenerateMidHistoryAsync(DateTime askStartDate, DateTime bidStartDate, DateTime askEndDate, DateTime bidEndDate)
+        private async Task GenerateMidHistoryAsync()
         {
-            var startDateMid = askStartDate < bidStartDate ? askStartDate : bidStartDate;
-            var endDateMid = askEndDate > bidEndDate ? askEndDate : bidEndDate;
+            var bidAskHistory = _bidAskHistoryService.GetHistory();
+            var secMidCandles = new List<ICandle>();
 
-            await _candlesMigrationService.GetFeedHistoryBidAskByChunkAsync(
-                _assetPair.Id,
-                startDateMid,
-                endDateMid,
-                ProcessBidAskHistoryChunkAsync);
+            foreach (var item in bidAskHistory)
+            {
+                _healthService.UpdateCurrentHistoryDate(item.timestamp, PriceType.Mid);
+
+                if (_cts.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                if (item.ask != null && item.bid != null)
+                {
+                    var midSecCandle = item.ask.CreateMidCandle(item.bid);
+
+                    secMidCandles.Add(midSecCandle);                   
+                }
+
+                //await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, PriceType.Mid, feedHistory.DateTime);
+            }
+
+            ProcessSecCandles(secMidCandles);
+
+            await Task.CompletedTask;
         }
 
         private async Task ProcessFeedHistoryChunkAsync(IEnumerable<IFeedHistory> items, PriceType priceType)
@@ -254,34 +278,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return;
                 }
 
-                await _candlesMigrationService.SaveBidAskHistoryAsync(_assetPair.Id, secCandles, priceType);
-                await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, priceType, feedHistory.DateTime);
+                _bidAskHistoryService.SaveHistory(secCandles);
+                //await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, priceType, feedHistory.DateTime);
             }
-        }
 
-        private async Task ProcessBidAskHistoryChunkAsync(IEnumerable<IFeedBidAskHistory> items)
-        {
-            foreach (var feedHistory in items)
-            {
-                _healthService.UpdateCurrentHistoryDate(feedHistory.DateTime, PriceType.Mid);
-
-                if (_cts.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                if (feedHistory.AskCandles != null && feedHistory.BidCandles != null)
-                {
-                    var midSecCandles = feedHistory.AskCandles.CreateMidCandles(feedHistory.BidCandles);
-
-                    if (ProcessSecCandles(midSecCandles))
-                    {
-                        return;
-                    }
-                }
-
-                await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, PriceType.Mid, feedHistory.DateTime);
-            }
+            await Task.CompletedTask;
         }
 
         private bool ProcessSecCandles(IEnumerable<ICandle> secCandles)

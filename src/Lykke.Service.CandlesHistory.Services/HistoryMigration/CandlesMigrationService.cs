@@ -58,25 +58,25 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return _feedHistoryRepository.GetCandlesByChunkAsync(assetPair, priceType, startDate, endDate, callback);
         }
 
-        public Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
-            Func<IEnumerable<IFeedBidAskHistory>, Task> callback)
-        {
-            return _feedBidAskHistoryRepository.GetHistoryByChunkAsync(assetPair, startDate, endDate, callback);
-        }
+        //public Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
+        //    Func<IEnumerable<IFeedBidAskHistory>, Task> callback)
+        //{
+        //    return _feedBidAskHistoryRepository.GetHistoryByChunkAsync(assetPair, startDate, endDate, callback);
+        //}
 
-        public async Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
-        {
-            await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, candles, priceType);
-        }
+        //public async Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
+        //{
+        //    await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, candles, priceType);
+        //}
 
-        public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
-        {
-            await _migrationProgressRepository.SetProcessedDateAsync(assetPair, priceType, date);
-        }
+        //public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
+        //{
+        //    await _migrationProgressRepository.SetProcessedDateAsync(assetPair, priceType, date);
+        //}
 
-        public async Task RemoveProcessedDateAsync(string assetPair)
-        {
-            await _migrationProgressRepository.RemoveProcessedDateAsync(assetPair);
-        }
+        //public async Task RemoveProcessedDateAsync(string assetPair)
+        //{
+        //    await _migrationProgressRepository.RemoveProcessedDateAsync(assetPair);
+        //}
     }
 }

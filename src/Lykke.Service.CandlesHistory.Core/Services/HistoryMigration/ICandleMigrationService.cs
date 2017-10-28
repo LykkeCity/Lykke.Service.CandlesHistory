@@ -15,11 +15,10 @@ namespace Lykke.Service.CandlesHistory.Core.Services.HistoryMigration
         Task GetFeedHistoryCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate,
             Func<IEnumerable<IFeedHistory>, PriceType, Task> callback);
 
-        Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
-            Func<IEnumerable<IFeedBidAskHistory>, Task> callback);
-
-        Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType);
-        Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date);
-        Task RemoveProcessedDateAsync(string assetPair);
+        //Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
+        //    Func<IEnumerable<IFeedBidAskHistory>, Task> callback);
+        //Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType);
+        //Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date);
+        //Task RemoveProcessedDateAsync(string assetPair);
     }
 }
