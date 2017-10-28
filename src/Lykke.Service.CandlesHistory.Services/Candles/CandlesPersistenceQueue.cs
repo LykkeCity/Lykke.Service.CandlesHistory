@@ -9,6 +9,7 @@ using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -20,6 +21,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
+        private readonly PersistenceSettings _settings;
 
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
@@ -27,7 +29,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             ICandlesHistoryRepository repository,
             IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
-            IHealthService healthService) :
+            IHealthService healthService,
+            PersistenceSettings settings) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
@@ -35,11 +38,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _failedToPersistCandlesPublisher = failedToPersistCandlesPublisher;
             _log = log;
             _healthService = healthService;
+            _settings = settings;
             _candlesToDispatch = new ConcurrentQueue<ICandle>();
         }
 
         public void EnqueueCandle(ICandle candle)
         {
+            if (_candlesToDispatch.Count > _settings.CandlesToDispatchLengthThrottlingThreshold)
+            {
+                Task.Delay(_settings.ThrottlingEnqueueDelay).Wait();
+            }
+
             _candlesToDispatch.Enqueue(candle);
 
             _healthService.TraceEnqueueCandle();
