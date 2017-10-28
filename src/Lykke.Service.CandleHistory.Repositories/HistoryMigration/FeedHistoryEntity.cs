@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
@@ -78,7 +79,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
                     }
                 }
 
-                Candles = result.ToArray();
+                Candles = result.OrderBy(c => c.Tick).ToArray();
             }
         }
 
