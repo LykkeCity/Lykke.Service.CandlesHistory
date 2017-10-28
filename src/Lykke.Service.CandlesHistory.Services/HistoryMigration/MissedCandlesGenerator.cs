@@ -53,8 +53,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             
             var result = GenerateMissedCandles(assetPair, candles);
 
-            // Remember the last candle
-            _lastCandles[key] = Candle.Create(result.Last());
+            // Remember the last candle, if any
+            if (result.Any())
+            {
+                _lastCandles[key] = Candle.Create(result.Last());
+            }
 
             if (removeFirstCandle)
             {
@@ -87,8 +90,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     spread)
                 .ToList();
 
-            // Remember the last candle
-            _lastCandles[key] = Candle.Create(result.Last());
+            // Remember the last candle, if any
+            if (result.Any())
+            {
+                _lastCandles[key] = Candle.Create(result.Last());
+            }
 
             return result;
         }
@@ -123,7 +129,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 result.AddRange(generagedCandles);
             }
 
-            result.Add(candles.Last());
+            if (candles.Any())
+            {
+                result.Add(candles.Last());
+            }
 
             return result;
         }
@@ -139,7 +148,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public IImmutableDictionary<string, ICandle> GetState()
         {
             return _lastCandles.ToArray().ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
-
         }
 
         public void SetState(IImmutableDictionary<string, ICandle> state)
@@ -172,6 +180,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             var start = exclusiveStartDate.AddSeconds(1);
             var end = exclusiveEndDate.AddSeconds(-1);
+
+            if (start - end <= TimeSpan.Zero)
+            {
+                yield break;
+            }
+
             var duration = (end - start).TotalSeconds;
             var prevClose = startPrice;
             var trendSign = startPrice < endPrice ? 1 : -1;
