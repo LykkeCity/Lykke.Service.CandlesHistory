@@ -44,7 +44,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         public void EnqueueCandle(ICandle candle)
         {
-            if (_candlesToDispatch.Count > _settings.CandlesToDispatchLengthThrottlingThreshold)
+            if (_healthService.CandlesToDispatchQueueLength > _settings.CandlesToDispatchLengthThrottlingThreshold)
             {
                 Task.Delay(_settings.ThrottlingEnqueueDelay).Wait();
             }
