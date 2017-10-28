@@ -47,7 +47,6 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
                 if (yieldResult.Count > 0)
                 {
                     await chunkCallback(yieldResult, priceType);
-                    yieldResult.Clear();
                 }
             });
         }

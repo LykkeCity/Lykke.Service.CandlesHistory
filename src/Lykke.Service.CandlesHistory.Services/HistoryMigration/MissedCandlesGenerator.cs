@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
@@ -37,10 +38,17 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             _lastCandles.TryGetValue(key, out var lastCandle);
 
+            bool removeFirstCandle;
+
             // Use the last candle as the first candle, if any
             if (lastCandle != null)
             {
+                removeFirstCandle = true;
                 candles.Insert(0, lastCandle);
+            }
+            else
+            {
+                removeFirstCandle = false;
             }
             
             var result = GenerateMissedCandles(assetPair, candles);
@@ -48,7 +56,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             // Remember the last candle
             _lastCandles[key] = Candle.Create(result.Last());
 
-            return result;
+            if (removeFirstCandle)
+            {
+                result.RemoveAt(0);
+            }
+
+            return new ReadOnlyCollection<ICandle>(result);
         }
 
         public IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, PriceType priceType, DateTime dateTime)
@@ -80,7 +93,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return result;
         }
 
-        private IReadOnlyList<ICandle> GenerateMissedCandles(IAssetPair assetPair, IReadOnlyList<ICandle> candles)
+        private IList<ICandle> GenerateMissedCandles(IAssetPair assetPair, IReadOnlyList<ICandle> candles)
         {
             var result = new List<ICandle>();
 
@@ -159,41 +172,48 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             var start = exclusiveStartDate.AddSeconds(1);
             var end = exclusiveEndDate.AddSeconds(-1);
-            var duration = end - start;
+            var duration = (end - start).TotalSeconds;
             var prevClose = startPrice;
             var trendSign = startPrice < endPrice ? 1 : -1;
+            // Absolute start to end price change in % of start price
+            var totalPriceChange = Math.Abs((endPrice - startPrice) / startPrice);
+            var stepPriceChange = totalPriceChange / duration;
 
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
             {
                 // Interpolation parameter (0..1)
-                var t = (timestamp - start).TotalSeconds / duration.TotalSeconds;
+                var t = (timestamp - start).TotalSeconds / duration;
 
                 // Lineary interpolated price for current candle
                 var mid = MathEx.Lerp(startPrice, endPrice, t);
 
                 var halfSpread = spread * 0.5;
-                var min = mid - halfSpread;
-                var max = mid + halfSpread;
 
-                // Next candle opens at prev candle close and +/- 10% of spread
-                var open = prevClose + _rnd.NextDouble(-0.1, 0.1) * spread;
+                // Next candle opens at prev candle close and +/- 5% of spread
+                var open = prevClose + _rnd.NextDouble(-0.05, 0.05) * spread;
 
-                // in 70% of cases following the trend, and opposite in rest of cases
-                var currentSign = _rnd.NextDouble() < 0.7 ? trendSign : -trendSign;
+                // in 90% of cases following the trend, and opposite in rest of cases
+                var currentSign = _rnd.NextDouble() < 0.9 ? trendSign : -trendSign;
 
-                // Candle can be closed up to 80% of spread from the open price
-                var close = open + _rnd.NextDouble(0, 0.8) * spread * currentSign;
+                // Candle can be closed up to 200% of price change from the open price
+                var close = open + _rnd.NextDouble(0, 2) * stepPriceChange * currentSign;
 
-                // Preserve candle in the middle of the spread
+                // Lets candles goes up to 500% of the spread in the middle of the generated range, 
+                // and only inside the spread at the range boundaries
+                var rangeMinMaxDeviationFactor = MathEx.Lerp(1, 5, 2 * (0.5 - Math.Abs(0.5 - t)));
+                var min = mid - halfSpread * rangeMinMaxDeviationFactor;
+                var max = mid + halfSpread * rangeMinMaxDeviationFactor;
+
+                // Returns candles inside 80% of the current range spread, if it gone to far
                 if (close > max || close < min)
                 {
-                    close = mid;
+                    close = mid + _rnd.NextDouble(-0.8, 0.8) * halfSpread * rangeMinMaxDeviationFactor;
                 }
 
                 // Max low/high deviation from open/close is 20% of candle height
                 var height = Math.Abs(open - close);
-                var high = Math.Max(open, close) + _rnd.NextDouble(0, 0.2) * height;
-                var low = Math.Min(open, close) - _rnd.NextDouble(0, 0.2) * height;
+                var high = Math.Max(open, close) + _rnd.NextDouble(0, 0.1) * height;
+                var low = Math.Min(open, close) - _rnd.NextDouble(0, 0.1) * height;
 
                 //Console.WriteLine($"{t:0.000} : {mid:0.000} : {min:0.000}-{max:0.000} : {open:0.000}-{close:0.000} : {low:0.000}-{high:0.000}");
 
