@@ -245,12 +245,16 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return;
                 }
 
-                if (item.ask != null && item.bid != null)
+                if (item.ask == null && item.bid == null)
                 {
-                    var midSecCandle = item.ask.CreateMidCandle(item.bid);
-
-                    secMidCandles.Add(midSecCandle);                   
+                    await _log.WriteWarningAsync(nameof(AssetPairMigrationManager), nameof(GenerateMidHistoryAsync),
+                        $"{_assetPair}-{item.timestamp}", "bid or ask candle is empty");
+                    continue;
                 }
+
+                var midSecCandle = item.ask.CreateMidCandle(item.bid);
+
+                secMidCandles.Add(midSecCandle);                   
 
                 //await _candlesMigrationService.SetProcessedDateAsync(feedHistory.AssetPair, PriceType.Mid, feedHistory.DateTime);
             }
