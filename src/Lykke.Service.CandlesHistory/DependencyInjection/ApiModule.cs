@@ -122,7 +122,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
-                .SingleInstance();
+                .SingleInstance()
+                .WithParameter(TypedParameter.From(_settings.Persistence));
 
             builder.RegisterType<QueueMonitor>()
                 .As<IStartable>()
