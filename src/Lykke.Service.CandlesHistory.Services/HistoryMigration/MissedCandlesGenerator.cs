@@ -181,7 +181,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             var start = exclusiveStartDate.AddSeconds(1);
             var end = exclusiveEndDate.AddSeconds(-1);
 
-            if (start - end <= TimeSpan.Zero)
+            if (end - start <= TimeSpan.Zero)
             {
                 yield break;
             }
