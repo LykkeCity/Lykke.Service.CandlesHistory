@@ -74,6 +74,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     assetPair,
                     _log,
                     _candlesMigrationService,
+                    new BidAskHistoryService(), 
                     OnMigrationStopped);
 
                 assetManager.StartRandom(start, end, startPrice, endPrice, spread);
@@ -114,7 +115,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     assetHealthService,
                     assetPair, 
                     _log, 
-                    _candlesMigrationService, 
+                    _candlesMigrationService,
+                    new BidAskHistoryService(), 
                     OnMigrationStopped);
 
                 assetManager.Start();
