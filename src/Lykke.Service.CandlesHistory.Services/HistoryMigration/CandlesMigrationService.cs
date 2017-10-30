@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -36,9 +37,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 return processedDate.Value;
             }
 
-            var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair);
+            var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair, priceType);
 
-            return oldestFeedHistory?.DateTime;
+            return oldestFeedHistory
+                ?.Candles
+                .First()
+                .ToCandle(assetPair, priceType, oldestFeedHistory.DateTime).Timestamp;
         }
 
         public async Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType, DateTime now)

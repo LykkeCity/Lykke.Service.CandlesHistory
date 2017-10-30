@@ -28,6 +28,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly MigrationCandlesGenerator _candlesGenerator;
         private readonly MissedCandlesGenerator _missedCandlesGenerator;
+        private DateTime _prevAskTimestamp;
+        private DateTime _prevBidTimestamp;
+        private DateTime _prevMidTimestamp;
 
         private readonly ImmutableArray<TimeInterval> _intervalsToGenerate = Constants
             .StoredIntervals
@@ -72,6 +75,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             try
             {
+                _prevAskTimestamp = _prevBidTimestamp = _prevMidTimestamp = start.AddSeconds(-1);
+
                 _healthService.UpdateOverallProgress($"Randomizing bid and ask candles in the dates range {start} - {end} and prices {startPrice} - {endPrice} and generating mid history");
                 _healthService.UpdateStartDates(start, start);
                 _healthService.UpdateEndDates(end, end);
@@ -79,7 +84,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 await Task.WhenAll(
                     RandomizeCandlesAsync(PriceType.Ask, start, end, startPrice, endPrice, spread),
                     RandomizeCandlesAsync(PriceType.Bid, start, end, startPrice, endPrice, spread),
-                    GenerateMidHistoryAsync(end, end));
+                    GenerateMidHistoryAsync(start, start, end, end));
 
                 //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
@@ -128,6 +133,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 (DateTime? askStartDate, DateTime? bidStartDate) = await GetStartDatesAsync();
 
+                _prevAskTimestamp = askStartDate?.AddSeconds(-1) ?? DateTime.MinValue;
+                _prevBidTimestamp = bidStartDate?.AddSeconds(-1) ?? DateTime.MinValue;
+                
                 _healthService.UpdateStartDates(askStartDate, bidStartDate);
                 _healthService.UpdateOverallProgress("Obtaining bid and ask end dates");
 
@@ -139,7 +147,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 await Task.WhenAll(
                     ProcessAskAndBidHistoryAsync(askStartDate, askEndDate, bidStartDate, bidEndDate),
                     askStartDate.HasValue && bidStartDate.HasValue
-                        ? GenerateMidHistoryAsync(askEndDate, bidEndDate)
+                        ? GenerateMidHistoryAsync(askStartDate.Value, bidStartDate.Value, askEndDate, bidEndDate)
                         : Task.CompletedTask);
 
                 //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
@@ -225,16 +233,19 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             await Task.CompletedTask;
         }
 
-        private async Task GenerateMidHistoryAsync(DateTime askEndTime, DateTime bidEndTime)
+        private async Task GenerateMidHistoryAsync(DateTime askStartTime, DateTime bidStartTime, DateTime askEndTime, DateTime bidEndTime)
         {
+            var midStartTime = askStartTime < bidStartTime ? bidStartTime : askStartTime;
             var midEndTime = (askEndTime < bidEndTime ? askEndTime : bidEndTime).AddSeconds(-1);
-            
+
+            _prevMidTimestamp = midStartTime.AddSeconds(-1);
+
             while (_healthService.CurrentMidDate < midEndTime)
             {
                 // Lets migrate some bid and ask history
                 await Task.Delay(1000);
 
-                var bidAskHistory = _bidAskHistoryService.PopReadyHistory();
+                var bidAskHistory = _bidAskHistoryService.PopReadyHistory(midStartTime);
                 var secMidCandles = new List<ICandle>();
 
                 foreach (var item in bidAskHistory)
@@ -295,6 +306,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             foreach (var candle in secCandles)
             {
+                CheckCandleOrder(candle);
+
                 foreach (var interval in _intervalsToGenerate)
                 {
                     if (_cts.IsCancellationRequested)
@@ -319,6 +332,44 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
 
             return false;
+        }
+
+        private void CheckCandleOrder(ICandle candle)
+        {
+            DateTime CheckTimestamp(PriceType priceType, DateTime prevTimestamp, DateTime currentTimestamp)
+            {
+                var distance = currentTimestamp - prevTimestamp;
+
+                if (distance == TimeSpan.Zero)
+                {
+                    throw new InvalidOperationException($"Candle {priceType} timestamp duplicated at {currentTimestamp}");
+                }
+                if (distance < TimeSpan.Zero)
+                {
+                    throw new InvalidOperationException($"Candle {priceType} timestamp is to old at {currentTimestamp}, prev was {prevTimestamp}");
+                }
+                if (distance > TimeSpan.FromSeconds(1))
+                {
+                    throw new InvalidOperationException($"Candle {priceType} timestamp is skipped at {currentTimestamp}, prev was {prevTimestamp}");
+                }
+
+                return currentTimestamp;
+            }
+
+            switch (candle.PriceType)
+            {
+                case PriceType.Ask:
+                    _prevAskTimestamp = CheckTimestamp(PriceType.Ask, _prevAskTimestamp, candle.Timestamp);
+                    break;
+                case PriceType.Bid:
+                    _prevBidTimestamp = CheckTimestamp(PriceType.Bid, _prevBidTimestamp, candle.Timestamp);
+                    break;
+                case PriceType.Mid:
+                    _prevMidTimestamp = CheckTimestamp(PriceType.Mid, _prevMidTimestamp, candle.Timestamp);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(candle.PriceType), candle.PriceType, "Invalid price type");
+            }
         }
 
         public void Stop()

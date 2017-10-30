@@ -11,26 +11,54 @@ namespace Lykke.Service.CandlesHistory.Tests
     public partial class MissedCandlesGeneratorTests
     {
         [TestMethod]
-        public void Test_Generator()
+        public void Test_that_one_sec_candles_gap_generates_single_candle()
         {
             // Arrange
             var generator = new MissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
-                new AssetPairResponseModel
-                {
-                    Id = "EURUSD",
-                    Accuracy = 5
-                },
-                PriceType.Ask,
-                new DateTime(2017, 10, 28, 00, 00, 00, DateTimeKind.Utc),
-                new DateTime(2017, 10, 28, 00, 01, 00, DateTimeKind.Utc),
-                1,
-                2,
-                0.2);
+                    new AssetPairResponseModel
+                    {
+                        Id = "BTCEUR",
+                        Accuracy = 5
+                    },
+                    PriceType.Bid,
+                    new DateTime(2016, 04, 28, 10, 57, 29, DateTimeKind.Utc),
+                    new DateTime(2016, 04, 28, 10, 57, 31, DateTimeKind.Utc),
+                    1,
+                    2,
+                    0.2)
+                .ToArray();
 
-            var a = candles.ToArray();
+            // Assert
+            Assert.AreEqual(1, candles.Length);
+            Assert.AreEqual(new DateTime(2016, 04, 28, 10, 57, 30, DateTimeKind.Utc), candles.First().Timestamp);
+        }
+
+        [TestMethod]
+        public void Test_that_zero_candles_gap_generates_no_candles()
+        {
+            // Arrange
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                    new AssetPairResponseModel
+                    {
+                        Id = "BTCEUR",
+                        Accuracy = 5
+                    },
+                    PriceType.Bid,
+                    new DateTime(2016, 04, 28, 10, 57, 29, DateTimeKind.Utc),
+                    new DateTime(2016, 04, 28, 10, 57, 30, DateTimeKind.Utc),
+                    1,
+                    2,
+                    0.2)
+                .ToArray();
+
+            // Assert
+            Assert.AreEqual(0, candles.Length);
         }
     }
 }
