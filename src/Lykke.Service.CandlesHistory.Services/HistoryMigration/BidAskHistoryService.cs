@@ -17,7 +17,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _storage = new LinkedList<(DateTime timestamp, ICandle ask, ICandle bid)>();
         }
 
-        public IReadOnlyList<(DateTime timestamp, ICandle ask, ICandle bid)> PopReadyHistory()
+        public IReadOnlyList<(DateTime timestamp, ICandle ask, ICandle bid)> PopReadyHistory(DateTime startDate)
         {
             lock (_storage)
             {
@@ -26,19 +26,27 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 for (var item = _storage.First; item != null;)
                 {
                     var value = item.Value;
+
+                    // Returns only items with both ask and bid candles
+
                     if (value.ask != null && value.bid != null)
                     {
                         result.Add(value);
-
-                        var itemToRemove = item;
-                        item = item.Next;
-
-                        _storage.Remove(itemToRemove);
                     }
-                    else
+
+                    // Breaks, when items filled with both ask and bid candles are ended, and they are after the startDate
+
+                    else if(value.timestamp >= startDate)
                     {
                         break;
                     }
+
+                    // Removes added to the result items and skipped due to timestamp is before startDate items
+
+                    var itemToRemove = item;
+                    item = item.Next;
+
+                    _storage.Remove(itemToRemove);
                 }
 
                 return result;

@@ -23,7 +23,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
             Tick = tick;
         }
 
-        public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime, TimeInterval timeInterval)
+        public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime)
         {
             return new Candle(
                 open: Open,
@@ -32,8 +32,8 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
                 low: Low,
                 assetPair: assetPairId,
                 priceType: priceType,
-                timeInterval: timeInterval,
-                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
+                timeInterval: TimeInterval.Sec,
+                timestamp: baseTime.AddIntervalTicks(Tick, TimeInterval.Sec));
         }
     }
 }

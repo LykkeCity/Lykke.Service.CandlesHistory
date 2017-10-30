@@ -33,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             var key = GetKey(feedHistory.AssetPair, feedHistory.PriceType);
             var candles = feedHistory.Candles
-                .Select(item => item.ToCandle(feedHistory.AssetPair, feedHistory.PriceType, feedHistory.DateTime, TimeInterval.Sec))
+                .Select(item => item.ToCandle(feedHistory.AssetPair, feedHistory.PriceType, feedHistory.DateTime))
                 .ToList();
 
             _lastCandles.TryGetValue(key, out var lastCandle);
@@ -172,34 +172,34 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             PriceType priceType, 
             DateTime exclusiveStartDate, 
             DateTime exclusiveEndDate, 
-            double startPrice, 
-            double endPrice,
+            double exclusiveStartPrice, 
+            double exclusiveEndPrice,
             double spread)
         {
-            //Console.WriteLine($"Generating missed candles: {exclusiveStartDate} - {exclusiveEndDate}, {startPrice} - {endPrice}");
+            //Console.WriteLine($"Generating missed candles: {exclusiveStartDate} - {exclusiveEndDate}, {exclusiveStartPrice} - {exclusiveEndPrice}");
 
             var start = exclusiveStartDate.AddSeconds(1);
             var end = exclusiveEndDate.AddSeconds(-1);
 
-            if (end - start <= TimeSpan.Zero)
+            if (exclusiveEndDate - exclusiveStartDate <= TimeSpan.FromSeconds(1))
             {
                 yield break;
             }
 
-            var duration = (end - start).TotalSeconds;
-            var prevClose = startPrice;
-            var trendSign = startPrice < endPrice ? 1 : -1;
+            var duration = (exclusiveEndDate - exclusiveStartDate).TotalSeconds;
+            var prevClose = exclusiveStartPrice;
+            var trendSign = exclusiveStartPrice < exclusiveEndPrice ? 1 : -1;
             // Absolute start to end price change in % of start price
-            var totalPriceChange = Math.Abs((endPrice - startPrice) / startPrice);
+            var totalPriceChange = Math.Abs((exclusiveEndPrice - exclusiveStartPrice) / exclusiveStartPrice);
             var stepPriceChange = totalPriceChange / duration;
 
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
             {
                 // Interpolation parameter (0..1)
-                var t = (timestamp - start).TotalSeconds / duration;
+                var t = (timestamp - exclusiveStartDate).TotalSeconds / duration;
 
                 // Lineary interpolated price for current candle
-                var mid = MathEx.Lerp(startPrice, endPrice, t);
+                var mid = MathEx.Lerp(exclusiveStartPrice, exclusiveEndPrice, t);
 
                 var halfSpread = spread * 0.5;
 
