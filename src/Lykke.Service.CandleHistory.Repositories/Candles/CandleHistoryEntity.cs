@@ -190,12 +190,17 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 throw new ArgumentNullException(nameof(value));
             }
 
-            if (!DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.AssumeUniversal, out var date))
+            if (DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.AssumeUniversal, out var date))
             {
-                throw new InvalidOperationException($"Failed to parse RowKey '{value}' as DateTime");
+                return DateTime.SpecifyKind(date, DateTimeKind.Utc);
             }
 
-            return DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            if (long.TryParse(value, out var ticks))
+            {
+                return new DateTime(ticks, DateTimeKind.Utc);
+            }
+
+            throw new InvalidOperationException($"Failed to parse RowKey '{value}' as DateTime");
         }
     }
 }
