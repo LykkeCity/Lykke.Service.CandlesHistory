@@ -5,54 +5,57 @@ using Lykke.Service.CandlesHistory.Core.Services;
 
 namespace Lykke.Service.CandlesHistory.Services
 {
-    public class SnapshotSerializer<TState> : ISnapshotSerializer
+    public class SnapshotSerializer : ISnapshotSerializer
     {
-        private readonly IHaveState<TState> _stateHolder;
-        private readonly ISnapshotRepository<TState> _repository;
         private readonly ILog _log;
 
-        public SnapshotSerializer(
-            IHaveState<TState> stateHolder,
-            ISnapshotRepository<TState> repository,
-            ILog log)
+        public SnapshotSerializer(ILog log)
         {
-            _stateHolder = stateHolder;
-            _repository = repository;
-            _log = log.CreateComponentScope($"{nameof(SnapshotSerializer<TState>)}[{_stateHolder.GetType().Name}]");
+            _log = log;
         }
 
-        public async Task SerializeAsync()
+        public async Task SerializeAsync<TState>(IHaveState<TState> stateHolder, ISnapshotRepository<TState> repository)
         {
-            await _log.WriteInfoAsync(nameof(SerializeAsync), "", "Gettings state...");
-
-            var state = _stateHolder.GetState();
-
-            await _log.WriteInfoAsync(nameof(SerializeAsync), _stateHolder.DescribeState(state), "Saving state...");
-
-            await _repository.SaveAsync(state);
-
-            await _log.WriteInfoAsync(nameof(SerializeAsync), "", "State saved");
+            await SerializeAsync(_log.CreateComponentScope($"{nameof(SnapshotSerializer)}[{stateHolder.GetType().Name}]"), stateHolder, repository);
         }
 
-        public async Task<bool> DeserializeAsync()
+        public async Task<bool> DeserializeAsync<TState>(IHaveState<TState> stateHolder, ISnapshotRepository<TState> repository)
         {
-            await _log.WriteInfoAsync(nameof(DeserializeAsync), "", "Loading state...");
+            return await DeserializeAsync(_log.CreateComponentScope($"{nameof(SnapshotSerializer)}[{stateHolder.GetType().Name}]"), stateHolder, repository);
+        }
 
-            var state = await _repository.TryGetAsync();
+        private static async Task SerializeAsync<TState>(ILog log, IHaveState<TState> stateHolder, ISnapshotRepository<TState> repository)
+        {
+            await log.WriteInfoAsync(nameof(SerializeAsync), "", "Gettings state...");
+
+            var state = stateHolder.GetState();
+
+            await log.WriteInfoAsync(nameof(SerializeAsync), stateHolder.DescribeState(state), "Saving state...");
+
+            await repository.SaveAsync(state);
+
+            await log.WriteInfoAsync(nameof(SerializeAsync), "", "State saved");
+        }
+
+        private async Task<bool> DeserializeAsync<TState>(ILog log, IHaveState<TState> stateHolder, ISnapshotRepository<TState> repository)
+        {
+            await log.WriteInfoAsync(nameof(DeserializeAsync), "", "Loading state...");
+
+            var state = await repository.TryGetAsync();
 
             if (state == null)
             {
-                await _log.WriteWarningAsync("SnapshotSerializer", nameof(DeserializeAsync),
-                    _stateHolder.GetType().Name, "No snapshot found to deserialize");
+                await log.WriteWarningAsync("SnapshotSerializer", nameof(DeserializeAsync),
+                    stateHolder.GetType().Name, "No snapshot found to deserialize");
 
                 return false;
             }
 
-            await _log.WriteInfoAsync(nameof(DeserializeAsync), _stateHolder.DescribeState(state), "Settings state...");
+            await log.WriteInfoAsync(nameof(DeserializeAsync), stateHolder.DescribeState(state), "Settings state...");
 
-            _stateHolder.SetState(state);
+            stateHolder.SetState(state);
 
-            await _log.WriteInfoAsync(nameof(DeserializeAsync), "", "State was set");
+            await log.WriteInfoAsync(nameof(DeserializeAsync), "", "State was set");
 
             return true;
         }

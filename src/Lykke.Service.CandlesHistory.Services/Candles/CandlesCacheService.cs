@@ -74,7 +74,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             var key = GetKey(assetPairId, priceType, timeInterval);
 
-            if (_candles.TryGetValue(key, out LinkedList<ICandle> history))
+            if (_candles.TryGetValue(key, out var history))
             {
                 IReadOnlyCollection<ICandle> localHistory;
                 lock (history)

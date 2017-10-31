@@ -25,14 +25,12 @@ namespace Lykke.Service.CandlesHistory.Services
         private TimeSpan _totalPersistTime;
         private long _totalPersistCount;
 
-        public void TraceStartPersistCandles(int candlesCount)
+        public void TraceStartPersistCandles()
         {
             if (_persistCandlesStopwatch != null)
             {
                 return;
             }
-
-            _totalCandlesPersistedCount += candlesCount;
 
             _persistCandlesStopwatch = Stopwatch.StartNew();
         }
@@ -63,8 +61,9 @@ namespace Lykke.Service.CandlesHistory.Services
             Interlocked.Increment(ref _batchesToPersistQueueLength);
         }
 
-        public void TraceCandlesBatchPersisted()
+        public void TraceCandlesBatchPersisted(int candlesCount)
         {
+            Interlocked.Add(ref _totalCandlesPersistedCount, candlesCount);
             Interlocked.Decrement(ref _batchesToPersistQueueLength);
         }
     }

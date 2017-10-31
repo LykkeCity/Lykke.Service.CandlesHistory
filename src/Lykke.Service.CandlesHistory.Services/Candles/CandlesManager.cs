@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Extensions;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -25,33 +25,23 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
-        private readonly IAssetPairsManager _assetPairsManager;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
 
         public CandlesManager(
             ICandlesCacheService candlesCacheService,
             ICandlesHistoryRepository candlesHistoryRepository,
-            IAssetPairsManager assetPairsManager,
             ICandlesPersistenceQueue candlesPersistenceQueue)
         {
             _candlesCacheService = candlesCacheService;
             _candlesHistoryRepository = candlesHistoryRepository;
-            _assetPairsManager = assetPairsManager;
             _candlesPersistenceQueue = candlesPersistenceQueue;
         }
 
-        public async Task ProcessCandleAsync(ICandle candle)
+        public void ProcessCandle(ICandle candle)
         {
             try
             {
                 if (!_candlesHistoryRepository.CanStoreAssetPair(candle.AssetPairId))
-                {
-                    return;
-                }
-
-                var assetPair = await _assetPairsManager.TryGetEnabledPairAsync(candle.AssetPairId);
-
-                if (assetPair == null)
                 {
                     return;
                 }
@@ -78,10 +68,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
                 throw new InvalidOperationException($"Connection string for asset pair {assetPairId} not configured");
-            }
-            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
-            {
-                throw new InvalidOperationException($"Asset pair {assetPairId} not found or disabled in dictionary");
             }
 
             var alignedFromMoment = fromMoment.RoundTo(timeInterval);

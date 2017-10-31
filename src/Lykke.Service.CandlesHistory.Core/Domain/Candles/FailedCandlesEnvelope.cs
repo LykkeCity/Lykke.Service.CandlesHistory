@@ -4,13 +4,6 @@ using System.Linq;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
 {
-    public interface IFailedCandlesEnvelope
-    {
-        DateTime ProcessingMoment { get; }
-        string Exception { get; }
-        IEnumerable<ICandle> Candles { get; }
-    }
-
     public class FailedCandlesEnvelope : IFailedCandlesEnvelope
     {
         public DateTime ProcessingMoment { get; set; }

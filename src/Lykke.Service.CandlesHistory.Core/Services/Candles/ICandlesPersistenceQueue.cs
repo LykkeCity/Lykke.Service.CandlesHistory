@@ -7,7 +7,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface ICandlesPersistenceQueue : IStartable, IStopable, IHaveState<IImmutableList<ICandle>>
     {
-        bool DispatchCandlesToPersist();
+        void DispatchCandlesToPersist(int maxBatchSize);
         void EnqueueCandle(ICandle candle);
     }
 }

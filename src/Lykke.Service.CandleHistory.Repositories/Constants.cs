@@ -1,6 +1,6 @@
 ﻿namespace Lykke.Service.CandleHistory.Repositories
 {
-    internal class Constants
+    internal static class Constants
     {
         public const string SnapshotsContainer = "CandlesHistorySnapshots";
     }

@@ -48,11 +48,24 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
                 PriceType = candle.PriceType,
                 TimeInterval = candle.TimeInterval,
                 Timestamp = candle.Timestamp,
-                Open = (decimal) candle.Open,
-                Close = (decimal) candle.Close,
-                Low = (decimal) candle.Low,
-                High = (decimal) candle.High
+                Open = ConvertPrice(candle.Open),
+                Close = ConvertPrice(candle.Close),
+                Low = ConvertPrice(candle.Low),
+                High = ConvertPrice(candle.High)
             };
+        }
+
+        private static decimal ConvertPrice(double d)
+        {
+            try
+            {
+                return Convert.ToDecimal(d);
+            }
+            catch (OverflowException)
+            {
+                return d > 0 ? decimal.MaxValue : decimal.MinValue;
+            }
+            
         }
     }
 }

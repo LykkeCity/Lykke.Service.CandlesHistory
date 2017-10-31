@@ -1,23 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Blob;
+using AzureStorage.Tables;
 using Common.Log;
 using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
-using Lykke.Service.CandleHistory.Repositories;
+using Lykke.Service.CandleHistory.Repositories.Candles;
+using Lykke.Service.CandleHistory.Repositories.HistoryMigration;
 using Lykke.Service.CandleHistory.Repositories.Snapshots;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
@@ -94,6 +97,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<IShutdownManager>()
                 .SingleInstance();
 
+            builder.RegisterType<SnapshotSerializer>()
+                .As<ISnapshotSerializer>();
+
             builder.RegisterType<CandlesSubscriber>()
                 .As<ICandlesSubscriber>()
                 .WithParameter(TypedParameter.From(_settings.Rabbit.CandlesSubscription))
@@ -105,7 +111,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesCacheService>()
                 .As<ICandlesCacheService>()
-                .As<IHaveState<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
@@ -116,8 +121,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesPersistenceQueue>()
                 .As<ICandlesPersistenceQueue>()
-                .As<IHaveState<IImmutableList<ICandle>>>()
-                .SingleInstance();
+                .SingleInstance()
+                .WithParameter(TypedParameter.From(_settings.Persistence));
 
             builder.RegisterType<QueueMonitor>()
                 .As<IStartable>()
@@ -131,7 +136,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.Rabbit.FailedToPersistPublication))
                 .WithParameter(TypedParameter.From<IPublishingQueueRepository>(
                     new MessagePackBlobPublishingQueueRepository(
-                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString)))))
+                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10)))))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheInitalizationService>()
@@ -139,21 +144,39 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandlesCacheInitalizationService>();
 
             builder.RegisterType<CandlesCacheSnapshotRepository>()
-                .As<ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
-
-            builder.RegisterType<SnapshotSerializer<IImmutableDictionary<string, IImmutableList<ICandle>>>>()
-                .As<ISnapshotSerializer>()
-                .AsSelf();
+                .As<ICandlesCacheSnapshotRepository>()
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
 
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
-                .As<ISnapshotRepository<IImmutableList<ICandle>>>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
+                .As<ICandlesPersistenceQueueSnapshotRepository>()
+                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
 
-            builder.RegisterType<SnapshotSerializer<IImmutableList<ICandle>>>()
-                .As<ISnapshotSerializer>()
+            RegisterCandlesMigration(builder);
+        }
+
+        private void RegisterCandlesMigration(ContainerBuilder builder)
+        {
+            builder.RegisterType<FeedHistoryRepository>()
+                .As<IFeedHistoryRepository>()
+                .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
+                    _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                .SingleInstance();
+
+            builder.RegisterType<CandlesMigrationManager>()
                 .AsSelf()
-                .PreserveExistingDefaults();
+                .SingleInstance();
+
+            builder.RegisterType<CandlesesMigrationService>()
+                .As<ICandlesMigrationService>()
+                .SingleInstance();
+
+            builder.RegisterType<MigrationCandlesGenerator>()
+                .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<MissedCandlesGenerator>()
+                .AsSelf()
+                .SingleInstance();
         }
     }
 }
