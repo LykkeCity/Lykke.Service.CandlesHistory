@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -64,12 +63,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Candles, ordered by the tick
         /// </summary>
-        public List<CandleHistoryItem> Candles { get; set; }
+        public List<CandleHistoryItem> Candles { get; private set; }
 
         public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-            EntityProperty property;
-            if (properties.TryGetValue("Data", out property))
+            if (properties.TryGetValue("Data", out var property))
             {
                 var json = property.StringValue;
                 if (!string.IsNullOrEmpty(json))
@@ -145,7 +143,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        public void MergeCandle(ICandle candle, TimeInterval interval)
+        private void MergeCandle(ICandle candle, TimeInterval interval)
         {
             // 1. Check if candle with specified time already exist
             // 2. If found - merge, else - add to list

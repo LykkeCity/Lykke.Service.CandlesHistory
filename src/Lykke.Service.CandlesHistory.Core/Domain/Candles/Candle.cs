@@ -5,14 +5,14 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
 {
     public class Candle : ICandle
     {
-        public string AssetPairId { get; set; }
-        public PriceType PriceType { get; set; }
-        public TimeInterval TimeInterval { get; set; }
-        public DateTime Timestamp { get; set; }
-        public double Open { get; set; }
-        public double Close { get; set; }
-        public double High { get; set; }
-        public double Low { get; set; }
+        public string AssetPairId { get; }
+        public PriceType PriceType { get; }
+        public TimeInterval TimeInterval { get; }
+        public DateTime Timestamp { get; }
+        public double Open { get; }
+        public double Close { get; }
+        public double High { get; }
+        public double Low { get; }
 
         public Candle(string assetPair, PriceType priceType, TimeInterval timeInterval, DateTime timestamp, double open, double close, double high, double low)
         {

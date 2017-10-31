@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -26,7 +25,7 @@ namespace Lykke.Service.CandlesHistory.Services
         private TimeSpan _totalPersistTime;
         private long _totalPersistCount;
 
-        public void TraceStartPersistCandles(int candlesCount)
+        public void TraceStartPersistCandles()
         {
             if (_persistCandlesStopwatch != null)
             {

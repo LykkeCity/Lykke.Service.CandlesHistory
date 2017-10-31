@@ -19,7 +19,7 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
         /// and it will be used as merged candle <see cref="ICandle.Timestamp"/>
         /// </param>
         /// <returns>Merged candle, or null, if no candles to merge</returns>
-        public static ICandle MergeAll(this IEnumerable<ICandle> candles, DateTime? newTimestamp = null)
+        private static ICandle MergeAll(this IEnumerable<ICandle> candles, DateTime? newTimestamp = null)
         {
             if (candles == null)
             {

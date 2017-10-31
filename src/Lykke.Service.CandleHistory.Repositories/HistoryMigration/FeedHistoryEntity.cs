@@ -18,7 +18,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
         public DateTimeOffset Timestamp { get; set; }
         public string ETag { get; set; }
 
-        public FeedHistoryItem[] Candles { get; set; } = Array.Empty<FeedHistoryItem>();
+        public FeedHistoryItem[] Candles { get; private set; }
 
         public string AssetPair => PartitionKey.Split('_')[0];
         public DateTime DateTime
@@ -87,7 +87,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
         {
             var dict = new Dictionary<string, EntityProperty>
             {
-                {"Data", new EntityProperty(Candles.ToFeedHistoryData(TimeInterval.Sec))}
+                {"Data", new EntityProperty(Candles.ToFeedHistoryData())}
             };
 
             return dict;

@@ -12,17 +12,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
         public double Low { get; set; }
         public int Tick { get; set; }
 
-        public FeedHistoryItem(){}
-
-        public FeedHistoryItem(double open, double close, double high, double low, int tick)
-        {
-            Open = open;
-            Close = close;
-            High = high;
-            Low = low;
-            Tick = tick;
-        }
-
         public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime)
         {
             return new Candle(

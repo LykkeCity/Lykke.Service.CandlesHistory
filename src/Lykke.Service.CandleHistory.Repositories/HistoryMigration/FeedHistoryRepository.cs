@@ -21,12 +21,9 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
 
         public async Task<IFeedHistory> GetTopRecordAsync(string assetPair, PriceType priceType)
         {
-            return await _tableStorage.GetTopRecordAsync($"{assetPair}_{priceType}");
-        }
+            var entity = await _tableStorage.GetTopRecordAsync($"{assetPair}_{priceType}");
 
-        public async Task<IFeedHistory> GetCandle(string assetPair, PriceType priceType, string date)
-        {
-            return await _tableStorage.GetDataAsync(FeedHistoryEntity.GeneratePartitionKey(assetPair, priceType), date);
+            return FeedHistory.Create(entity);
         }
 
         public Task GetCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate, Func<IEnumerable<IFeedHistory>, PriceType, Task> chunkCallback)
@@ -43,7 +40,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
 
                 foreach (var historyItem in chunk.Where(item => item.DateTime >= feedStartDate && item.DateTime <= feedEndDate))
                 {
-                    yieldResult.Add(historyItem);
+                    yieldResult.Add(FeedHistory.Create(historyItem));
                 }
 
                 if (yieldResult.Count > 0)

@@ -180,7 +180,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             {
                 foreach (var timeInterval in Constants.StoredIntervals)
                 {
-                    _candles.TryRemove(GetKey(assetPair, timeInterval, priceType), out var candle);
+                    _candles.TryRemove(GetKey(assetPair, timeInterval, priceType), out var _);
                 }
             }
         }

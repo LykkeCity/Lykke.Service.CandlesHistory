@@ -8,10 +8,5 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
         {
             return random.NextDouble() * (maxValue - minValue) + minValue;
         }
-
-        public static int RandomSign(this Random rnd)
-        {
-            return rnd.Next(0, 1) * 2 - 1;
-        }
     }
 }

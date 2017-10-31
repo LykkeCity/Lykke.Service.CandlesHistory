@@ -76,13 +76,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return $"Candles: {state.Count}";
         }
 
-        public bool DispatchCandlesToPersist(int maxBatchSize)
+        public void DispatchCandlesToPersist(int maxBatchSize)
         {
             var candlesCount = _candlesToDispatch.Count;
 
             if (candlesCount == 0)
             {
-                return false;
+                return;
             }
 
             candlesCount = Math.Min(candlesCount, maxBatchSize);
@@ -105,8 +105,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             // Add candles to producer/consumer's queue
             Produce(candles);
-
-            return true;
         }
 
         protected override async Task Consume(IReadOnlyCollection<ICandle> candles)
@@ -136,7 +134,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return;
             }
 
-            _healthService.TraceStartPersistCandles(candles.Count);
+            _healthService.TraceStartPersistCandles();
 
             try
             {

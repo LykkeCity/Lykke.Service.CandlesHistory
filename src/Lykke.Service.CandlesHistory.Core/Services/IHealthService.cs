@@ -12,7 +12,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services
         int AverageCandlesPersistedPerSecond { get; }
         long TotalCandlesPersistedCount { get; }
 
-        void TraceStartPersistCandles(int candlesCount);
+        void TraceStartPersistCandles();
         void TraceStopPersistCandles();
      
         void TraceEnqueueCandle();
