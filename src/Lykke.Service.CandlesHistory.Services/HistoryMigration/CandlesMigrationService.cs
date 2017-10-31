@@ -11,32 +11,19 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
     public class CandlesesMigrationService : ICandlesMigrationService
     {
-        private readonly IMigrationProgressRepository _migrationProgressRepository;
         private readonly IFeedHistoryRepository _feedHistoryRepository;
-        private readonly IFeedBidAskHistoryRepository _feedBidAskHistoryRepository;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
 
         public CandlesesMigrationService(
-            IMigrationProgressRepository migrationProgressRepository,
             IFeedHistoryRepository feedHistoryRepository,
-            IFeedBidAskHistoryRepository feedBidAskHistoryRepository,
             ICandlesHistoryRepository candlesHistoryRepository)
         {
-            _migrationProgressRepository = migrationProgressRepository;
             _feedHistoryRepository = feedHistoryRepository;
-            _feedBidAskHistoryRepository = feedBidAskHistoryRepository;
             _candlesHistoryRepository = candlesHistoryRepository;
         }
 
         public async Task<DateTime?> GetStartDateAsync(string assetPair, PriceType priceType)
         {
-            var processedDate = await _migrationProgressRepository.GetProcessedDateAsync(assetPair, priceType);
-
-            if (processedDate != null)
-            {
-                return processedDate.Value;
-            }
-
             var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair, priceType);
 
             return oldestFeedHistory
@@ -61,26 +48,5 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             return _feedHistoryRepository.GetCandlesByChunkAsync(assetPair, priceType, startDate, endDate, callback);
         }
-
-        //public Task GetFeedHistoryBidAskByChunkAsync(string assetPair, DateTime startDate, DateTime endDate,
-        //    Func<IEnumerable<IFeedBidAskHistory>, Task> callback)
-        //{
-        //    return _feedBidAskHistoryRepository.GetHistoryByChunkAsync(assetPair, startDate, endDate, callback);
-        //}
-
-        //public async Task SaveBidAskHistoryAsync(string assetPair, IEnumerable<ICandle> candles, PriceType priceType)
-        //{
-        //    await _feedBidAskHistoryRepository.SaveHistoryItemAsync(assetPair, candles, priceType);
-        //}
-
-        //public async Task SetProcessedDateAsync(string assetPair, PriceType priceType, DateTime date)
-        //{
-        //    await _migrationProgressRepository.SetProcessedDateAsync(assetPair, priceType, date);
-        //}
-
-        //public async Task RemoveProcessedDateAsync(string assetPair)
-        //{
-        //    await _migrationProgressRepository.RemoveProcessedDateAsync(assetPair);
-        //}
     }
 }
