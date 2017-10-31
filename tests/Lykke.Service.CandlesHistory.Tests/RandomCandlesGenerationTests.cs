@@ -94,6 +94,12 @@ namespace Lykke.Service.CandlesHistory.Tests
                 {
                     break;
                 }
+
+                if (_manager.Health["EURUSD"].OverallProgressHistory.Any(x => x.Progress.Contains("Failed")))
+                {
+                    Assert.Fail(_manager.Health["EURUSD"].OverallProgressHistory.First(x => x.Progress.Contains("Failed")).Progress);
+                }
+
                 await Task.Delay(50);
             }
 
