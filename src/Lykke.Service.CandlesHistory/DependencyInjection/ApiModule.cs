@@ -162,18 +162,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                     _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
                 .SingleInstance();
 
-            builder.RegisterType<MigrationProgressRepository>()
-                .As<IMigrationProgressRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<MigrationProgressEntity>.Create(
-                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "CandlesHistoryProgress", _log)))
-                .SingleInstance();
-
-            builder.RegisterType<FeedBidAskHistoryRepository>()
-                .As<IFeedBidAskHistoryRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<FeedBidAskHistoryEntity>.Create(
-                    _dbSettings.ConnectionString(x => x.ProcessedCandlesConnectionString), "BidAskCandlesHistory", _log)))
-                .SingleInstance();
-
             builder.RegisterType<CandlesMigrationManager>()
                 .AsSelf()
                 .SingleInstance();
