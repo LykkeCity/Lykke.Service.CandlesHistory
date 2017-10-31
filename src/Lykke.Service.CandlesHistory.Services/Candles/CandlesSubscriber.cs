@@ -101,7 +101,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     return;
                 }
 
-                await _candlesManager.ProcessCandleAsync(candle);
+                _candlesManager.ProcessCandle(candle);
             }
             catch (Exception)
             {

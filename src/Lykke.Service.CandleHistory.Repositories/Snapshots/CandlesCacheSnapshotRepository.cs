@@ -4,13 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using MessagePack;
 
 namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 {
-    public class CandlesCacheSnapshotRepository : ISnapshotRepository<IImmutableDictionary<string, IImmutableList<ICandle>>>
+    public class CandlesCacheSnapshotRepository : ICandlesCacheSnapshotRepository
     {
         private const string Key = "CandlesCache";
 

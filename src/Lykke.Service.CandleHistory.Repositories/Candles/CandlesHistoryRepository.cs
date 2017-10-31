@@ -5,13 +5,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
-using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.SettingsReader;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class CandlesHistoryRepository : ICandlesHistoryRepository
     {
@@ -43,18 +42,6 @@ namespace Lykke.Service.CandleHistory.Repositories
                 return;
             }
 
-            foreach (var candle in candles)
-            {
-                if (candle.AssetPairId != assetPairId)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid AssetPriceId", nameof(candles));
-                }
-                if (candle.TimeInterval != timeInterval)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid TimeInterval", nameof(candles));
-                }
-            }
-
             var repo = GetRepo(assetPairId, timeInterval);
             try
             {
@@ -76,6 +63,20 @@ namespace Lykke.Service.CandleHistory.Repositories
             try
             {
                 return await repo.GetCandlesAsync(priceType, interval, from, to);
+            }
+            catch
+            {
+                ResetRepo(assetPairId, interval);
+                throw;
+            }
+        }
+
+        public async Task<DateTime?> GetFirstCandleDateTimeAsync(string assetPairId, TimeInterval interval, PriceType priceType)
+        {
+            var repo = GetRepo(assetPairId, interval);
+            try
+            {
+                return await repo.GetFirstCandleDateTimeAsync(priceType, interval);
             }
             catch
             {

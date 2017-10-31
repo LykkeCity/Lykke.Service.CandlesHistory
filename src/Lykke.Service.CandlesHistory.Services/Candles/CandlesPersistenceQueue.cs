@@ -9,6 +9,7 @@ using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -20,6 +21,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
+        private readonly PersistenceSettings _settings;
 
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
@@ -27,7 +29,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             ICandlesHistoryRepository repository,
             IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
-            IHealthService healthService) :
+            IHealthService healthService,
+            PersistenceSettings settings) :
 
             base(nameof(CandlesPersistenceQueue), log)
         {
@@ -35,11 +38,17 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _failedToPersistCandlesPublisher = failedToPersistCandlesPublisher;
             _log = log;
             _healthService = healthService;
+            _settings = settings;
             _candlesToDispatch = new ConcurrentQueue<ICandle>();
         }
 
         public void EnqueueCandle(ICandle candle)
         {
+            if (_healthService.CandlesToDispatchQueueLength > _settings.CandlesToDispatchLengthThrottlingThreshold)
+            {
+                Task.Delay(_settings.ThrottlingEnqueueDelay).Wait();
+            }
+
             _candlesToDispatch.Enqueue(candle);
 
             _healthService.TraceEnqueueCandle();
@@ -67,14 +76,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return $"Candles: {state.Count}";
         }
 
-        public bool DispatchCandlesToPersist()
+        public void DispatchCandlesToPersist(int maxBatchSize)
         {
             var candlesCount = _candlesToDispatch.Count;
 
             if (candlesCount == 0)
             {
-                return false;
+                return;
             }
+
+            candlesCount = Math.Min(candlesCount, maxBatchSize);
 
             var candles = new List<ICandle>(candlesCount);
 
@@ -94,8 +105,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             // Add candles to producer/consumer's queue
             Produce(candles);
-
-            return true;
         }
 
         protected override async Task Consume(IReadOnlyCollection<ICandle> candles)
@@ -110,7 +119,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
             finally
             {
-                _healthService.TraceCandlesBatchPersisted();
+                _healthService.TraceCandlesBatchPersisted(candles.Count);
             }
 #if DEBUG
             await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
@@ -125,7 +134,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return;
             }
 
-            _healthService.TraceStartPersistCandles(candles.Count);
+            _healthService.TraceStartPersistCandles();
 
             try
             {
@@ -160,19 +169,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 try
                 {
-                    var mergedCandles = group
-                        .GroupBy(c => c.Timestamp)
-                        .Select(g => g.MergeAll())
-                        .ToArray();
-
                     await _repository.InsertOrMergeAsync(
-                        mergedCandles,
+                        group.ToArray(),
                         assetPairId,
                         group.Key.PriceType,
                         group.Key.TimeInterval);
                 }
                 catch (Exception ex)
                 {
+                    await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(InsertAssetPairCandlesAsync), "", ex);
+
                     await _failedToPersistCandlesPublisher.ProduceAsync(new FailedCandlesEnvelope
                     {
                         ProcessingMoment = DateTime.UtcNow,

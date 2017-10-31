@@ -3,7 +3,7 @@ using Lykke.Domain.Prices;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class Constants
+    public static class Constants
     {
         public static readonly ImmutableArray<TimeInterval> StoredIntervals = ImmutableArray.Create
         (

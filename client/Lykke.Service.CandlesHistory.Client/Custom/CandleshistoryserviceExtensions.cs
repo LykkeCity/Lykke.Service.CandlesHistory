@@ -20,14 +20,12 @@ namespace Lykke.Service.CandlesHistory.Client
         {
             var result = await service.GetCandlesHistoryOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, cancellationToken);
 
-            var candlesHistoryResponseModel = result as CandlesHistoryResponseModel;
-            if (candlesHistoryResponseModel != null)
+            if (result is CandlesHistoryResponseModel candlesHistoryResponseModel)
             {
                 return candlesHistoryResponseModel;
             }
 
-            var errorResponse = result as ErrorResponse;
-            if (errorResponse != null)
+            if (result is ErrorResponse errorResponse)
             {
                 throw new ErrorResponseException(errorResponse);
             }

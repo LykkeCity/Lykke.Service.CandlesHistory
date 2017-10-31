@@ -2,7 +2,6 @@
 using System.Linq;
 using Common.Log;
 using Lykke.Domain.Prices;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +32,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -44,7 +43,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -55,7 +54,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -66,7 +65,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -77,7 +76,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -110,7 +109,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -121,7 +120,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -132,7 +131,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -143,7 +142,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -154,7 +153,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -165,7 +164,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.7,
                     Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -198,7 +197,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -209,7 +208,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -220,7 +219,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -231,7 +230,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -266,7 +265,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Adding_candle_without_history_adds_candle()
         {
             // Arrange
-            var candle = new Candle
+            var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -301,7 +300,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -309,7 +308,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -317,7 +316,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -325,14 +324,14 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
                     TimeInterval = TimeInterval.Day,
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8, Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -341,7 +340,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
                 }
             };
-            var candle = new Candle
+            var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -377,7 +376,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Sequental_candles_addition_without_history_replaces_candles()
         {
             // Arrange
-            var candle1 = new Candle
+            var candle1 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -388,7 +387,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 2,
                 High = 2
             };
-            var candle2 = new Candle
+            var candle2 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -422,7 +421,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void To_old_candles_evicts()
         {
             // Arrange
-            var candle1 = new Candle
+            var candle1 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -433,7 +432,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 2,
                 High = 2
             };
-            var candle2 = new Candle
+            var candle2 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -444,7 +443,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 1,
                 High = 1,
             };
-            var candle3 = new Candle
+            var candle3 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -455,7 +454,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 5,
                 High = 5,
             };
-            var candle4 = new Candle
+            var candle4 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -466,7 +465,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 4,
                 High = 4,
             };
-            var candle5 = new Candle
+            var candle5 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -477,7 +476,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Low = 3,
                 High = 3,
             };
-            var candle6 = new Candle
+            var candle6 = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,
@@ -570,7 +569,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -578,7 +577,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -586,7 +585,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -594,7 +593,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -602,7 +601,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -630,7 +629,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -638,7 +637,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -646,7 +645,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -654,7 +653,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -662,7 +661,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -689,7 +688,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Arrange
             var history = new[]
             {
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -697,7 +696,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -705,7 +704,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -713,7 +712,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -721,7 +720,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
-                new Candle
+                new TestCandle
                 {
                     AssetPairId = "EURUSD",
                     PriceType = PriceType.Ask,
@@ -731,7 +730,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 },
             };
 
-            var candle = new Candle
+            var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
                 PriceType = PriceType.Ask,

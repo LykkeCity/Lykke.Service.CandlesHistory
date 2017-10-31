@@ -66,7 +66,6 @@ namespace Lykke.Service.CandlesHistory.Tests
             _manager = new CandlesManager(
                 _cacheServiceMock.Object,
                 _historyRepositoryMock.Object,
-                _assetPairsManagerMock.Object,
                 _persistenceQueueMock.Object);
         }
 
@@ -74,29 +73,23 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Candle processing
 
         [TestMethod]
-        public async Task Only_candle_for_existing_enabled_asset_pairs_with_connection_string_are_processed()
+        public void Only_candle_for_asset_pairs_with_connection_string_are_processed()
         {
             // Arrange
-            var quote1 = new Candle { AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First() };
-            var quote2 = new Candle { AssetPairId = "USDRUB", TimeInterval = StoredIntervals.First() };
-            var quote3 = new Candle { AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First() };
+            var quote1 = new TestCandle { AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First() };
+            var quote3 = new TestCandle { AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First() };
 
             // Act
-            await _manager.ProcessCandleAsync(quote1);
-            await _manager.ProcessCandleAsync(quote2);
-            await _manager.ProcessCandleAsync(quote3);
+            _manager.ProcessCandle(quote1);
+            _manager.ProcessCandle(quote3);
 
             // Assert
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
             _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
 
-            _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Never, "No asset pair");
             _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-            _cacheServiceMock.Verify(s => s.Cache(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
 
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "USDRUB")), Times.Never, "No asset pair");
             _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURCHF")), Times.Never, "No asset pair nor connection string");
         }
 
         #endregion
@@ -109,13 +102,6 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
                 _manager.GetCandlesAsync("EURRUB", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
-        }
-
-        [TestMethod]
-        public async Task Getting_candles_of_asset_pair_that_doesnt_exists_throws()
-        {
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
-                _manager.GetCandlesAsync("USDRUB", PriceType.Mid, TimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
         }
 
         [TestMethod]
@@ -247,11 +233,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                  .Returns((string a, PriceType p, TimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
                 });
 
             // Act
@@ -271,11 +257,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns((string a, PriceType p, TimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
                 });
 
             // Act
@@ -297,11 +283,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns((string a, PriceType p, TimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
                 });
 
             // Act
@@ -350,11 +336,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns((string a, PriceType p, TimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
                 });
 
             // Act
@@ -375,11 +361,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(r => r.GetCandlesAsync(It.IsAny<string>(), It.IsAny<TimeInterval>(), It.IsAny<PriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
                 });
 
             // Act
@@ -404,21 +390,21 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.Is<DateTime>(d => d == new DateTime(2017, 06, 23, 17, 13, 00))))
                 .ReturnsAsync((string a, TimeInterval i, PriceType p, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 10, 00), Open = 1},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 11, 00), Open = 1},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 12, 00), Open = 1},
-                    new Candle {Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), Open = 1}
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 10, 00), Open = 1},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 11, 00), Open = 1},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 12, 00), Open = 1},
+                    new TestCandle {Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), Open = 1}
                 });
 
             _cacheServiceMock
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<PriceType>(), It.IsAny<TimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns((string a, PriceType p, TimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), Open = 2},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00), Open = 2},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00), Open = 2},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00), Open = 2},
-                    new Candle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00), Open = 2},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), Open = 2},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00), Open = 2},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00), Open = 2},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00), Open = 2},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00), Open = 2},
                 });
 
             // Act

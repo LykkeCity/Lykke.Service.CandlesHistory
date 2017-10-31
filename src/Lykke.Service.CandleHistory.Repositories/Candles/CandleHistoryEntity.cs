@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -8,7 +8,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 
-namespace Lykke.Service.CandleHistory.Repositories
+namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class CandleHistoryEntity : ITableEntity
     {
@@ -20,6 +20,7 @@ namespace Lykke.Service.CandleHistory.Repositories
         {
             PartitionKey = partitionKey;
             RowKey = rowKey;
+            Candles = new List<CandleHistoryItem>();
         }
 
         #region ITableEntity properties
@@ -38,7 +39,7 @@ namespace Lykke.Service.CandleHistory.Repositories
                 // extract from RowKey + Interval from PKey
                 if (!string.IsNullOrEmpty(RowKey))
                 {
-                    return ParseRowKey(RowKey, DateTimeKind.Utc);
+                    return ParseRowKey(RowKey);
                 }
                 return default(DateTime);
             }
@@ -59,32 +60,31 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        public List<CandleHistoryItem> Candles { get; set; } = new List<CandleHistoryItem>();
+        /// <summary>
+        /// Candles, ordered by the tick
+        /// </summary>
+        public List<CandleHistoryItem> Candles { get; private set; }
 
         public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-            Candles.Clear();
-
-            EntityProperty property;
-            if (properties.TryGetValue("Data", out property))
+            if (properties.TryGetValue("Data", out var property))
             {
                 var json = property.StringValue;
                 if (!string.IsNullOrEmpty(json))
                 {
-                    Candles.AddRange(JsonConvert.DeserializeObject<List<CandleHistoryItem>>(json));
+                    Candles = new List<CandleHistoryItem>(60);
+                    Candles.AddRange(JsonConvert.DeserializeObject<IEnumerable<CandleHistoryItem>>(json));
                 }
             }
         }
 
         public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            // Serialize candles
-            var json = JsonConvert.SerializeObject(Candles);
-
             var dict = new Dictionary<string, EntityProperty>
             {
-                {"Data", new EntityProperty(json)}
+                {"Data", new EntityProperty(JsonConvert.SerializeObject(Candles))}
             };
+
             return dict;
         }
 
@@ -143,59 +143,62 @@ namespace Lykke.Service.CandleHistory.Repositories
             }
         }
 
-        //public void MergeCandles(IEnumerable<CandleHistoryItem> candles, TimeInterval timeInterval)
-        //{
-        //    foreach (var candle in candles)
-        //    {
-        //        MergeCandle(candle, timeInterval);
-        //    }
-        //}
-
-        public void MergeCandle(ICandle candle, TimeInterval interval)
+        private void MergeCandle(ICandle candle, TimeInterval interval)
         {
             // 1. Check if candle with specified time already exist
             // 2. If found - merge, else - add to list
-            //
-            //var cell = candle.DateTime.GetIntervalCell(timeInterval);
+
             var tick = candle.Timestamp.GetIntervalTick(interval);
-            var existingCandle = Candles.FirstOrDefault(ci => ci.Tick == tick);
 
-            if (existingCandle != null)
+            // Considering that Candles is ordered by Tick
+            for(var i = 0; i < Candles.Count; ++i)
             {
-                // Merge in list
-                var mergedCandle = existingCandle
-                    .ToCandle(candle.AssetPairId, PriceType, DateTime, interval)
-                    .MergeWith(candle);
+                var currentCandle = Candles[i];
 
-                Candles.Remove(existingCandle);
-                Candles.Add(mergedCandle.ToItem(interval));
+                // While currentCandle.Tick < tick - just skipping
+                
+                // That's it, merge to existing candle
+                if (currentCandle.Tick == tick)
+                {
+                    currentCandle.InplaceMergeWith(candle);
+                    return;
+                }
+
+                // No candle is found but there are some candles after, so we should insert candle right before them
+                if (currentCandle.Tick > tick)
+                {
+                    Candles.Insert(i, candle.ToItem(tick));
+                    return;
+                }
             }
-            else
-            {
-                // Add to list
-                Candles.Add(candle.ToItem(interval));
-            }
+
+            // No candle is found, and no candles after, so just add to the end
+            Candles.Add(candle.ToItem(tick));
         }
-
-        //public void MergeCandle(CandleHistoryItem candleHistory, TimeInterval interval)
-        //{
-        //    var fc = candleHistory.ToCandle(, DateTime, interval);
-        //    MergeCandle(fc, interval);
-        //}
 
         private static string FormatRowKey(DateTime dateUtc)
         {
             return dateUtc.ToString("s"); // sortable format
         }
 
-        private static DateTime ParseRowKey(string value, DateTimeKind kind)
+        private static DateTime ParseRowKey(string value)
         {
             if (string.IsNullOrEmpty(value))
             {
                 throw new ArgumentNullException(nameof(value));
             }
 
-            return DateTime.SpecifyKind(DateTime.ParseExact(value, "s", System.Globalization.DateTimeFormatInfo.InvariantInfo), kind);
+            if (DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.AssumeUniversal, out var date))
+            {
+                return DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            }
+
+            if (long.TryParse(value, out var ticks))
+            {
+                return new DateTime(ticks, DateTimeKind.Utc);
+            }
+
+            throw new InvalidOperationException($"Failed to parse RowKey '{value}' as DateTime");
         }
     }
 }
