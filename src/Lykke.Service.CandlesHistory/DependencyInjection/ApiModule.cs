@@ -10,7 +10,6 @@ using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandleHistory.Repositories.HistoryMigration;
-using Lykke.Service.CandleHistory.Repositories.HistoryMigration.Snapshots;
 using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
@@ -177,14 +176,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<MissedCandlesGenerator>()
                 .AsSelf()
                 .SingleInstance();
-
-            builder.RegisterType<MigrationCandlesGeneratorSnapshotRepository>()
-                .As<IMigrationCandlesGeneratorSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
-
-            builder.RegisterType<MissedCandlesGeneratorSnapshotRepository>()
-                .As<IMissedCandlesGeneratorSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString))));
         }
     }
 }

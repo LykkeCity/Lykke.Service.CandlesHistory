@@ -128,11 +128,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        public void Resume()
-        {
-            // TODO: Implement it if needed
-        }
-
         private void OnMigrationStopped(string assetPair)
         {
             lock (_assetManagers)
