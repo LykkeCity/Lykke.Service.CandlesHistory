@@ -45,6 +45,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 {
                     throw new ArgumentException($"Candle {candle.ToJson()} has invalid PriceType", nameof(candles));
                 }
+                if (double.IsNaN(candle.Close) || double.IsNaN(candle.Open) || 
+                    double.IsNaN(candle.High) || double.IsNaN(candle.Low))
+                {
+                    throw new InvalidOperationException($"Candle {candle.ToJson()} has NaN prices");
+                }
             }
 
             var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);

@@ -21,8 +21,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             public double Close { get; }
             public double High { get; }
             public double Low { get; }
+            public string Tag { get; }
 
-            private Candle(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime timestamp, double open, double close, double low, double high)
+            private Candle(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime timestamp, double open, double close, double low, double high, string tag)
             {
                 AssetPairId = assetPairId;
                 PriceType = priceType;
@@ -32,6 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 Close = close;
                 Low = low;
                 High = high;
+                Tag = tag;
             }
 
             public static Candle Create(ICandle candle, TimeInterval? interval = null)
@@ -47,7 +49,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     candle.Open,
                     candle.Close,
                     candle.Low,
-                    candle.High
+                    candle.High,
+                    candle.Tag
                 );
             }
 
@@ -70,7 +73,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     oldCandle.Open,
                     newCandle.Close,
                     Math.Min(oldCandle.Low, newCandle.Low),
-                    Math.Max(oldCandle.High, newCandle.High)
+                    Math.Max(oldCandle.High, newCandle.High),
+                    newCandle.Tag
                 );
             }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Lykke.Domain.Prices;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
@@ -13,5 +13,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         double Close { get; }
         double High { get; }
         double Low { get; }
+        string Tag { get; }
     }
 }

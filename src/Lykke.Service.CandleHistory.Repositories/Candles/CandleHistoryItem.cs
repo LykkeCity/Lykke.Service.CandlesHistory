@@ -22,6 +22,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("T")]
         public int Tick { get; set; }
 
+        [JsonProperty("Tag")]
+        public string Tag { get; set; }
+
         public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime, TimeInterval timeInterval)
         {
             return new Candle(
@@ -32,7 +35,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: timeInterval,
-                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
+                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval),
+                tag: Tag);
         }
 
         /// <summary>

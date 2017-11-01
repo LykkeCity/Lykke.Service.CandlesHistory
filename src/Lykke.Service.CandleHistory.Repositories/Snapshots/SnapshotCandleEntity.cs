@@ -32,6 +32,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         [Key(7)]
         public decimal Low { get; set; }
 
+        [Key(8)]
+        public string Tag { get; set; }
+
         double ICandle.Open => (double) Open;
 
         double ICandle.Close => (double) Close;

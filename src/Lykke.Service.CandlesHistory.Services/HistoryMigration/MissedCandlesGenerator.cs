@@ -239,7 +239,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     open: Math.Round(open, assetPair.Accuracy),
                     close: Math.Round(close, assetPair.Accuracy),
                     high: Math.Round(high, assetPair.Accuracy),
-                    low: Math.Round(low, assetPair.Accuracy));
+                    low: Math.Round(low, assetPair.Accuracy),
+                    tag: "Randomly generated");
 
                 prevClose = close;
 
