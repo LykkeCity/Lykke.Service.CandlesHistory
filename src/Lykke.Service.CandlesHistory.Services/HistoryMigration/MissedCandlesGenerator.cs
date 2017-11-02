@@ -188,14 +188,20 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
 
             var duration = (exclusiveEndDate - exclusiveStartDate).TotalSeconds;
-            var prevClose = exclusiveStartPrice;
-            var trendSign = exclusiveStartPrice < exclusiveEndPrice ? 1 : -1;
+
+            var startPrice = double.IsNaN(exclusiveStartPrice) ? 0 : exclusiveStartPrice;
+            var endPrice = double.IsNaN(exclusiveEndPrice) ? 0 : exclusiveEndPrice;
+            var effectiveSpread = double.IsNaN(spread) ? 0 : spread;
+
+            var prevClose = startPrice;
+            var trendSign = startPrice < endPrice ? 1 : -1;
             // Absolute start to end price change in % of start price
-            var totalPriceChange = Math.Abs((exclusiveEndPrice - exclusiveStartPrice) / exclusiveStartPrice);
+            var totalPriceChange = Math.Abs((endPrice - startPrice) / startPrice);
+
 
             if (double.IsNaN(totalPriceChange))
             {
-                totalPriceChange = Math.Abs(exclusiveEndPrice - exclusiveStartPrice);
+                totalPriceChange = Math.Abs(endPrice - startPrice);
             }
 
             var stepPriceChange = totalPriceChange / duration;
@@ -206,12 +212,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 var t = (timestamp - exclusiveStartDate).TotalSeconds / duration;
 
                 // Lineary interpolated price for current candle
-                var mid = MathEx.Lerp(exclusiveStartPrice, exclusiveEndPrice, t);
+                var mid = MathEx.Lerp(startPrice, endPrice, t);
 
-                var halfSpread = spread * 0.5;
+                var halfSpread = effectiveSpread * 0.5;
 
                 // Next candle opens at prev candle close and +/- 5% of spread
-                var open = prevClose + _rnd.NextDouble(-0.05, 0.05) * spread;
+                var open = prevClose + _rnd.NextDouble(-0.05, 0.05) * effectiveSpread;
 
                 // in 90% of cases following the trend, and opposite in rest of cases
                 var currentSign = _rnd.NextDouble() < 0.9 ? trendSign : -trendSign;
@@ -257,7 +263,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         startDate = exclusiveStartDate,
                         endDate = exclusiveEndDate,
                         startPrice = exclusiveStartPrice,
-                        endPrice = exclusiveEndDate,
+                        endPrice = exclusiveEndPrice,
                         spread = spread,
                         timestamp = timestamp,
                         t = t
