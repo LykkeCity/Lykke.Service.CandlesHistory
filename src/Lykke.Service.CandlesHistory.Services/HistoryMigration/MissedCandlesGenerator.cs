@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Common;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
@@ -191,6 +192,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             var trendSign = exclusiveStartPrice < exclusiveEndPrice ? 1 : -1;
             // Absolute start to end price change in % of start price
             var totalPriceChange = Math.Abs((exclusiveEndPrice - exclusiveStartPrice) / exclusiveStartPrice);
+
+            if (double.IsNaN(totalPriceChange))
+            {
+                totalPriceChange = Math.Abs(exclusiveEndPrice - exclusiveStartPrice);
+            }
+
             var stepPriceChange = totalPriceChange / duration;
 
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
@@ -241,6 +248,23 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     high: Math.Round(high, assetPair.Accuracy),
                     low: Math.Round(low, assetPair.Accuracy),
                     tag: "Randomly generated");
+
+                if (double.IsNaN(close) || double.IsNaN(open) ||
+                    double.IsNaN(high) || double.IsNaN(low))
+                {
+                    var context = new
+                    {
+                        startDate = exclusiveStartDate,
+                        endDate = exclusiveEndDate,
+                        startPrice = exclusiveStartPrice,
+                        endPrice = exclusiveEndDate,
+                        spread = spread,
+                        timestamp = timestamp,
+                        t = t
+                    };
+
+                    throw new InvalidOperationException($"Generated candle {newCandle.ToJson()} has NaN prices. Context: {context.ToJson()}");
+                }
 
                 prevClose = close;
 
