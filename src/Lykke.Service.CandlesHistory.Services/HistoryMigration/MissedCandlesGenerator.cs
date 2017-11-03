@@ -169,13 +169,32 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         }
 
         public IEnumerable<ICandle> GenerateCandles(
+            IAssetPair assetPair,
+            PriceType priceType,
+            DateTime exclusiveStartDate,
+            DateTime exclusiveEndDate,
+            double exclusiveStartPrice,
+            double exclusiveEndPrice,
+            double spread)
+        {
+            return GenerateCandles(
+                assetPair,
+                priceType,
+                exclusiveStartDate,
+                exclusiveEndDate,
+                (decimal) exclusiveStartPrice,
+                (decimal) exclusiveEndPrice,
+                (decimal) spread);
+        }
+
+        private IEnumerable<ICandle> GenerateCandles(
             IAssetPair assetPair, 
             PriceType priceType, 
             DateTime exclusiveStartDate, 
             DateTime exclusiveEndDate, 
-            double exclusiveStartPrice, 
-            double exclusiveEndPrice,
-            double spread)
+            decimal exclusiveStartPrice,
+            decimal exclusiveEndPrice,
+            decimal spread)
         {
             //Console.WriteLine($"Generating missed candles: {exclusiveStartDate} - {exclusiveEndDate}, {exclusiveStartPrice} - {exclusiveEndPrice}");
 
@@ -187,60 +206,54 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 yield break;
             }
 
-            var duration = (exclusiveEndDate - exclusiveStartDate).TotalSeconds;
-
-            var startPrice = double.IsNaN(exclusiveStartPrice) ? 0 : exclusiveStartPrice;
-            var endPrice = double.IsNaN(exclusiveEndPrice) ? 0 : exclusiveEndPrice;
-            var effectiveSpread = double.IsNaN(spread) ? 0 : spread;
-
-            var prevClose = startPrice;
-            var trendSign = startPrice < endPrice ? 1 : -1;
+            var duration = (decimal)(exclusiveEndDate - exclusiveStartDate).TotalSeconds;
+            var prevClose = exclusiveStartPrice;
+            var trendSign = exclusiveStartPrice < exclusiveEndPrice ? 1 : -1;
             // Absolute start to end price change in % of start price
-            var totalPriceChange = Math.Abs((endPrice - startPrice) / startPrice);
-
-
-            if (double.IsNaN(totalPriceChange))
-            {
-                totalPriceChange = Math.Abs(endPrice - startPrice);
-            }
+            var totalPriceChange = exclusiveStartPrice != 0m
+                ? Math.Abs((exclusiveEndPrice - exclusiveStartPrice) / exclusiveStartPrice)
+                : Math.Abs(exclusiveEndPrice - exclusiveStartPrice);
 
             var stepPriceChange = totalPriceChange / duration;
+            var effectiveSpread = spread != 0
+                ? spread
+                : totalPriceChange * 0.2m;
 
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
             {
                 // Interpolation parameter (0..1)
-                var t = (timestamp - exclusiveStartDate).TotalSeconds / duration;
+                var t = (decimal)(timestamp - exclusiveStartDate).TotalSeconds / duration;
 
                 // Lineary interpolated price for current candle
-                var mid = MathEx.Lerp(startPrice, endPrice, t);
+                var mid = MathEx.Lerp(exclusiveStartPrice, exclusiveEndPrice, t);
 
-                var halfSpread = effectiveSpread * 0.5;
+                var halfSpread = effectiveSpread * 0.5m;
 
                 // Next candle opens at prev candle close and +/- 5% of spread
-                var open = prevClose + _rnd.NextDouble(-0.05, 0.05) * effectiveSpread;
+                var open = prevClose + _rnd.NextDecimal(-0.05m, 0.05m) * effectiveSpread;
 
                 // in 90% of cases following the trend, and opposite in rest of cases
-                var currentSign = _rnd.NextDouble() < 0.9 ? trendSign : -trendSign;
+                var currentSign = _rnd.NextDecimal(0m, 1m) < 0.9m ? trendSign : -trendSign;
 
                 // Candle can be closed up to 200% of price change from the open price
-                var close = open + _rnd.NextDouble(0, 2) * stepPriceChange * currentSign;
+                var close = open + _rnd.NextDecimal(0, 2) * stepPriceChange * currentSign;
 
                 // Lets candles goes up to 500% of the spread in the middle of the generated range, 
                 // and only inside the spread at the range boundaries
-                var rangeMinMaxDeviationFactor = MathEx.Lerp(1, 5, 2 * (0.5 - Math.Abs(0.5 - t)));
+                var rangeMinMaxDeviationFactor = MathEx.Lerp(1m, 5m, 2m * (0.5m - Math.Abs(0.5m - t)));
                 var min = mid - halfSpread * rangeMinMaxDeviationFactor;
                 var max = mid + halfSpread * rangeMinMaxDeviationFactor;
 
                 // Returns candles inside 80% of the current range spread, if it gone to far
                 if (close > max || close < min)
                 {
-                    close = mid + _rnd.NextDouble(-0.8, 0.8) * halfSpread * rangeMinMaxDeviationFactor;
+                    close = mid + _rnd.NextDecimal(-0.8m, 0.8m) * halfSpread * rangeMinMaxDeviationFactor;
                 }
 
                 // Max low/high deviation from open/close is 20% of candle height
                 var height = Math.Abs(open - close);
-                var high = Math.Max(open, close) + _rnd.NextDouble(0, 0.1) * height;
-                var low = Math.Min(open, close) - _rnd.NextDouble(0, 0.1) * height;
+                var high = Math.Max(open, close) + _rnd.NextDecimal(0m, 0.1m) * height;
+                var low = Math.Min(open, close) - _rnd.NextDecimal(0m, 0.1m) * height;
 
                 //Console.WriteLine($"{t:0.000} : {mid:0.000} : {min:0.000}-{max:0.000} : {open:0.000}-{close:0.000} : {low:0.000}-{high:0.000}");
 
@@ -249,14 +262,16 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     priceType: priceType,
                     timeInterval: TimeInterval.Sec,
                     timestamp: timestamp,
-                    open: Math.Round(open, assetPair.Accuracy),
-                    close: Math.Round(close, assetPair.Accuracy),
-                    high: Math.Round(high, assetPair.Accuracy),
-                    low: Math.Round(low, assetPair.Accuracy),
+                    open: (double) Math.Round(open, assetPair.Accuracy),
+                    close: (double) Math.Round(close, assetPair.Accuracy),
+                    high: (double) Math.Round(high, assetPair.Accuracy),
+                    low: (double) Math.Round(low, assetPair.Accuracy),
                     tag: "Randomly generated");
 
                 if (double.IsNaN(newCandle.Open) || double.IsNaN(newCandle.Close) ||
-                    double.IsNaN(newCandle.Low) || double.IsNaN(newCandle.High))
+                    double.IsNaN(newCandle.Low) || double.IsNaN(newCandle.High) ||
+                    double.IsInfinity(newCandle.Open) || double.IsInfinity(newCandle.Close) ||
+                    double.IsInfinity(newCandle.Low) || double.IsInfinity(newCandle.High))
                 {
                     var context = new
                     {
@@ -273,8 +288,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         exclusiveEndPrice = exclusiveEndPrice,
                         duration = duration,
                         spread = spread,
-                        startPrice = startPrice,
-                        endPrice = endPrice,
                         effectiveSpread = effectiveSpread,
                         prevClose = prevClose,
                         trendSign = trendSign,

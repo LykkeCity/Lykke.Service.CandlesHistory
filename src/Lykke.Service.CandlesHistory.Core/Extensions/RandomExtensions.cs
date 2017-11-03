@@ -4,9 +4,9 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
 {
     public static class RandomExtensions
     {
-        public static double NextDouble(this Random random, double minValue, double maxValue)
+        public static decimal NextDecimal(this Random random, decimal minValue, decimal maxValue)
         {
-            return random.NextDouble() * (maxValue - minValue) + minValue;
+            return (decimal)random.NextDouble() * (maxValue - minValue) + minValue;
         }
     }
 }
