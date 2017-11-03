@@ -255,8 +255,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     low: Math.Round(low, assetPair.Accuracy),
                     tag: "Randomly generated");
 
-                if (double.IsNaN(close) || double.IsNaN(open) ||
-                    double.IsNaN(high) || double.IsNaN(low))
+                if (double.IsNaN(newCandle.Open) || double.IsNaN(newCandle.Close) ||
+                    double.IsNaN(newCandle.Low) || double.IsNaN(newCandle.High))
                 {
                     var context = new
                     {
@@ -265,13 +265,29 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                             Id = assetPair.Id,
                             Accuracy = assetPair.Accuracy
                         },
-                        startDate = exclusiveStartDate,
-                        endDate = exclusiveEndDate,
-                        startPrice = exclusiveStartPrice,
-                        endPrice = exclusiveEndPrice,
+                        exclusiveStartDate = exclusiveStartDate,
+                        exclusiveEndDate = exclusiveEndDate,
+                        start = start,
+                        end = end,
+                        exclusiveStartPrice = exclusiveStartPrice,
+                        exclusiveEndPrice = exclusiveEndPrice,
+                        duration = duration,
                         spread = spread,
+                        startPrice = startPrice,
+                        endPrice = endPrice,
+                        effectiveSpread = effectiveSpread,
+                        prevClose = prevClose,
+                        trendSign = trendSign,
+                        totalPriceChange = totalPriceChange,
                         timestamp = timestamp,
-                        t = t
+                        t = t,
+                        mid = mid,
+                        halfSpread = halfSpread,
+                        currentSign = currentSign,
+                        rangeMinMaxDeviationFactor = rangeMinMaxDeviationFactor,
+                        min = min,
+                        max = max,
+                        height = height
                     };
 
                     throw new InvalidOperationException($"Generated candle {newCandle.ToJson()} has NaN prices. Context: {context.ToJson()}");
