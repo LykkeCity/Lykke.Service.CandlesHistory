@@ -177,14 +177,28 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             double exclusiveEndPrice,
             double spread)
         {
+            decimal ConvertToDecimal(double d)
+            {
+                if (double.IsNaN(d))
+                {
+                    return 0;
+                }
+                if (double.IsInfinity(d))
+                {
+                    return 0;
+                }
+
+                return Convert.ToDecimal(d);
+            }
+
             return GenerateCandles(
                 assetPair,
                 priceType,
                 exclusiveStartDate,
                 exclusiveEndDate,
-                (decimal) exclusiveStartPrice,
-                (decimal) exclusiveEndPrice,
-                (decimal) spread);
+                ConvertToDecimal(exclusiveStartPrice),
+                ConvertToDecimal(exclusiveEndPrice),
+                ConvertToDecimal(spread));
         }
 
         private IEnumerable<ICandle> GenerateCandles(
