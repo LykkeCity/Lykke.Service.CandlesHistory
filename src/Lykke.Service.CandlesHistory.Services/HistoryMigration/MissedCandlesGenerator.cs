@@ -260,6 +260,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     var context = new
                     {
+                        AssetPair = new
+                        {
+                            Id = assetPair.Id,
+                            Accuracy = assetPair.Accuracy
+                        },
                         startDate = exclusiveStartDate,
                         endDate = exclusiveEndDate,
                         startPrice = exclusiveStartPrice,

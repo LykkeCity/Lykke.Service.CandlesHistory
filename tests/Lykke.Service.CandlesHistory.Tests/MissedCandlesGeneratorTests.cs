@@ -11,7 +11,7 @@ namespace Lykke.Service.CandlesHistory.Tests
     public partial class MissedCandlesGeneratorTests
     {
         [TestMethod]
-        public void Test_that_zero_zero_to_NaN_prices_generates_candles_well()
+        public void Test_that_not_NaN_prices_candles_generated_case1()
         {
             // Arrange
             var generator = new MissedCandlesGenerator();
@@ -28,6 +28,31 @@ namespace Lykke.Service.CandlesHistory.Tests
                     new DateTime(2017, 08, 16, 15, 14, 57, DateTimeKind.Utc),
                     0,
                     double.NaN,
+                    0)
+                .ToArray();
+
+            // Assert
+            Assert.AreEqual(7, candles.Length);
+        }
+
+        [TestMethod]
+        public void Test_that_not_NaN_prices_candles_generated_case2()
+        {
+            // Arrange
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                    new AssetPairResponseModel
+                    {
+                        Id = "EURUSD",
+                        Accuracy = 5
+                    },
+                    PriceType.Ask,
+                    new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
+                    new DateTime(2017, 08, 16, 15, 14, 57, DateTimeKind.Utc),
+                    0,
+                    1.17046,
                     0)
                 .ToArray();
 
