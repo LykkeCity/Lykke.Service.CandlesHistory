@@ -33,6 +33,13 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             // Assert
             Assert.AreEqual(7, candles.Length);
+            foreach (var candle in candles)
+            {
+                Assert.IsFalse(double.IsNaN(candle.Open));
+                Assert.IsFalse(double.IsNaN(candle.Close));
+                Assert.IsFalse(double.IsNaN(candle.Low));
+                Assert.IsFalse(double.IsNaN(candle.High));
+            }
         }
 
         [TestMethod]
@@ -58,6 +65,74 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             // Assert
             Assert.AreEqual(7, candles.Length);
+            foreach (var candle in candles)
+            {
+                Assert.IsFalse(double.IsNaN(candle.Open));
+                Assert.IsFalse(double.IsNaN(candle.Close));
+                Assert.IsFalse(double.IsNaN(candle.Low));
+                Assert.IsFalse(double.IsNaN(candle.High));
+            }
+        }
+
+        [TestMethod]
+        public void Test_that_the_same_start_and_end_prices_with_zerospread_produces_different_prices()
+        {
+            // Arrange
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                    new AssetPairResponseModel
+                    {
+                        Id = "EURUSD",
+                        Accuracy = 5
+                    },
+                    PriceType.Ask,
+                    new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
+                    new DateTime(2017, 08, 16, 15, 14, 51, DateTimeKind.Utc),
+                    1.17046,
+                    1.17046,
+                    0)
+                .ToArray();
+
+            // Assert
+            Assert.AreEqual(1, candles.Length);
+            Assert.AreNotEqual(1.17046, candles[0].Open, 0.000001);
+            Assert.AreNotEqual(1.17046, candles[0].Close, 0.000001);
+            Assert.AreNotEqual(1.17046, candles[0].High, 0.000001);
+            Assert.AreNotEqual(1.17046, candles[0].Low, 0.000001);
+        }
+
+        [TestMethod]
+        public void Test_that_near_zero_prices_not_generates_negative_prices()
+        {
+            // Arrange
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                    new AssetPairResponseModel
+                    {
+                        Id = "EURUSD",
+                        Accuracy = 5
+                    },
+                    PriceType.Ask,
+                    new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
+                    new DateTime(2017, 08, 16, 15, 15, 49, DateTimeKind.Utc),
+                    1.17046,
+                    0.0046,
+                    50)
+                .ToArray();
+
+            // Assert
+            Assert.AreEqual(59, candles.Length);
+            foreach (var candle in candles)
+            {
+                Assert.IsTrue(candle.Open > 0, $"Open price {candle.Open} for candle {candle.Timestamp} is not pisitive");
+                Assert.IsTrue(candle.Close > 0, $"Close price {candle.Close} for candle {candle.Timestamp} is not pisitive");
+                Assert.IsTrue(candle.Low > 0, $"Low price {candle.Low} for candle {candle.Timestamp} is not pisitive");
+                Assert.IsTrue(candle.High > 0, $"High price {candle.High} for candle {candle.Timestamp} is not pisitive");
+            }
         }
 
         [TestMethod]

@@ -116,7 +116,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 var currentCandleHeight = currentCandle.High - currentCandle.Low;
                 var nextCandleHeight = nextCandle.High - nextCandle.Low;
-                var spread = (currentCandleHeight + nextCandleHeight) * 0.5;
+                var candlesDiff = Math.Abs(nextCandle.Open - currentCandle.Close);
+                var spread = (currentCandleHeight + nextCandleHeight + candlesDiff) / 3;
 
                 var generagedCandles = GenerateCandles(
                     assetPair,
@@ -227,12 +228,33 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             var totalPriceChange = exclusiveStartPrice != 0m
                 ? Math.Abs((exclusiveEndPrice - exclusiveStartPrice) / exclusiveStartPrice)
                 : Math.Abs(exclusiveEndPrice - exclusiveStartPrice);
-
             var stepPriceChange = totalPriceChange / duration;
             var effectiveSpread = spread != 0
-                ? spread
+                ? Math.Abs(spread)
                 : totalPriceChange * 0.2m;
 
+            if (effectiveSpread == 0)
+            {
+                if (exclusiveStartPrice != 0)
+                {
+                    effectiveSpread = exclusiveStartPrice * 0.2m;
+                }
+            }
+
+            var backupMid = exclusiveEndPrice;
+
+            if (backupMid == 0)
+            {
+                if (exclusiveEndPrice != 0)
+                {
+                    backupMid = exclusiveEndPrice;
+                }
+                else
+                {
+                    backupMid = effectiveSpread;
+                }
+            }
+            
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
             {
                 // Interpolation parameter (0..1)
@@ -240,6 +262,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 // Lineary interpolated price for current candle
                 var mid = MathEx.Lerp(exclusiveStartPrice, exclusiveEndPrice, t);
+
+                if (mid <= 0)
+                {
+                    mid = backupMid;
+                }
 
                 var halfSpread = effectiveSpread * 0.5m;
 
@@ -258,6 +285,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 var min = mid - halfSpread * rangeMinMaxDeviationFactor;
                 var max = mid + halfSpread * rangeMinMaxDeviationFactor;
 
+                if (min <= 0)
+                {
+                    min = mid;
+                }
+
                 // Returns candles inside 80% of the current range spread, if it gone to far
                 if (close > max || close < min)
                 {
@@ -268,6 +300,26 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 var height = Math.Abs(open - close);
                 var high = Math.Max(open, close) + _rnd.NextDecimal(0m, 0.1m) * height;
                 var low = Math.Min(open, close) - _rnd.NextDecimal(0m, 0.1m) * height;
+
+                if (open <= 0)
+                {
+                    open = mid;
+                }
+
+                if (close <= 0)
+                {
+                    close = mid;
+                }
+
+                if (low <= 0)
+                {
+                    low = Math.Min(open, close);
+                }
+
+                if (high <= 0)
+                {
+                    high = Math.Max(open, close);
+                }
 
                 //Console.WriteLine($"{t:0.000} : {mid:0.000} : {min:0.000}-{max:0.000} : {open:0.000}-{close:0.000} : {low:0.000}-{high:0.000}");
 
