@@ -154,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                 await Task.WhenAll(processAskCandlesTask, processBidkCandlesTask);
 
-                _healthService.UpdateOverallProgress("Generate ending of missed feed history");
+                _healthService.UpdateOverallProgress($"Generate ending of missed feed history from ask {_healthService.CurrentAskDate:O}, bid {_healthService.CurrentBidDate:O}");
 
                 await Task.WhenAll(
                     GenerateAskBidMissedCandlesEndingAsync(PriceType.Ask, askEndDate),

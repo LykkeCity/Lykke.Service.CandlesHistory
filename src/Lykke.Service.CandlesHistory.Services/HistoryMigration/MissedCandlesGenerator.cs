@@ -86,8 +86,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     priceType,
                     lastCandle.Timestamp,
                     dateTime,
-                    lastCandle.Open,
                     lastCandle.Close,
+                    lastCandle.Open,
                     spread)
                 .ToList();
 
@@ -201,6 +201,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             var effectiveSpread = spread != 0
                 ? Math.Abs(spread)
                 : totalPriceChange * 0.2m;
+            var currentTrendSign = trendSign;
 
             if (effectiveSpread == 0)
             {
@@ -239,15 +240,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 // Next candle opens at prev candle close and +/- 5% of spread
                 var open = prevClose + _rnd.NextDecimal(-0.05m, 0.05m) * effectiveSpread;
 
-                // in 90% of cases following the trend, and opposite in rest of cases
-                var currentSign = _rnd.NextDecimal(0m, 1m) < 0.9m ? trendSign : -trendSign;
-
-                // Candle can be closed up to 200% of price change from the open price
-                var close = open + _rnd.NextDecimal(0, 2) * stepPriceChange * currentSign;
-
-                // Lets candles goes up to 500% of the spread in the middle of the generated range, 
+                // Lets candles goes from 10% near the generated range boundaries and 
+                // up to 100% of the spread in the middle of the generated range, 
                 // and only inside the spread at the range boundaries
-                var rangeMinMaxDeviationFactor = MathEx.Lerp(1m, 5m, 2m * (0.5m - Math.Abs(0.5m - t)));
+                var rangeMinMaxDeviationFactor = MathEx.Lerp(0.1m, 1m, 2m * (0.5m - Math.Abs(0.5m - t)));
                 var min = mid - halfSpread * rangeMinMaxDeviationFactor;
                 var max = mid + halfSpread * rangeMinMaxDeviationFactor;
 
@@ -256,13 +252,38 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     min = mid;
                 }
 
-                // Returns candles inside 80% of the current range spread, if it gone to far
-                if (close > max || close < min)
+                decimal closePriceMaxDeviation;
+                
+                // Close price max deviation is dependent of how close candle to the spread border is, and is the 150%
+                // in the middle of the spread, 0% in the trend target side of the spread, and 300% in the opposite sinde of the
+                // spread
+                if (currentTrendSign > 0)
                 {
-                    close = mid + _rnd.NextDecimal(-0.8m, 0.8m) * halfSpread * rangeMinMaxDeviationFactor;
+                    closePriceMaxDeviation = Math.Abs(max - open) / halfSpread * 1.5m; // 150%
+                }
+                else
+                {
+                    closePriceMaxDeviation = Math.Abs(open - min) / halfSpread * 1.5m; // 150%
                 }
 
-                // Max low/high deviation from open/close is 20% of candle height
+                // Candle can be closed from the 10% and up to closePriceMaxDeviation% of price change from the open price
+                // But only inside min/max and if it touched min/max, the sign will be changed, and close price will be regenerated
+
+                decimal GenerateClose(decimal sign)
+                {
+                    return open + _rnd.NextDecimal(0.0m, closePriceMaxDeviation) * stepPriceChange * sign;
+                }
+
+                var close = GenerateClose(currentTrendSign);
+
+                if (close >= max || close <= min)
+                {
+                    currentTrendSign = -currentTrendSign;
+
+                    close = GenerateClose(currentTrendSign);
+                }
+
+                // Max low/high deviation from open/close is 10% of candle height
                 var height = Math.Abs(open - close);
                 var high = Math.Max(open, close) + _rnd.NextDecimal(0m, 0.1m) * height;
                 var low = Math.Min(open, close) - _rnd.NextDecimal(0m, 0.1m) * height;
@@ -325,7 +346,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         t = t,
                         mid = mid,
                         halfSpread = halfSpread,
-                        currentSign = currentSign,
+                        currentTrendSign = currentTrendSign,
                         rangeMinMaxDeviationFactor = rangeMinMaxDeviationFactor,
                         min = min,
                         max = max,
