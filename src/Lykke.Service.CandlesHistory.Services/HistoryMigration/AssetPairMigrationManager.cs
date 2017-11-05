@@ -61,76 +61,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _cts = new CancellationTokenSource();
         }
 
-        public void StartRandom(DateTime start, DateTime end, double startPrice, double endPrice, double spread)
-        {
-            Task.Run(() => RandomizeAsync(start, end, startPrice, endPrice, spread).Wait());
-        }
-
         public void Start()
         {
             Task.Run(() => MigrateAsync().Wait());
-        }
-
-        private async Task RandomizeAsync(DateTime start, DateTime end, double startPrice, double endPrice, double spread)
-        {
-            try
-            {
-                _prevAskTimestamp = _prevBidTimestamp = start;
-
-                _healthService.UpdateOverallProgress($"Randomizing bid and ask candles in the dates range {start} - {end} and prices {startPrice} - {endPrice} and generating mid history");
-                _healthService.UpdateStartDates(start, start);
-                _healthService.UpdateEndDates(end, end);
-
-                await Task.WhenAll(
-                    RandomizeCandlesAsync(PriceType.Ask, start, end, startPrice, endPrice, spread),
-                    RandomizeCandlesAsync(PriceType.Bid, start, end, startPrice, endPrice, spread),
-                    GenerateMidHistoryAsync(start.AddSeconds(1), start.AddSeconds(1), end, end));
-
-                //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
-
-                _healthService.UpdateOverallProgress("Done");
-            }
-            catch (Exception ex)
-            {
-                _healthService.UpdateOverallProgress($"Failed: {ex}");
-
-                await _log.WriteErrorAsync(nameof(AssetPairMigrationManager), nameof(MigrateAsync), _assetPair.Id, ex);
-            }
-            finally
-            {
-                try
-                {
-                    _onStoppedAction.Invoke(_assetPair.Id);
-                }
-                catch (Exception ex)
-                {
-                    await _log.WriteErrorAsync(nameof(AssetPairMigrationManager), nameof(MigrateAsync), _assetPair.Id, ex);
-                }
-            }
-        }
-
-        private async Task RandomizeCandlesAsync(PriceType priceType, DateTime start, DateTime end, double startPrice, double endPrice, double spread)
-        {
-            try
-            {
-                var secCandles = _missedCandlesGenerator
-                    .GenerateCandles(_assetPair, priceType, start, end, startPrice, endPrice, spread)
-                    .ToArray();
-
-                if (ProcessSecCandles(secCandles))
-                {
-                    return;
-                }
-
-                _bidAskHistoryService.PushHistory(secCandles);
-
-                await Task.CompletedTask;
-            }
-            catch
-            {
-                _cts.Cancel();
-                throw;
-            }
         }
 
         private async Task MigrateAsync()

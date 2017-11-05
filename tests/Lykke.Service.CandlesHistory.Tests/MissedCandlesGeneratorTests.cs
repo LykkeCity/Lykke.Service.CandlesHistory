@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Lykke.Service.CandlesHistory.Tests
 {
     [TestClass]
-    public partial class MissedCandlesGeneratorTests
+    public class MissedCandlesGeneratorTests
     {
         [TestMethod]
         public void Test_that_not_NaN_prices_candles_generated_case1()
@@ -26,9 +26,9 @@ namespace Lykke.Service.CandlesHistory.Tests
                     PriceType.Ask,
                     new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
                     new DateTime(2017, 08, 16, 15, 14, 57, DateTimeKind.Utc),
-                    0,
+                    0.1,
                     double.NaN,
-                    0)
+                    0.1)
                 .ToArray();
 
             // Assert
@@ -184,6 +184,30 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             // Assert
             Assert.AreEqual(0, candles.Length);
+        }
+
+        [TestMethod]
+        public void Test_that_generator_generates_all_candles()
+        {
+            // Arrange
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                new AssetPairResponseModel
+                {
+                    Id = "BTCEUR",
+                    Accuracy = 5
+                },
+                PriceType.Bid,
+                new DateTime(2017, 10, 25, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
+                new DateTime(2017, 10, 26, 00, 00, 00, DateTimeKind.Utc),
+                1.3212,
+                1.1721,
+                0.02);
+
+            // Assert
+            Assert.AreEqual(60 * 60 * 24, candles.Count());
         }
     }
 }

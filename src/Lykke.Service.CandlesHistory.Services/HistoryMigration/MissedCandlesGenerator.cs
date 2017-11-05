@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Common;
@@ -11,7 +10,6 @@ using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Extensions;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -19,14 +17,16 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
     /// <summary>
     /// Generates missed candles for ask and bid sec candles history
     /// </summary>
-    public class MissedCandlesGenerator : IHaveState<IImmutableDictionary<string, ICandle>>
+    public class MissedCandlesGenerator
     {
-        private ConcurrentDictionary<string, Candle> _lastCandles;
+        private readonly ConcurrentDictionary<string, Candle> _lastCandles;
+        private readonly ConcurrentDictionary<string, decimal> _lastNonZeroPrices;
         private readonly Random _rnd;
 
         public MissedCandlesGenerator()
         {
             _lastCandles = new ConcurrentDictionary<string, Candle>();
+            _lastNonZeroPrices = new ConcurrentDictionary<string, decimal>();
             _rnd = new Random();
         }
 
@@ -104,36 +104,43 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             var result = new List<ICandle>();
 
-            for (var i = 0; i < candles.Count - 1; i++)
-            {
-                var currentCandle = candles[i];
-                var nextCandle = candles[i + 1];
-
-                var firstDate = currentCandle.Timestamp;
-                var lastDate = nextCandle.Timestamp;
-
-                result.Add(currentCandle);
-
-                var currentCandleHeight = currentCandle.High - currentCandle.Low;
-                var nextCandleHeight = nextCandle.High - nextCandle.Low;
-                var candlesDiff = Math.Abs(nextCandle.Open - currentCandle.Close);
-                var spread = (currentCandleHeight + nextCandleHeight + candlesDiff) / 3;
-
-                var generagedCandles = GenerateCandles(
-                    assetPair,
-                    currentCandle.PriceType,
-                    firstDate,
-                    lastDate,
-                    currentCandle.Close,
-                    nextCandle.Open,
-                    spread);
-
-                result.AddRange(generagedCandles);
-            }
-
             if (candles.Any())
             {
-                result.Add(candles.Last());
+                var nextCandle = NormalizeCandlePrices(candles.First());
+                
+                for (var i = 0; i < candles.Count - 1; i++)
+                {
+                    var currentCandle = nextCandle;
+
+                    UpdateLastNonZeroPrice(currentCandle);
+                    
+                    nextCandle = NormalizeCandlePrices(candles[i + 1]);
+                    
+                    var firstDate = currentCandle.Timestamp;
+                    var lastDate = nextCandle.Timestamp;
+
+                    result.Add(currentCandle);
+
+                    var currentCandleHeight = currentCandle.High - currentCandle.Low;
+                    var nextCandleHeight = nextCandle.High - nextCandle.Low;
+                    var candlesDiff = Math.Abs(nextCandle.Open - currentCandle.Close);
+                    var spread = (currentCandleHeight + nextCandleHeight + candlesDiff) / 3;
+
+                    var generagedCandles = GenerateCandles(
+                        assetPair,
+                        currentCandle.PriceType,
+                        firstDate,
+                        lastDate,
+                        currentCandle.Close,
+                        nextCandle.Open,
+                        spread);
+
+                    result.AddRange(generagedCandles);
+                }
+
+                UpdateLastNonZeroPrice(nextCandle);
+
+                result.Add(nextCandle);
             }
 
             return result;
@@ -147,28 +154,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        public IImmutableDictionary<string, ICandle> GetState()
-        {
-            return _lastCandles.ToArray().ToImmutableDictionary(i => i.Key, i => (ICandle)i.Value);
-        }
-
-        public void SetState(IImmutableDictionary<string, ICandle> state)
-        {
-            if (_lastCandles.Count > 0)
-            {
-                throw new InvalidOperationException("Missed candles generator state already not empty");
-            }
-
-            _lastCandles = new ConcurrentDictionary<string, Candle>(state.ToDictionary(
-                i => i.Key,
-                i => Candle.Create(i.Value)));
-        }
-
-        public string DescribeState(IImmutableDictionary<string, ICandle> state)
-        {
-            return $"Candles count: {state.Count}";
-        }
-
         public IEnumerable<ICandle> GenerateCandles(
             IAssetPair assetPair,
             PriceType priceType,
@@ -178,20 +163,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             double exclusiveEndPrice,
             double spread)
         {
-            decimal ConvertToDecimal(double d)
-            {
-                if (double.IsNaN(d))
-                {
-                    return 0;
-                }
-                if (double.IsInfinity(d))
-                {
-                    return 0;
-                }
-
-                return Convert.ToDecimal(d);
-            }
-
             return GenerateCandles(
                 assetPair,
                 priceType,
@@ -211,8 +182,6 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             decimal exclusiveEndPrice,
             decimal spread)
         {
-            //Console.WriteLine($"Generating missed candles: {exclusiveStartDate} - {exclusiveEndDate}, {exclusiveStartPrice} - {exclusiveEndPrice}");
-
             var start = exclusiveStartDate.AddSeconds(1);
             var end = exclusiveEndDate.AddSeconds(-1);
 
@@ -239,20 +208,17 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     effectiveSpread = exclusiveStartPrice * 0.2m;
                 }
+                else if(exclusiveEndPrice != 0)
+                {
+                    effectiveSpread = exclusiveEndPrice * 0.2m;
+                }
             }
 
-            var backupMid = exclusiveEndPrice;
+            var backupMid = exclusiveStartPrice;
 
             if (backupMid == 0)
             {
-                if (exclusiveEndPrice != 0)
-                {
-                    backupMid = exclusiveEndPrice;
-                }
-                else
-                {
-                    backupMid = effectiveSpread;
-                }
+                backupMid = exclusiveEndPrice != 0 ? exclusiveEndPrice : effectiveSpread;
             }
             
             for (var timestamp = start; timestamp <= end; timestamp = timestamp.AddSeconds(1))
@@ -334,10 +300,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     low: (double) Math.Round(low, assetPair.Accuracy),
                     tag: "Randomly generated");
 
-                if (double.IsNaN(newCandle.Open) || double.IsNaN(newCandle.Close) ||
-                    double.IsNaN(newCandle.Low) || double.IsNaN(newCandle.High) ||
-                    double.IsInfinity(newCandle.Open) || double.IsInfinity(newCandle.Close) ||
-                    double.IsInfinity(newCandle.Low) || double.IsInfinity(newCandle.High))
+                if (open == 0 || close == 0 || high == 0 || low == 0)
                 {
                     var context = new
                     {
@@ -369,13 +332,89 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         height = height
                     };
 
-                    throw new InvalidOperationException($"Generated candle {newCandle.ToJson()} has NaN prices. Context: {context.ToJson()}");
+                    throw new InvalidOperationException($"Generated candle {newCandle.ToJson()} has zero prices. Context: {context.ToJson()}");
                 }
 
                 prevClose = close;
 
                 yield return newCandle;
             }
+        }
+
+        private ICandle NormalizeCandlePrices(ICandle candle)
+        {
+            var lastNonZeroPrice = GetLastNonZeroPrice(candle.AssetPairId, candle.PriceType);
+            var open = ConvertToDecimal(candle.Open);
+            var close = ConvertToDecimal(candle.Close);
+            var high = ConvertToDecimal(candle.High);
+            var low = ConvertToDecimal(candle.Low);
+
+            if (open == 0 || close == 0 || high == 0 || low == 0)
+            {
+                open = open == 0 ? lastNonZeroPrice : open;
+                close = close == 0 ? lastNonZeroPrice : close;
+                high = high == 0 ? lastNonZeroPrice : high;
+                low = low == 0 ? lastNonZeroPrice : low;
+
+                return new Candle(candle.AssetPairId, candle.PriceType, candle.TimeInterval, candle.Timestamp, 
+                    (double)open,
+                    (double)close,
+                    (double)high,
+                    (double)low,
+                    $"Normalized {candle.Tag}");
+            }
+
+            return candle;
+        }
+
+        private void UpdateLastNonZeroPrice(ICandle candle)
+        {
+            var key = GetKey(candle.AssetPairId, candle.PriceType);
+
+            var price = ConvertToDecimal(candle.Close);
+
+            if (price == 0m)
+            {
+                price = ConvertToDecimal(candle.High);
+
+                if (price == 0m)
+                {
+                    price = ConvertToDecimal(candle.Low);
+
+                    if (price == 0m)
+                    {
+                        price = ConvertToDecimal(candle.Open);
+                    }
+                }
+            }
+
+            if (price != 0m)
+            {
+                _lastNonZeroPrices[key] = price;
+            }
+        }
+
+        private decimal GetLastNonZeroPrice(string assetPair, PriceType priceType)
+        {
+            var key = GetKey(assetPair, priceType);
+
+            _lastNonZeroPrices.TryGetValue(key, out var price);
+
+            return price;
+        }
+
+        private static decimal ConvertToDecimal(double d)
+        {
+            if (double.IsNaN(d))
+            {
+                return 0;
+            }
+            if (double.IsInfinity(d))
+            {
+                return 0;
+            }
+
+            return Convert.ToDecimal(d);
         }
 
         private static string GetKey(string assetPair, PriceType priceType)
