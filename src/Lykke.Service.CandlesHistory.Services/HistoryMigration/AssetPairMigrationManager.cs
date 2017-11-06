@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Common;
 using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
@@ -80,18 +81,21 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 _healthService.UpdateStartDates(askStartDate, bidStartDate);
                 _healthService.UpdateOverallProgress("Obtaining bid and ask end dates");
 
-                (DateTime askEndDate, DateTime bidEndDate) = await GetEndDatesAsync(askStartDate, bidStartDate);
+                var now = DateTime.UtcNow.RoundToSecond();
+
+                (ICandle askEndCandle, ICandle bidEndCandle) = await GetEndCandlesAsync(askStartDate, bidStartDate);
+
+                var askEndDate = askEndCandle?.Timestamp ?? now;
+                var bidEndDate = bidEndCandle?.Timestamp ?? now;
 
                 _healthService.UpdateEndDates(askEndDate, bidEndDate);
                 _healthService.UpdateOverallProgress("Processing bid and ask feed history, generating mid history");
 
                 await Task.WhenAll(
-                    ProcessAskAndBidHistoryAsync(askStartDate, askEndDate, bidStartDate, bidEndDate),
+                    ProcessAskAndBidHistoryAsync(askStartDate, askEndDate, askEndCandle, bidStartDate, askEndDate, bidEndCandle),
                     askStartDate.HasValue && bidStartDate.HasValue
                         ? GenerateMidHistoryAsync(askStartDate.Value, bidStartDate.Value, askEndDate, bidEndDate)
                         : Task.CompletedTask);
-
-                //await _candlesMigrationService.RemoveProcessedDateAsync(_assetPair.Id);
 
                 _healthService.UpdateOverallProgress("Done");
             }
@@ -123,23 +127,22 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return (askStartDate: startDates[0], bidStartDate: startDates[1]);
         }
 
-        private async Task<(DateTime askEndDate, DateTime bidEndDate)> GetEndDatesAsync(DateTime? askStartDate, DateTime? bidStartDate)
+        private async Task<(ICandle askEndCandle, ICandle bidEndCandle)> GetEndCandlesAsync(DateTime? askStartDate, DateTime? bidStartDate)
         {
-            var now = DateTime.UtcNow;
-            var getAskEndDateTask = askStartDate.HasValue
-                ? _candlesMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Ask, now)
-                : Task.FromResult(DateTime.MaxValue);
-            var getBidEndDateTask = bidStartDate.HasValue
-                ? _candlesMigrationService.GetEndDateAsync(_assetPair.Id, PriceType.Bid, now)
-                : Task.FromResult(DateTime.MaxValue);
-            var endDates = await Task.WhenAll(getAskEndDateTask, getBidEndDateTask);
+            var getAskEndCandleTask = askStartDate.HasValue
+                ? _candlesMigrationService.GetEndCandleAsync(_assetPair.Id, PriceType.Ask)
+                : Task.FromResult<ICandle>(null);
+            var getBidEndCandleTask = bidStartDate.HasValue
+                ? _candlesMigrationService.GetEndCandleAsync(_assetPair.Id, PriceType.Bid)
+                : Task.FromResult<ICandle>(null);
+            var endCandles = await Task.WhenAll(getAskEndCandleTask, getBidEndCandleTask);
 
-            return (askEndDate: endDates[0], bidEndDate: endDates[1]);
+            return (askEndCandle: endCandles[0], bidEndCandle: endCandles[1]);
         }
 
         private async Task ProcessAskAndBidHistoryAsync(
-            DateTime? askStartDate, DateTime askEndDate, 
-            DateTime? bidStartDate, DateTime bidEndDate)
+            DateTime? askStartDate, DateTime askEndDate, ICandle askEndCandle,
+            DateTime? bidStartDate, DateTime bidEndDate, ICandle bidEndCandle)
         {
             try
             {
@@ -157,8 +160,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 _healthService.UpdateOverallProgress($"Generate ending of missed feed history from ask {_healthService.CurrentAskDate:O}, bid {_healthService.CurrentBidDate:O}");
 
                 await Task.WhenAll(
-                    GenerateAskBidMissedCandlesEndingAsync(PriceType.Ask, askEndDate),
-                    GenerateAskBidMissedCandlesEndingAsync(PriceType.Bid, bidEndDate));
+                    GenerateAskBidMissedCandlesEndingAsync(PriceType.Ask, askEndDate, askEndCandle),
+                    GenerateAskBidMissedCandlesEndingAsync(PriceType.Bid, bidEndDate, bidEndCandle));
             }
             catch
             {
@@ -167,11 +170,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
-        private async Task GenerateAskBidMissedCandlesEndingAsync(PriceType priceType, DateTime endDateTime)
+        private async Task GenerateAskBidMissedCandlesEndingAsync(PriceType priceType, DateTime endDateTime, ICandle endCandle)
         {
             try
             {
-                var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, priceType, endDateTime);
+                var secCandles = _missedCandlesGenerator.FillGapUpTo(_assetPair, priceType, endDateTime, endCandle);
 
                 if (ProcessSecCandles(secCandles))
                 {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Models;
@@ -204,10 +205,34 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new DateTime(2017, 10, 26, 00, 00, 00, DateTimeKind.Utc),
                 1.3212,
                 1.1721,
-                0.02);
-
+                0.2);
+            
             // Assert
             Assert.AreEqual(60 * 60 * 24, candles.Count());
+        }
+
+        [TestMethod]
+        public void Just_generate_something()
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            var generator = new MissedCandlesGenerator();
+
+            // Act
+            var candles = generator.GenerateCandles(
+                    new AssetPairResponseModel
+                    {
+                        Id = "BTCEUR",
+                        Accuracy = 5
+                    },
+                    PriceType.Bid,
+                    new DateTime(2017, 10, 25, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
+                    new DateTime(2017, 10, 25, 00, 01, 00, DateTimeKind.Utc).AddSeconds(1),
+                    1.1721,
+                    1.1721,
+                    0.0)
+                .ToArray();
         }
     }
 }
