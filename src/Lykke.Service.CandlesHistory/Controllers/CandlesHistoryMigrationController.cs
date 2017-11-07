@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Lykke.Domain.Prices;
+using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,19 +16,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         public CandlesHistoryMigrationController(CandlesMigrationManager candlesMigrationManager)
         {
             _candlesMigrationManager = candlesMigrationManager;
-        }
-
-        [HttpPost]
-        [Route("random/{assetPair}")]
-        public async Task<IActionResult> Random(string assetPair)
-        {
-            var result = await _candlesMigrationManager.RandomAsync(assetPair, 
-                new DateTime(2017, 10, 26, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
-                new DateTime(2017, 10, 29, 00, 00, 00, DateTimeKind.Utc),
-                1.3212,
-                1.1721,
-                0.02);
-            return Ok(result);
         }
 
         [HttpPost]

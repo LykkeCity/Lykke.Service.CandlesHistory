@@ -5,9 +5,25 @@
         /// <summary>
         /// Linear interpolation
         /// </summary>
-        public static double Lerp(double v0, double v1, double t)
+        public static decimal Lerp(decimal v0, decimal v1, decimal t)
         {
-            return (1 - t) * v0 + t * v1;
+            return (1m - t) * v0 + t * v1;
+        }
+
+        /// <summary>
+        /// Clamps decimal value by the given boundaries
+        /// </summary>
+        public static decimal Clamp(decimal value, decimal lowerBound, decimal upperBound)
+        {
+            if (value < lowerBound)
+            {
+                return lowerBound;
+            }
+            if (value > upperBound)
+            {
+                return upperBound;
+            }
+            return value;
         }
     }
 }
