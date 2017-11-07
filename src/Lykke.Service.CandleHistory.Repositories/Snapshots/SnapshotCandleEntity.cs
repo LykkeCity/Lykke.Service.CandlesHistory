@@ -65,7 +65,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
             {
                 return d > 0 ? decimal.MaxValue : decimal.MinValue;
             }
-            
         }
     }
 }

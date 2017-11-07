@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Lykke.Domain.Prices;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.Candles

@@ -32,15 +32,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 .ToCandle(assetPair, priceType, oldestFeedHistory.DateTime).Timestamp;
         }
 
-        public async Task<DateTime> GetEndDateAsync(string assetPair, PriceType priceType, DateTime now)
+        public async Task<ICandle> GetEndCandleAsync(string assetPair, PriceType priceType)
         {
-            var date = await _candlesHistoryRepository.GetFirstCandleDateTimeAsync(
-                assetPair, 
-                TimeInterval.Sec,
-                priceType);
+            var candle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPair, TimeInterval.Sec, priceType);
 
-            // Sec candles packed into the minute rows, so round to the minute
-            return date ?? now.RoundTo(TimeInterval.Sec);
+            return candle;
         }
 
         public Task GetFeedHistoryCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate,
