@@ -332,8 +332,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     open: (double) Math.Round(open, assetPair.Accuracy),
                     close: (double) Math.Round(close, assetPair.Accuracy),
                     high: (double) Math.Round(high, assetPair.Accuracy),
-                    low: (double) Math.Round(low, assetPair.Accuracy),
-                    tag: "Randomly generated");
+                    low: (double) Math.Round(low, assetPair.Accuracy));
 
                 if (open == 0 || close == 0 || high == 0 || low == 0)
                 {
@@ -418,8 +417,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     (double)open,
                     (double)close,
                     (double)high,
-                    (double)low,
-                    $"Normalized {candle.Tag}");
+                    (double)low);
             }
 
             return candle;

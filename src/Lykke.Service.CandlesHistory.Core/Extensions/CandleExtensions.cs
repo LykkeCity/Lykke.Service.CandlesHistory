@@ -94,8 +94,7 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                     assetPair: assetPairId,
                     priceType: priceType,
                     timeInterval: timeInterval,
-                    timestamp: newTimestamp ?? timestamp,
-                    tag: "Merged");
+                    timestamp: newTimestamp ?? timestamp);
             }
 
             return null;
@@ -158,8 +157,7 @@ namespace Lykke.Service.CandlesHistory.Core.Extensions
                 assetPair: askCandle.AssetPairId,
                 priceType: PriceType.Mid,
                 timeInterval: askCandle.TimeInterval,
-                timestamp: askCandle.Timestamp,
-                tag: askCandle.Tag == bidCandle.Tag ? askCandle.Tag : $"{askCandle.Tag}, {bidCandle.Tag}");
+                timestamp: askCandle.Timestamp);
         }
     }
 }

@@ -41,8 +41,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             [JsonProperty("l")]
             public double Low { get; set; }
-
-            public string Tag => "Candles Producer";
         }
 
         private readonly ILog _log;

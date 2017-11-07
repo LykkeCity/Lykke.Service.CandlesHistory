@@ -13,6 +13,5 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         double Close { get; }
         double High { get; }
         double Low { get; }
-        string Tag { get; }
     }
 }

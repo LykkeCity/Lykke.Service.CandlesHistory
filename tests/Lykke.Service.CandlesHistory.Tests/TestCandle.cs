@@ -14,6 +14,5 @@ namespace Lykke.Service.CandlesHistory.Tests
         public double Close { get; set; }
         public double High { get; set; }
         public double Low { get; set; }
-        public string Tag => "Test";
     }
 }

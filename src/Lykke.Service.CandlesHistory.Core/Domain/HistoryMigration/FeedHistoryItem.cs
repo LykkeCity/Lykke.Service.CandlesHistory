@@ -22,8 +22,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: TimeInterval.Sec,
-                timestamp: baseTime.AddIntervalTicks(Tick, TimeInterval.Sec),
-                tag: "Feed History");
+                timestamp: baseTime.AddIntervalTicks(Tick, TimeInterval.Sec));
         }
     }
 }

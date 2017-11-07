@@ -12,8 +12,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 Close = candle.Close,
                 High = candle.High,
                 Low = candle.Low,
-                Tick = tick,
-                Tag = candle.Tag
+                Tick = tick
             };
         }
     }
