@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Domain.Prices;
 
-namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     public interface IFeedHistoryRepository
     {
         Task<IFeedHistory> GetTopRecordAsync(string assetPair, PriceType priceType);
-        Task GetCandlesByChunkAsync(string assetPair, PriceType priceType, DateTime startDate, DateTime endDate, Func<IEnumerable<IFeedHistory>, PriceType, Task> chunkCallback);
+        Task GetCandlesByChunksAsync(string assetPair, PriceType priceType, DateTime endDate, Func<IEnumerable<IFeedHistory>, Task> readChunkFunc);
     }
 }

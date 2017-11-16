@@ -6,13 +6,14 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
     /// <summary>
-    /// Stores bid and ask sec candles for single asset pair
+    /// Stores bid and ask sec candles for single asset pair.
+    /// Use to synchronize bid and ask history flow while mid candles generating
     /// </summary>
-    public class BidAskHistoryService
+    public class BidAskHCacheService
     {
         private readonly LinkedList<(DateTime timestamp, ICandle ask, ICandle bid)> _storage;
 
-        public BidAskHistoryService()
+        public BidAskHCacheService()
         {
             _storage = new LinkedList<(DateTime timestamp, ICandle ask, ICandle bid)>();
         }

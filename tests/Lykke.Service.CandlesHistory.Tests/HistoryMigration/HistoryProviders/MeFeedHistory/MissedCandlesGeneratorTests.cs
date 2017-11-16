@@ -3,10 +3,10 @@ using System.Globalization;
 using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Models;
-using Lykke.Service.CandlesHistory.Services.HistoryMigration;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Lykke.Service.CandlesHistory.Tests
+namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     [TestClass]
     public class MissedCandlesGeneratorTests

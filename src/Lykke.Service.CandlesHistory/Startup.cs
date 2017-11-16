@@ -33,8 +33,6 @@ namespace Lykke.Service.CandlesHistory
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
 
@@ -123,7 +121,7 @@ namespace Lykke.Service.CandlesHistory
             {
                 await ApplicationContainer.Resolve<IStartupManager>().StartAsync();
 
-                await Log.WriteMonitorAsync("", "", "Started");
+                await Log.WriteMonitorAsync("", $"Env: {Program.EnvInfo}", "Started");
             }
             catch (Exception ex)
             {

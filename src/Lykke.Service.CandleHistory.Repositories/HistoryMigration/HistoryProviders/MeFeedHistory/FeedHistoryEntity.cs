@@ -4,12 +4,12 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Lykke.Domain.Prices;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Core.Extensions;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration
+namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     public class FeedHistoryEntity : ITableEntity, IFeedHistory
     {

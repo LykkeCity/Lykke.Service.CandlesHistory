@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 
 namespace Lykke.Service.CandlesHistory.Core.Extensions
 {

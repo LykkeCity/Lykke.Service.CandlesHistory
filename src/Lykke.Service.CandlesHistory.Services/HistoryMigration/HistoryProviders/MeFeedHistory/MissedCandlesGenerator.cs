@@ -8,11 +8,11 @@ using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Core.Extensions;
 using Lykke.Service.CandlesHistory.Services.Candles;
 
-namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     /// <summary>
     /// Generates missed candles for ask and bid sec candles history
