@@ -7,6 +7,8 @@ namespace Lykke.Service.CandlesHistory
 {
     internal class Program
     {
+        public static string EnvInfo => Environment.GetEnvironmentVariable("ENV_INFO");
+
         private static void Main(string[] args)
         {
             Console.WriteLine($"Lykke.Service.CandlesHistory version {Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion}");
@@ -15,6 +17,8 @@ namespace Lykke.Service.CandlesHistory
 #else
             Console.WriteLine("Is RELEASE");
 #endif
+            Console.WriteLine($"ENV_INFO: {EnvInfo}");
+
             try
             {
                 var host = new WebHostBuilder()

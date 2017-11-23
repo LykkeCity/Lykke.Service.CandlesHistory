@@ -1,7 +1,7 @@
 ﻿using System;
 using Lykke.Domain.Prices;
 
-namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     public interface IFeedHistory
     {

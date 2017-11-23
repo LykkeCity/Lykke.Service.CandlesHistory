@@ -2,31 +2,36 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
+    [UsedImplicitly]
     public class CandlesMigrationManager : IDisposable
     {
-        public IReadOnlyDictionary<string, AssetPairMigrationHealthService> Health => _assetHealthServices;
+        public IReadOnlyDictionary<string, AssetPairMigrationTelemetryService> Health => _assetHealthServices;
 
         private readonly MigrationCandlesGenerator _candlesGenerator;
-        private readonly MissedCandlesGenerator _missedCandlesGenerator;
-        private readonly ICandlesMigrationService _candlesMigrationService;
+        private readonly IMissedCandlesGenerator _missedCandlesGenerator;
+        private readonly ICandlesHistoryMigrationService _candlesHistoryMigrationService;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly ICachedAssetsService _assetPairsManager;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
         private readonly ILog _log;
         private readonly Dictionary<string, AssetPairMigrationManager> _assetManagers;
-        private readonly Dictionary<string, AssetPairMigrationHealthService> _assetHealthServices;
+        private readonly Dictionary<string, AssetPairMigrationTelemetryService> _assetHealthServices;
 
         public CandlesMigrationManager(
             MigrationCandlesGenerator candlesGenerator,
-            MissedCandlesGenerator missedCandlesGenerator,
-            ICandlesMigrationService candlesMigrationService, 
+            IMissedCandlesGenerator missedCandlesGenerator,
+            ICandlesHistoryMigrationService candlesHistoryMigrationService, 
             ICandlesPersistenceQueue candlesPersistenceQueue,
             ICachedAssetsService cachedAssetsService,
             ICandlesHistoryRepository candlesHistoryRepository,
@@ -34,17 +39,17 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             _candlesGenerator = candlesGenerator;
             _missedCandlesGenerator = missedCandlesGenerator;
-            _candlesMigrationService = candlesMigrationService;
+            _candlesHistoryMigrationService = candlesHistoryMigrationService;
             _candlesPersistenceQueue = candlesPersistenceQueue;
             _assetPairsManager = cachedAssetsService;
             _candlesHistoryRepository = candlesHistoryRepository;
             _log = log;
 
             _assetManagers = new Dictionary<string, AssetPairMigrationManager>();
-            _assetHealthServices = new Dictionary<string, AssetPairMigrationHealthService>();
+            _assetHealthServices = new Dictionary<string, AssetPairMigrationTelemetryService>();
         }
 
-        public async Task<string> MigrateAsync(string assetPairId)
+        public async Task<string> MigrateAsync(string assetPairId, IHistoryProvider historyProvider)
         {
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
@@ -65,21 +70,21 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     return $"{assetPairId} already being processed";
                 }
 
-                var assetHealthService = new AssetPairMigrationHealthService(_log, assetPairId);
+                var telemetryService = new AssetPairMigrationTelemetryService(_log, assetPairId);
                 var assetManager = new AssetPairMigrationManager(
                     _candlesPersistenceQueue,
                     _candlesGenerator,
-                    _missedCandlesGenerator,
-                    assetHealthService,
+                    telemetryService,
                     assetPair, 
-                    _log, 
-                    _candlesMigrationService,
-                    new BidAskHistoryService(), 
+                    _log,
+                    new BidAskHCacheService(),
+                    historyProvider,
+                    _candlesHistoryMigrationService,
                     OnMigrationStopped);
 
                 assetManager.Start();
 
-                _assetHealthServices.Add(assetPairId, assetHealthService);
+                _assetHealthServices.Add(assetPairId, telemetryService);
                 _assetManagers.Add(assetPairId, assetManager);
                 
                  return $"{assetPairId} processing is started";
