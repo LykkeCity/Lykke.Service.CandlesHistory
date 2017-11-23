@@ -281,10 +281,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 {
                     throw new InvalidOperationException($"Candle {priceType} timestamp is to old at {currentTimestamp}, prev was {prevTimestamp}");
                 }
-                if (distance > TimeSpan.FromSeconds(1))
-                {
-                    throw new InvalidOperationException($"Candle {priceType} timestamp is skipped at {currentTimestamp}, prev was {prevTimestamp}");
-                }
+                //if (distance > TimeSpan.FromSeconds(1))
+                //{
+                //    throw new InvalidOperationException($"Candle {priceType} timestamp is skipped at {currentTimestamp}, prev was {prevTimestamp}");
+                //}
 
                 return currentTimestamp;
             }
