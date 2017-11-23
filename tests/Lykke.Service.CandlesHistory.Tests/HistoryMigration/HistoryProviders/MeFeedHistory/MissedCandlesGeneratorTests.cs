@@ -3,19 +3,19 @@ using System.Globalization;
 using System.Linq;
 using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Models;
-using Lykke.Service.CandlesHistory.Services.HistoryMigration;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Lykke.Service.CandlesHistory.Tests
+namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     [TestClass]
-    public class MissedCandlesGeneratorTests
+    public class RandomMissedCandlesGeneratorTests
     {
         [TestMethod]
         public void Test_that_not_NaN_prices_candles_generated_case1()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -47,7 +47,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_not_NaN_prices_candles_generated_case2()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -79,7 +79,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_the_same_start_and_end_prices_with_zerospread_produces_different_prices()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -108,7 +108,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_near_zero_prices_not_generates_negative_prices()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -140,7 +140,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_one_sec_candles_gap_generates_single_candle()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -166,7 +166,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_zero_candles_gap_generates_no_candles()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -191,7 +191,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Test_that_generator_generates_all_candles()
         {
             // Arrange
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(
@@ -217,7 +217,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
 
-            var generator = new MissedCandlesGenerator();
+            var generator = new RandomMissedCandlesGenerator();
 
             // Act
             var candles = generator.GenerateCandles(

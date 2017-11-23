@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Domain.Prices;
 
-namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry
 {
-    public class AssetPairMigrationHealthService
+    public class AssetPairMigrationTelemetryService
     {
         public class ProgressHistoryItem
         {
+            [UsedImplicitly]
             public string Progress { get; }
+            [UsedImplicitly]
             public DateTime Moment { get; }
 
             public ProgressHistoryItem(string progress)
@@ -19,20 +22,28 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             }
         }
 
+        [UsedImplicitly]
         public IReadOnlyList<ProgressHistoryItem> OverallProgressHistory => _overallProgressHistory;
+        [UsedImplicitly]
         public DateTime? AskStartDate { get; private set; }
+        [UsedImplicitly]
         public DateTime? BidStartDate { get; private set; }
+        [UsedImplicitly]
         public DateTime AskEndDate { get; private set; }
+        [UsedImplicitly]
         public DateTime BidEndDate { get; private set; }
+        [UsedImplicitly]
         public DateTime CurrentAskDate { get; private set; }
+        [UsedImplicitly]
         public DateTime CurrentBidDate { get; private set; }
+        [UsedImplicitly]
         public DateTime CurrentMidDate { get; private set; }
         
         private readonly List<ProgressHistoryItem> _overallProgressHistory;
         private readonly ILog _log;
         private readonly string _assetPair;
 
-        public AssetPairMigrationHealthService(ILog log, string assetPair)
+        public AssetPairMigrationTelemetryService(ILog log, string assetPair)
         {
             _log = log;
             _assetPair = assetPair;
@@ -41,14 +52,14 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         public void UpdateOverallProgress(string progress)
         {
-            _log.WriteInfoAsync(nameof(AssetPairMigrationHealthService), nameof(UpdateOverallProgress), _assetPair, progress);
+            _log.WriteInfoAsync(nameof(AssetPairMigrationTelemetryService), nameof(UpdateOverallProgress), _assetPair, progress);
 
             _overallProgressHistory.Add(new ProgressHistoryItem(progress));
         }
 
         public void UpdateStartDates(DateTime? askStartDate, DateTime? bidStartDate)
         {
-            _log.WriteInfoAsync(nameof(AssetPairMigrationHealthService), nameof(UpdateStartDates), _assetPair, $"Start dates - ask: {askStartDate:O}, bid: {bidStartDate:O}");
+            _log.WriteInfoAsync(nameof(AssetPairMigrationTelemetryService), nameof(UpdateStartDates), _assetPair, $"Start dates - ask: {askStartDate:O}, bid: {bidStartDate:O}");
 
             AskStartDate = askStartDate;
             BidStartDate = bidStartDate;
@@ -56,7 +67,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         
         public void UpdateEndDates(DateTime askEndDate, DateTime bidEndDate)
         {
-            _log.WriteInfoAsync(nameof(AssetPairMigrationHealthService), nameof(UpdateEndDates), _assetPair, $"End dates - ask: {askEndDate:O}, bid: {bidEndDate:O}");
+            _log.WriteInfoAsync(nameof(AssetPairMigrationTelemetryService), nameof(UpdateEndDates), _assetPair, $"End dates - ask: {askEndDate:O}, bid: {bidEndDate:O}");
             
             AskEndDate = askEndDate;
             BidEndDate = bidEndDate;

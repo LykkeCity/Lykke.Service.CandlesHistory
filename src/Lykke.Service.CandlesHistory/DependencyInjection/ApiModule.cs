@@ -9,18 +9,21 @@ using Lykke.RabbitMq.Azure;
 using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
-using Lykke.Service.CandleHistory.Repositories.HistoryMigration;
+using Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
+using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders;
+using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,27 +159,43 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterCandlesMigration(ContainerBuilder builder)
         {
-            builder.RegisterType<FeedHistoryRepository>()
-                .As<IFeedHistoryRepository>()
-                .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
-                    _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
-                .SingleInstance();
+            if (!string.IsNullOrWhiteSpace(_dbSettings.CurrentValue.FeedHistoryConnectionString))
+            {
+                builder.RegisterType<FeedHistoryRepository>()
+                    .As<IFeedHistoryRepository>()
+                    .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
+                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                    .SingleInstance();
+            }
 
             builder.RegisterType<CandlesMigrationManager>()
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<CandlesesMigrationService>()
-                .As<ICandlesMigrationService>()
+            builder.RegisterType<CandlesesHistoryMigrationService>()
+                .As<ICandlesHistoryMigrationService>()
                 .SingleInstance();
 
             builder.RegisterType<MigrationCandlesGenerator>()
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<MissedCandlesGenerator>()
-                .AsSelf()
+            builder.RegisterType<EmptyMissedCandlesGenerator>()
+                .As<IMissedCandlesGenerator>()
                 .SingleInstance();
+
+            builder.RegisterType<HistoryProvidersManager>()
+                .As<IHistoryProvidersManager>()
+                .SingleInstance();
+                
+            RegisterHistoryProvider<MeFeedHistoryProvider>(builder);
+        }
+
+        private static void RegisterHistoryProvider<TProvider>(ContainerBuilder builder) 
+            where TProvider : IHistoryProvider
+        {
+            builder.RegisterType<TProvider>()
+                .Named<IHistoryProvider>(typeof(TProvider).Name);
         }
     }
 }

@@ -2,7 +2,7 @@
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
-namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration
+namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     public class FeedHistoryItem
     {
