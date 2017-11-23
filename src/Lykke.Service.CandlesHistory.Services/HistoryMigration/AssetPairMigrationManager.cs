@@ -33,6 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private DateTime _prevAskTimestamp;
         private DateTime _prevBidTimestamp;
         private DateTime _prevMidTimestamp;
+        private volatile bool _isAskOrBidMigrationCompleted;
 
         private readonly ImmutableArray<TimeInterval> _intervalsToGenerate = Constants
             .StoredIntervals
@@ -154,6 +155,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     ? _historyProvider.GetHistoryByChunksAsync(_assetPair, PriceType.Bid, bidEndDate, bidEndCandle, ProcessHistoryChunkAsync, _cts.Token)
                     : Task.CompletedTask;
 
+                await Task.WhenAny(processAskCandlesTask, processBidkCandlesTask);
+
+                _isAskOrBidMigrationCompleted = true;
+
                 await Task.WhenAll(processAskCandlesTask, processBidkCandlesTask);
             }
             catch
@@ -178,6 +183,15 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     await Task.Delay(1000);
 
                     var bidAskHistory = _bidAskHCacheService.PopReadyHistory();
+
+                    if (!bidAskHistory.Any() && _isAskOrBidMigrationCompleted)
+                    {
+                        // If bid or ask migration is completed and there are not more bid/ask history to read,
+                        // then no more mid candle can be created 
+
+                        return;
+                    }
+
                     var secMidCandles = new List<ICandle>();
 
                     foreach (var item in bidAskHistory)
@@ -189,7 +203,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                             return;
                         }
 
-                        if (item.ask == null && item.bid == null)
+                        if (item.ask == null || item.bid == null)
                         {
                             await _log.WriteWarningAsync(nameof(AssetPairMigrationManager), nameof(GenerateMidHistoryAsync),
                                 $"{_assetPair}-{item.timestamp}", "bid or ask candle is empty");
