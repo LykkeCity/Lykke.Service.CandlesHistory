@@ -180,8 +180,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<MissedCandlesGenerator>()
-                .AsSelf()
+            builder.RegisterType<EmptyMissedCandlesGenerator>()
+                .As<IMissedCandlesGenerator>()
                 .SingleInstance();
 
             builder.RegisterType<HistoryProvidersManager>()

@@ -16,11 +16,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
     public class MeFeedHistoryProvider : IHistoryProvider
     {
         private readonly IFeedHistoryRepository _feedHistoryRepository;
-        private readonly MissedCandlesGenerator _missedCandlesGenerator;
+        private readonly IMissedCandlesGenerator _missedCandlesGenerator;
 
         public MeFeedHistoryProvider(
             IFeedHistoryRepository feedHistoryRepository,
-            MissedCandlesGenerator missedCandlesGenerator)
+            IMissedCandlesGenerator missedCandlesGenerator)
         {
             _feedHistoryRepository = feedHistoryRepository;
             _missedCandlesGenerator = missedCandlesGenerator;

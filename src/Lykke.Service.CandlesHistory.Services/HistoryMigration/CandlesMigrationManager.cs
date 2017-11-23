@@ -19,7 +19,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public IReadOnlyDictionary<string, AssetPairMigrationTelemetryService> Health => _assetHealthServices;
 
         private readonly MigrationCandlesGenerator _candlesGenerator;
-        private readonly MissedCandlesGenerator _missedCandlesGenerator;
+        private readonly IMissedCandlesGenerator _missedCandlesGenerator;
         private readonly ICandlesHistoryMigrationService _candlesHistoryMigrationService;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly ICachedAssetsService _assetPairsManager;
@@ -30,7 +30,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         public CandlesMigrationManager(
             MigrationCandlesGenerator candlesGenerator,
-            MissedCandlesGenerator missedCandlesGenerator,
+            IMissedCandlesGenerator missedCandlesGenerator,
             ICandlesHistoryMigrationService candlesHistoryMigrationService, 
             ICandlesPersistenceQueue candlesPersistenceQueue,
             ICachedAssetsService cachedAssetsService,

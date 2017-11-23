@@ -17,13 +17,13 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
     /// <summary>
     /// Generates missed candles for ask and bid sec candles history
     /// </summary>
-    public class MissedCandlesGenerator
+    public class RandomMissedCandlesGenerator : IMissedCandlesGenerator
     {
         private readonly ConcurrentDictionary<string, Candle> _lastCandles;
         private readonly ConcurrentDictionary<string, decimal> _lastNonZeroPrices;
         private readonly Random _rnd;
 
-        public MissedCandlesGenerator()
+        public RandomMissedCandlesGenerator()
         {
             _lastCandles = new ConcurrentDictionary<string, Candle>();
             _lastNonZeroPrices = new ConcurrentDictionary<string, decimal>();
