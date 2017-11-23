@@ -177,7 +177,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     // Lets migrate some bid and ask history
                     await Task.Delay(1000);
 
-                    var bidAskHistory = _bidAskHCacheService.PopReadyHistory(midStartTime);
+                    var bidAskHistory = _bidAskHCacheService.PopReadyHistory();
                     var secMidCandles = new List<ICandle>();
 
                     foreach (var item in bidAskHistory)
