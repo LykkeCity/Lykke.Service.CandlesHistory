@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
@@ -10,10 +10,10 @@ namespace Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryPro
 {
     public interface IHistoryProvider
     {
-        Task<DateTime?> GetStartDateAsync(string assetPair, PriceType priceType);
+        Task<DateTime?> GetStartDateAsync(string assetPair, CandlePriceType priceType);
         Task GetHistoryByChunksAsync(
             IAssetPair assetPair,
-            PriceType priceType,
+            CandlePriceType priceType,
             DateTime endDate,
             ICandle endCandle,
             Func<IReadOnlyList<ICandle>, Task> readChunkFunc,

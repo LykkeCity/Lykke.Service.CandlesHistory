@@ -4,23 +4,22 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Common;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class CandlesManager : ICandlesManager
     {
-        private static readonly ImmutableDictionary<TimeInterval, TimeInterval> GetToStoredIntervalsMap = ImmutableDictionary.CreateRange(new[]
+        private static readonly ImmutableDictionary<CandleTimeInterval, CandleTimeInterval> GetToStoredIntervalsMap = ImmutableDictionary.CreateRange(new[]
         {
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min5, TimeInterval.Minute),
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min15, TimeInterval.Minute),
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Min30, TimeInterval.Minute),
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour4, TimeInterval.Hour),
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour6, TimeInterval.Hour),
-            new KeyValuePair<TimeInterval, TimeInterval>(TimeInterval.Hour12, TimeInterval.Hour)
+            KeyValuePair.Create(CandleTimeInterval.Min5, CandleTimeInterval.Minute),
+            KeyValuePair.Create(CandleTimeInterval.Min15, CandleTimeInterval.Minute),
+            KeyValuePair.Create(CandleTimeInterval.Min30, CandleTimeInterval.Minute),
+            KeyValuePair.Create(CandleTimeInterval.Hour4, CandleTimeInterval.Hour),
+            KeyValuePair.Create(CandleTimeInterval.Hour6, CandleTimeInterval.Hour),
+            KeyValuePair.Create(CandleTimeInterval.Hour12, CandleTimeInterval.Hour)
         });
 
         private readonly ICandlesCacheService _candlesCacheService;
@@ -63,15 +62,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
                 throw new InvalidOperationException($"Connection string for asset pair {assetPairId} not configured");
             }
 
-            var alignedFromMoment = fromMoment.RoundTo(timeInterval);
-            var alignedToMoment = toMoment.RoundTo(timeInterval);
+            var alignedFromMoment = fromMoment.TruncateTo(timeInterval);
+            var alignedToMoment = toMoment.TruncateTo(timeInterval);
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
@@ -82,7 +81,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment);
 
             // Merging candles from sourceInterval (e.g. Minute) to bigger timeInterval (e.g. Min15)
-            return sourceHistory.MergeIntoBiggerIntervals(timeInterval);
+            return CandlesMerger.MergeIntoBiggerIntervals(sourceHistory, timeInterval);
         }
 
         /// <summary>
@@ -94,7 +93,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <param name="fromMoment"></param>
         /// <param name="toMoment"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             var cachedHistory = _candlesCacheService
                 .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)

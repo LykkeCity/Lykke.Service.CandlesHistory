@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using Common;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -13,12 +13,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     internal sealed class AssetPairCandlesHistoryRepository
     {
         private readonly string _assetPairId;
-        private readonly TimeInterval _timeInterval;
+        private readonly CandleTimeInterval _timeInterval;
         private readonly INoSQLTableStorage<CandleHistoryEntity> _tableStorage;
 
         public AssetPairCandlesHistoryRepository(
             string assetPairId,
-            TimeInterval timeInterval,
+            CandleTimeInterval timeInterval,
             INoSQLTableStorage<CandleHistoryEntity> tableStorage)
         {
             _assetPairId = assetPairId;
@@ -29,7 +29,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Assumed that all candles have the same AssetPair, PriceType, and Timeinterval
         /// </summary>
-        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, PriceType priceType)
+        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, CandlePriceType priceType)
         {
             foreach (var candle in candles)
             {
@@ -77,9 +77,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             await _tableStorage.InsertOrReplaceBatchAsync(existingEntities.Concat(newEntities));
         }
 
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(PriceType priceType, TimeInterval interval, DateTime from, DateTime to)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(CandlePriceType priceType, CandleTimeInterval interval, DateTime from, DateTime to)
         {
-            if (priceType == PriceType.Unspecified) { throw new ArgumentException(nameof(priceType)); }
+            if (priceType == CandlePriceType.Unspecified) { throw new ArgumentException(nameof(priceType)); }
 
             var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
             var rowKeyFrom = CandleHistoryEntity.GenerateRowKey(from, interval);
@@ -97,14 +97,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             var entities = await _tableStorage.WhereAsync(query);
 
             var result = from e in entities
-                         select e.Candles.Select(ci => ci.ToCandle(_assetPairId, e.PriceType, e.DateTime, interval));
+                         select e.Candles.Select(ci => ci.ToCandle(_assetPairId, e.CandlePriceType, e.DateTime, interval));
 
             return result
                 .SelectMany(c => c)
                 .Where(c => c.Timestamp >= from && c.Timestamp < to);
         }
 
-        public async Task<ICandle> TryGetFirstCandleAsync(PriceType priceType, TimeInterval timeInterval)
+        public async Task<ICandle> TryGetFirstCandleAsync(CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             var candleEntity = await _tableStorage.GetTopRecordAsync(CandleHistoryEntity.GeneratePartitionKey(priceType));
 

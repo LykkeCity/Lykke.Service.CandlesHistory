@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory
@@ -12,7 +12,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
         public double Low { get; set; }
         public int Tick { get; set; }
 
-        public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime)
+        public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime)
         {
             return new Candle(
                 open: Open,
@@ -21,8 +21,8 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
                 low: Low,
                 assetPair: assetPairId,
                 priceType: priceType,
-                timeInterval: TimeInterval.Sec,
-                timestamp: baseTime.AddIntervalTicks(Tick, TimeInterval.Sec));
+                timeInterval: CandleTimeInterval.Sec,
+                timestamp: baseTime.AddSeconds(Tick));
         }
     }
 }

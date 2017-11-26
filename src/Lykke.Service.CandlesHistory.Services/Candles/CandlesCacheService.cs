@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
@@ -28,7 +28,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles = new ConcurrentDictionary<string, LinkedList<ICandle>>();
         }
 
-        public void Initialize(string assetPairId, PriceType priceType, TimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
+        public void Initialize(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<ICandle>(candles.Limit(_amountOfCandlesToStore));
@@ -61,7 +61,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle));
         }
 
-        public IEnumerable<ICandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (fromMoment.Kind != DateTimeKind.Utc)
             {
@@ -202,7 +202,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return history;
         }
 
-        private static string GetKey(string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        private static string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             return $"{assetPairId.Trim().ToUpper()}-{priceType}-{timeInterval}";
         }

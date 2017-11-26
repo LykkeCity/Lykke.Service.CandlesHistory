@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 
@@ -22,7 +22,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("T")]
         public int Tick { get; set; }
 
-        public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime, TimeInterval timeInterval)
+        public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime, CandleTimeInterval timeInterval)
         {
             return new Candle(
                 open: Open,

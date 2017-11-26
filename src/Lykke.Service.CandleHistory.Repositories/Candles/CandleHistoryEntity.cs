@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Common;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -45,18 +45,18 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        public PriceType PriceType
+        public CandlePriceType CandlePriceType
         {
             get
             {
                 if (!string.IsNullOrEmpty(PartitionKey))
                 {
-                    if (Enum.TryParse(PartitionKey, out PriceType value))
+                    if (Enum.TryParse(PartitionKey, out CandlePriceType value))
                     {
                         return value;
                     }
                 }
-                return PriceType.Unspecified;
+                return CandlePriceType.Unspecified;
             }
         }
 
@@ -88,43 +88,43 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             return dict;
         }
 
-        public static string GeneratePartitionKey(PriceType priceType)
+        public static string GeneratePartitionKey(CandlePriceType priceType)
         {
             return $"{priceType}";
         }
 
-        public static string GenerateRowKey(DateTime date, TimeInterval interval)
+        public static string GenerateRowKey(DateTime date, CandleTimeInterval interval)
         {
             DateTime time;
             switch (interval)
             {
-                case TimeInterval.Month:
+                case CandleTimeInterval.Month:
                     time = new DateTime(date.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                     break;
 
-                case TimeInterval.Week:
+                case CandleTimeInterval.Week:
                     time = DateTimeUtils.GetFirstWeekOfYear(date);
                     break;
 
-                case TimeInterval.Day:
+                case CandleTimeInterval.Day:
                     time = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                     break;
 
-                case TimeInterval.Hour12:
-                case TimeInterval.Hour6:
-                case TimeInterval.Hour4:
-                case TimeInterval.Hour:
+                case CandleTimeInterval.Hour12:
+                case CandleTimeInterval.Hour6:
+                case CandleTimeInterval.Hour4:
+                case CandleTimeInterval.Hour:
                     time = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
                     break;
 
-                case TimeInterval.Min30:
-                case TimeInterval.Min15:
-                case TimeInterval.Min5:
-                case TimeInterval.Minute:
+                case CandleTimeInterval.Min30:
+                case CandleTimeInterval.Min15:
+                case CandleTimeInterval.Min5:
+                case CandleTimeInterval.Minute:
                     time = new DateTime(date.Year, date.Month, date.Day, date.Hour, 0, 0, DateTimeKind.Utc);
                     break;
 
-                case TimeInterval.Sec:
+                case CandleTimeInterval.Sec:
                     time = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, 0, DateTimeKind.Utc);
                     break;
 
@@ -135,7 +135,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             return FormatRowKey(time);
         }
 
-        public void MergeCandles(IEnumerable<ICandle> candles, TimeInterval timeInterval)
+        public void MergeCandles(IEnumerable<ICandle> candles, CandleTimeInterval timeInterval)
         {
             foreach (var candle in candles)
             {
@@ -143,12 +143,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        private void MergeCandle(ICandle candle, TimeInterval interval)
+        private void MergeCandle(ICandle candle, CandleTimeInterval interval)
         {
             // 1. Check if candle with specified time already exist
             // 2. If found - merge, else - add to list
 
-            var tick = candle.Timestamp.GetIntervalTick(interval);
+            var tick = GetIntervalTick(candle.Timestamp, interval);
 
             // Considering that Candles is ordered by Tick
             for(var i = 0; i < Candles.Count; ++i)
@@ -174,6 +174,39 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             // No candle is found, and no candles after, so just add to the end
             Candles.Add(candle.ToItem(tick));
+        }
+
+        private static int GetIntervalTick(DateTime dateTime, CandleTimeInterval interval)
+        {
+            switch (interval)
+            {
+                case CandleTimeInterval.Month:
+                    return dateTime.Month - 1;
+                case CandleTimeInterval.Week:
+                    return (int)(dateTime - DateTimeUtils.GetFirstWeekOfYear(dateTime)).TotalDays / 7;
+                case CandleTimeInterval.Day - 1:
+                    return dateTime.Day;
+                case CandleTimeInterval.Hour12:
+                    return dateTime.Hour / 12;
+                case CandleTimeInterval.Hour6:
+                    return dateTime.Hour / 6;
+                case CandleTimeInterval.Hour4:
+                    return dateTime.Hour / 4;
+                case CandleTimeInterval.Hour:
+                    return dateTime.Hour;
+                case CandleTimeInterval.Min30:
+                    return dateTime.Minute / 30;
+                case CandleTimeInterval.Min15:
+                    return dateTime.Minute / 15;
+                case CandleTimeInterval.Min5:
+                    return dateTime.Minute / 5;
+                case CandleTimeInterval.Minute:
+                    return dateTime.Minute;
+                case CandleTimeInterval.Sec:
+                    return dateTime.Second;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(interval), interval, "Unexpected TimeInterval value.");
+            }
         }
 
         private static string FormatRowKey(DateTime dateUtc)

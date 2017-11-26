@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Common;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -68,7 +68,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             return new ReadOnlyCollection<ICandle>(result);
         }
 
-        public IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, PriceType priceType, DateTime dateTime, ICandle endCandle)
+        public IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, CandlePriceType priceType, DateTime dateTime, ICandle endCandle)
         {
             var key = GetKey(assetPair.Id, priceType);
 
@@ -112,7 +112,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
 
         public IEnumerable<ICandle> GenerateCandles(
             IAssetPair assetPair,
-            PriceType priceType,
+            CandlePriceType priceType,
             DateTime exclusiveStartDate,
             DateTime exclusiveEndDate,
             double exclusiveStartPrice,
@@ -181,7 +181,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
 
         private IEnumerable<ICandle> GenerateCandles(
             IAssetPair assetPair, 
-            PriceType priceType, 
+            CandlePriceType priceType, 
             DateTime exclusiveStartDate, 
             DateTime exclusiveEndDate, 
             decimal exclusiveStartPrice,
@@ -327,7 +327,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                 var newCandle = new Candle(
                     assetPair: assetPair.Id,
                     priceType: priceType,
-                    timeInterval: TimeInterval.Sec,
+                    timeInterval: CandleTimeInterval.Sec,
                     timestamp: timestamp,
                     open: (double) Math.Round(open, assetPair.Accuracy),
                     close: (double) Math.Round(close, assetPair.Accuracy),
@@ -450,7 +450,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             }
         }
 
-        private decimal GetLastNonZeroPrice(string assetPair, PriceType priceType)
+        private decimal GetLastNonZeroPrice(string assetPair, CandlePriceType priceType)
         {
             var key = GetKey(assetPair, priceType);
 
@@ -473,7 +473,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             return Convert.ToDecimal(d);
         }
 
-        private static string GetKey(string assetPair, PriceType priceType)
+        private static string GetKey(string assetPair, CandlePriceType priceType)
         {
             return $"{assetPair}-{priceType}";
         }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.RabbitMqBroker;
 using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -22,10 +22,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             public string AssetPairId { get; set; }
 
             [JsonProperty("p")]
-            public PriceType PriceType { get; set; }
+            public CandlePriceType PriceType { get; set; }
 
             [JsonProperty("i")]
-            public TimeInterval TimeInterval { get; set; }
+            public CandleTimeInterval TimeInterval { get; set; }
 
             [JsonProperty("t")]
             public DateTime Timestamp { get; set; }

@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using MessagePack;
 
@@ -12,10 +12,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         public string AssetPairId { get; set; }
 
         [Key(1)]
-        public PriceType PriceType { get; set; }
+        public CandlePriceType PriceType { get; set; }
 
         [Key(2)]
-        public TimeInterval TimeInterval { get; set; }
+        public CandleTimeInterval TimeInterval { get; set; }
 
         [Key(3)]
         public DateTime Timestamp { get; set; }

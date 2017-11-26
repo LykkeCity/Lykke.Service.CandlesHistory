@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.SettingsReader;
 
@@ -35,7 +35,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Insert or merge candles. Assumed that all candles have the same AssetPairId, PriceType, Timeinterval
         /// </summary>
-        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             if (!candles.Any())
             {
@@ -57,7 +57,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Returns buy or sell candle values for the specified interval from the specified time range.
         /// </summary>
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, TimeInterval interval, PriceType priceType, DateTime from, DateTime to)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType, DateTime from, DateTime to)
         {
             var repo = GetRepo(assetPairId, interval);
             try
@@ -71,7 +71,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        public async Task<ICandle> TryGetFirstCandleAsync(string assetPairId, TimeInterval interval, PriceType priceType)
+        public async Task<ICandle> TryGetFirstCandleAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType)
         {
             var repo = GetRepo(assetPairId, interval);
             try
@@ -85,7 +85,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        private void ResetRepo(string assetPairId, TimeInterval interval)
+        private void ResetRepo(string assetPairId, CandleTimeInterval interval)
         {
             var tableName = interval.ToString().ToLowerInvariant();
             var key = assetPairId.ToLowerInvariant() + "_" + tableName;
@@ -93,7 +93,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             _assetPairRepositories[key] = null;
         }
 
-        private AssetPairCandlesHistoryRepository GetRepo(string assetPairId, TimeInterval timeInterval)
+        private AssetPairCandlesHistoryRepository GetRepo(string assetPairId, CandleTimeInterval timeInterval)
         {
             var tableName = timeInterval.ToString().ToLowerInvariant();
             var key = $"{assetPairId.ToLowerInvariant()}_{tableName}";

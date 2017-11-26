@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Services.Candles;
@@ -14,15 +14,15 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         public class Candle : IEquatable<Candle>, ICandle
         {
             public string AssetPairId { get; }
-            public PriceType PriceType { get;}
-            public TimeInterval TimeInterval { get; }
+            public CandlePriceType PriceType { get;}
+            public CandleTimeInterval TimeInterval { get; }
             public DateTime Timestamp { get; }
             public double Open { get; }
             public double Close { get; }
             public double High { get; }
             public double Low { get; }
 
-            private Candle(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime timestamp, double open, double close, double low, double high)
+            private Candle(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime timestamp, double open, double close, double low, double high)
             {
                 AssetPairId = assetPairId;
                 PriceType = priceType;
@@ -34,9 +34,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 High = high;
             }
 
-            public static Candle Create(ICandle candle, TimeInterval? interval = null)
+            public static Candle Create(ICandle candle, CandleTimeInterval? interval = null)
             {
-                var intervalTimestamp = interval.HasValue ? candle.Timestamp.RoundTo(interval.Value) : candle.Timestamp;
+                var intervalTimestamp = interval.HasValue ? candle.Timestamp.TruncateTo(interval.Value) : candle.Timestamp;
 
                 return new Candle
                 (
@@ -53,7 +53,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             public static Candle Create(ICandle oldCandle, ICandle newCandle)
             {
-                var intervalTimestamp = newCandle.Timestamp.RoundTo(oldCandle.TimeInterval);
+                var intervalTimestamp = newCandle.Timestamp.TruncateTo(oldCandle.TimeInterval);
 
                 // Start new candle?
                 if (intervalTimestamp != oldCandle.Timestamp)
@@ -131,7 +131,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _candles = new ConcurrentDictionary<string, Candle>();
         }
 
-        public MigrationCandleMergeResult Merge(ICandle candle, TimeInterval timeInterval)
+        public MigrationCandleMergeResult Merge(ICandle candle, CandleTimeInterval timeInterval)
         {
             var key = GetKey(candle.AssetPairId, timeInterval, candle.PriceType);
 
@@ -147,7 +147,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));
         }
 
-        private static string GetKey(string assetPair, TimeInterval timeInterval, PriceType type)
+        private static string GetKey(string assetPair, CandleTimeInterval timeInterval, CandlePriceType type)
         {
             return $"{assetPair}-{type}-{timeInterval}";
         }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -24,7 +24,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "EURUSD",
                         Accuracy = 5
                     },
-                    PriceType.Ask,
+                    CandlePriceType.Ask,
                     new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
                     new DateTime(2017, 08, 16, 15, 14, 57, DateTimeKind.Utc),
                     0.1,
@@ -56,7 +56,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "EURUSD",
                         Accuracy = 5
                     },
-                    PriceType.Ask,
+                    CandlePriceType.Ask,
                     new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
                     new DateTime(2017, 08, 16, 15, 14, 57, DateTimeKind.Utc),
                     0,
@@ -88,7 +88,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "EURUSD",
                         Accuracy = 5
                     },
-                    PriceType.Ask,
+                    CandlePriceType.Ask,
                     new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
                     new DateTime(2017, 08, 16, 15, 14, 51, DateTimeKind.Utc),
                     1.17046,
@@ -117,7 +117,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "EURUSD",
                         Accuracy = 5
                     },
-                    PriceType.Ask,
+                    CandlePriceType.Ask,
                     new DateTime(2017, 08, 16, 15, 14, 49, DateTimeKind.Utc),
                     new DateTime(2017, 08, 16, 15, 15, 49, DateTimeKind.Utc),
                     1.17046,
@@ -149,7 +149,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "BTCEUR",
                         Accuracy = 5
                     },
-                    PriceType.Bid,
+                    CandlePriceType.Bid,
                     new DateTime(2016, 04, 28, 10, 57, 29, DateTimeKind.Utc),
                     new DateTime(2016, 04, 28, 10, 57, 31, DateTimeKind.Utc),
                     1,
@@ -175,7 +175,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "BTCEUR",
                         Accuracy = 5
                     },
-                    PriceType.Bid,
+                    CandlePriceType.Bid,
                     new DateTime(2016, 04, 28, 10, 57, 29, DateTimeKind.Utc),
                     new DateTime(2016, 04, 28, 10, 57, 30, DateTimeKind.Utc),
                     1,
@@ -200,7 +200,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                     Id = "BTCEUR",
                     Accuracy = 5
                 },
-                PriceType.Bid,
+                CandlePriceType.Bid,
                 new DateTime(2017, 10, 25, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
                 new DateTime(2017, 10, 26, 00, 00, 00, DateTimeKind.Utc),
                 1.3212,
@@ -226,7 +226,7 @@ namespace Lykke.Service.CandlesHistory.Tests.HistoryMigration.HistoryProviders.M
                         Id = "BTCEUR",
                         Accuracy = 5
                     },
-                    PriceType.Bid,
+                    CandlePriceType.Bid,
                     new DateTime(2017, 10, 25, 00, 00, 00, DateTimeKind.Utc).AddSeconds(-1),
                     new DateTime(2017, 10, 25, 00, 01, 00, DateTimeKind.Utc).AddSeconds(1),
                     1.1721,

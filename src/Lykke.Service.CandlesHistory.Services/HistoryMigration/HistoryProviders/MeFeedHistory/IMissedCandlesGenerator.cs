@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
@@ -10,7 +10,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
     public interface IMissedCandlesGenerator
     {
         IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, IFeedHistory feedHistory);
-        IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, PriceType priceType, DateTime dateTime, ICandle endCandle);
+        IReadOnlyList<ICandle> FillGapUpTo(IAssetPair assetPair, CandlePriceType priceType, DateTime dateTime, ICandle endCandle);
         void RemoveAssetPair(string assetPair);
     }
 }

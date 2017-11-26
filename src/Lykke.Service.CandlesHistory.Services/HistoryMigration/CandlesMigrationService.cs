@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 
@@ -16,9 +16,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _candlesHistoryRepository = candlesHistoryRepository;
         }
         
-        public async Task<ICandle> GetFirstCandleOfHistoryAsync(string assetPair, PriceType priceType)
+        public async Task<ICandle> GetFirstCandleOfHistoryAsync(string assetPair, CandlePriceType priceType)
         {
-            var candle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPair, TimeInterval.Sec, priceType);
+            var candle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPair, CandleTimeInterval.Sec, priceType);
 
             return candle;
         }
