@@ -32,6 +32,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         [Key(7)]
         public decimal Low { get; set; }
 
+        [Key(8)]
+        public decimal TradingVolume { get; set; }
+
         double ICandle.Open => (double) Open;
 
         double ICandle.Close => (double) Close;
@@ -40,7 +43,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 
         double ICandle.Low => (double) Low;
 
-        public static SnapshotCandleEntity Create(ICandle candle)
+        double ICandle.TradingVolume => (double) TradingVolume;
+
+        public static SnapshotCandleEntity Copy(ICandle candle)
         {
             return new SnapshotCandleEntity
             {
@@ -48,14 +53,15 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
                 PriceType = candle.PriceType,
                 TimeInterval = candle.TimeInterval,
                 Timestamp = candle.Timestamp,
-                Open = ConvertPrice(candle.Open),
-                Close = ConvertPrice(candle.Close),
-                Low = ConvertPrice(candle.Low),
-                High = ConvertPrice(candle.High)
+                Open = ConvertDouble(candle.Open),
+                Close = ConvertDouble(candle.Close),
+                Low = ConvertDouble(candle.Low),
+                High = ConvertDouble(candle.High),
+                TradingVolume = ConvertDouble(candle.TradingVolume)
             };
         }
 
-        private static decimal ConvertPrice(double d)
+        private static decimal ConvertDouble(double d)
         {
             try
             {

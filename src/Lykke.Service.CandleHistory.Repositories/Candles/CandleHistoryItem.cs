@@ -8,23 +8,38 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     public class CandleHistoryItem
     {
         [JsonProperty("O")]
-        public double Open { get; internal set; }
+        public double Open { get; private set; }
 
         [JsonProperty("C")]
-        public double Close { get; internal set; }
+        public double Close { get; private set; }
 
         [JsonProperty("H")]
-        public double High { get; internal set; }
+        public double High { get; private set; }
 
         [JsonProperty("L")]
-        public double Low { get; internal set; }
+        public double Low { get; private set; }
 
         [JsonProperty("T")]
-        public int Tick { get; set; }
+        public int Tick { get; }
+
+        [JsonProperty("V")]
+        public double TradingVolume { get; private set; }
+
+        [JsonConstructor]
+        public CandleHistoryItem(double open, double close, double high, double low, int tick, double tradingVolume)
+        {
+            Open = open;
+            Close = close;
+            High = high;
+            Low = low;
+            Tick = tick;
+            TradingVolume = tradingVolume;
+        }
 
         public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime, CandleTimeInterval timeInterval)
         {
-            return new Candle(
+            return new Candle
+            (
                 open: Open,
                 close: Close,
                 high: High,
@@ -32,7 +47,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: timeInterval,
-                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
+                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval),
+                tradingVolume: TradingVolume
+            );
         }
 
         /// <summary>
@@ -44,6 +61,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             Close = candleChange.Close;
             High = Math.Max(High, candleChange.High);
             Low = Math.Min(Low, candleChange.Low);
+            TradingVolume += candleChange.TradingVolume;
         }
     }
 }

@@ -30,6 +30,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var close = 0d;
             var high = 0d;
             var low = 0d;
+            var tradingVolume = 0d;
             var assetPairId = string.Empty;
             var priceType = CandlePriceType.Unspecified;
             var timeInterval = CandleTimeInterval.Unspecified;
@@ -48,6 +49,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         close = candle.Close;
                         high = candle.High;
                         low = candle.Low;
+                        tradingVolume = candle.TradingVolume;
                         assetPairId = candle.AssetPairId;
                         priceType = candle.PriceType;
                         timeInterval = candle.TimeInterval;
@@ -78,6 +80,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         close = candle.Close;
                         high = Math.Max(high, candle.High);
                         low = Math.Min(low, candle.Low);
+                        tradingVolume += candle.TradingVolume;
                     }
 
                     count++;
@@ -94,7 +97,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     assetPair: assetPairId,
                     priceType: priceType,
                     timeInterval: timeInterval,
-                    timestamp: newTimestamp ?? timestamp);
+                    timestamp: newTimestamp ?? timestamp,
+                    tradingVolume: tradingVolume);
             }
 
             return null;
@@ -108,7 +112,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public static IEnumerable<ICandle> MergeIntoBiggerIntervals(IEnumerable<ICandle> candles, CandleTimeInterval newInterval)
         {
             return candles
-                .GroupBy(c => Job.CandlesProducer.Contract.DateTimeExtensions.TruncateTo(c.Timestamp, newInterval))
+                .GroupBy(c => c.Timestamp.TruncateTo(newInterval))
                 .Select(g => MergeAll(g, g.Key));
         }
     }

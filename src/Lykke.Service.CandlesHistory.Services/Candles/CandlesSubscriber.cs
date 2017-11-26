@@ -4,45 +4,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.RabbitMqBroker;
 using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
-using Newtonsoft.Json;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
+    [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class CandlesSubscriber : ICandlesSubscriber
     {
-        private class CandleMessage : ICandle
-        {
-            [JsonProperty("a")]
-            public string AssetPairId { get; set; }
-
-            [JsonProperty("p")]
-            public CandlePriceType PriceType { get; set; }
-
-            [JsonProperty("i")]
-            public CandleTimeInterval TimeInterval { get; set; }
-
-            [JsonProperty("t")]
-            public DateTime Timestamp { get; set; }
-
-            [JsonProperty("o")]
-            public double Open { get; set; }
-
-            [JsonProperty("c")]
-            public double Close { get; set; }
-
-            [JsonProperty("h")]
-            public double High { get; set; }
-
-            [JsonProperty("l")]
-            public double Low { get; set; }
-        }
-
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;
         private readonly RabbitEndpointSettings _settings;
@@ -101,7 +75,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     return;
                 }
 
-                _candlesManager.ProcessCandle(candle);
+                _candlesManager.ProcessCandle(new Candle(
+                    assetPair: candle.AssetPairId,
+                    priceType: candle.PriceType,
+                    timeInterval: candle.TimeInterval,
+                    timestamp: candle.Timestamp,
+                    open: candle.Open,
+                    close: candle.Close,
+                    low: candle.Low,
+                    high: candle.High,
+                    tradingVolume: candle.TradingVolume));
             }
             catch (Exception)
             {

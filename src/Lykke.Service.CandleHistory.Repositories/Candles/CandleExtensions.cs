@@ -7,13 +7,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         public static CandleHistoryItem ToItem(this ICandle candle, int tick)
         {
             return new CandleHistoryItem
-            {
-                Open = candle.Open,
-                Close = candle.Close,
-                High = candle.High,
-                Low = candle.Low,
-                Tick = tick
-            };
+            (
+                open: candle.Open,
+                close: candle.Close,
+                high: candle.High,
+                low: candle.Low,
+                tick: tick,
+                tradingVolume: candle.TradingVolume
+            );
         }
     }
 }

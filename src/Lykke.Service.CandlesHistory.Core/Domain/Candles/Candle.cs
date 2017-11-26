@@ -13,8 +13,9 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         public double Close { get; }
         public double High { get; }
         public double Low { get; }
+        public double TradingVolume { get; }
 
-        public Candle(string assetPair, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime timestamp, double open, double close, double high, double low)
+        public Candle(string assetPair, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime timestamp, double open, double close, double high, double low, double tradingVolume)
         {
             AssetPairId = assetPair;
             PriceType = priceType;
@@ -24,9 +25,10 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             Close = close;
             High = high;
             Low = low;
+            TradingVolume = tradingVolume;
         }
 
-        public static Candle Create(ICandle candle)
+        public static Candle Copy(ICandle candle)
         {
             return new Candle(
 
@@ -37,7 +39,8 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
                 open: candle.Open,
                 close: candle.Close,
                 high: candle.High,
-                low: candle.Low
+                low: candle.Low,
+                tradingVolume: candle.TradingVolume
             );
         }
     }

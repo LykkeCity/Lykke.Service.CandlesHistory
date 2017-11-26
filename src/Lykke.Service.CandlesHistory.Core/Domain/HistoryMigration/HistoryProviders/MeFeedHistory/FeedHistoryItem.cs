@@ -22,7 +22,8 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: CandleTimeInterval.Sec,
-                timestamp: baseTime.AddSeconds(Tick));
+                timestamp: baseTime.AddSeconds(Tick),
+                tradingVolume: 0);
         }
     }
 }

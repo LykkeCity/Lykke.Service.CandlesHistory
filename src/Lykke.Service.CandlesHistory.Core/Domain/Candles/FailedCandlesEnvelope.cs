@@ -16,7 +16,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             {
                 ProcessingMoment = src.ProcessingMoment,
                 Exception = src.Exception,
-                Candles = src.Candles.Select(Candle.Create)
+                Candles = src.Candles.Select(Candle.Copy)
             };
         }
     }

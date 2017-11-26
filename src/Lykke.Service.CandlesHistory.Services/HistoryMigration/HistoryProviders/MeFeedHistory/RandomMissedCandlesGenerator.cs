@@ -57,7 +57,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             // Remember the last candle, if any
             if (result.Any())
             {
-                _lastCandles[key] = Candle.Create(result.Last());
+                _lastCandles[key] = Candle.Copy(result.Last());
             }
 
             if (removeFirstCandle)
@@ -96,7 +96,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             // Remember the last candle, if any
             if (result.Any())
             {
-                _lastCandles[key] = Candle.Create(result.Last());
+                _lastCandles[key] = Candle.Copy(result.Last());
             }
 
             return result;
@@ -332,7 +332,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                     open: (double) Math.Round(open, assetPair.Accuracy),
                     close: (double) Math.Round(close, assetPair.Accuracy),
                     high: (double) Math.Round(high, assetPair.Accuracy),
-                    low: (double) Math.Round(low, assetPair.Accuracy));
+                    low: (double) Math.Round(low, assetPair.Accuracy),
+                    tradingVolume: 0);
 
                 if (open == 0 || close == 0 || high == 0 || low == 0)
                 {
@@ -413,11 +414,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                 high = high == 0 ? lastNonZeroPrice : high;
                 low = low == 0 ? lastNonZeroPrice : low;
 
-                return new Candle(candle.AssetPairId, candle.PriceType, candle.TimeInterval, candle.Timestamp, 
-                    (double)open,
-                    (double)close,
-                    (double)high,
-                    (double)low);
+                return new Candle(candle.AssetPairId, candle.PriceType, candle.TimeInterval, candle.Timestamp,
+                    (double) open,
+                    (double) close,
+                    (double) high,
+                    (double) low,
+                    0);
             }
 
             return candle;

@@ -52,7 +52,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 assetPair: askCandle.AssetPairId,
                 priceType: CandlePriceType.Mid,
                 timeInterval: askCandle.TimeInterval,
-                timestamp: askCandle.Timestamp);
+                timestamp: askCandle.Timestamp,
+                tradingVolume: askCandle.TradingVolume);
         }
     }
 }
