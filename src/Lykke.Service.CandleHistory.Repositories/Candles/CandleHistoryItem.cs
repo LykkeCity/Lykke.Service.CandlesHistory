@@ -42,6 +42,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
         public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime, CandleTimeInterval timeInterval)
         {
+            var normalizedTick = Tick - GetIntervalTickOrigin(timeInterval);
+
             return Candle.Create
             (
                 open: Open,
@@ -51,7 +53,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: timeInterval,
-                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval),
+                timestamp: baseTime.AddIntervalTicks(normalizedTick, timeInterval),
                 tradingVolume: TradingVolume,
                 lastUpdateTimestamp: LastUpdateTimestamp
             );
@@ -73,6 +75,29 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             Low = Math.Min(Low, candleState.Low);
             TradingVolume = candleState.TradingVolume;
             LastUpdateTimestamp = candleState.LastUpdateTimestamp;
+        }
+
+        private static int GetIntervalTickOrigin(CandleTimeInterval interval)
+        {
+            switch (interval)
+            {
+                case CandleTimeInterval.Month:
+                case CandleTimeInterval.Day:
+                    return 1;
+                case CandleTimeInterval.Week:
+                case CandleTimeInterval.Hour12:
+                case CandleTimeInterval.Hour6:
+                case CandleTimeInterval.Hour4:
+                case CandleTimeInterval.Hour:
+                case CandleTimeInterval.Min30:
+                case CandleTimeInterval.Min15:
+                case CandleTimeInterval.Min5:
+                case CandleTimeInterval.Minute:
+                case CandleTimeInterval.Sec:
+                    return 0;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(interval), interval, "Unexpected TimeInterval value.");
+            }
         }
     }
 }
