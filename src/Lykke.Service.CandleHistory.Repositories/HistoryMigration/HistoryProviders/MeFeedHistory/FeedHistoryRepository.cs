@@ -25,7 +25,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProvi
         {
             var entity = await _tableStorage.GetTopRecordAsync($"{assetPair}_{priceType}");
 
-            return FeedHistory.Create(entity);
+            return entity != null ? FeedHistory.Create(entity) : null;
         }
 
         public Task GetCandlesByChunksAsync(string assetPair, CandlePriceType priceType, DateTime endDate, Func<IEnumerable<IFeedHistory>, Task> readChunkFunc)

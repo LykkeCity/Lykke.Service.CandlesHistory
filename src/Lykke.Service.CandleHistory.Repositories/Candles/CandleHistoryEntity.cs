@@ -184,8 +184,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                     return dateTime.Month - 1;
                 case CandleTimeInterval.Week:
                     return (int)(dateTime - DateTimeUtils.GetFirstWeekOfYear(dateTime)).TotalDays / 7;
-                case CandleTimeInterval.Day - 1:
-                    return dateTime.Day;
+                case CandleTimeInterval.Day:
+                    return dateTime.Day - 1;
                 case CandleTimeInterval.Hour12:
                     return dateTime.Hour / 12;
                 case CandleTimeInterval.Hour6:

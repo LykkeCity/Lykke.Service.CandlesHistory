@@ -45,11 +45,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="timeInterval">Time interval</param>
         /// <param name="fromMoment">From moment in ISO 8601 (inclusive)</param>
         /// <param name="toMoment">To moment in ISO 8601 (exclusive)</param>
-        [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
+        [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment?:datetime}")]
         [SwaggerOperation("GetCandlesHistoryOrError")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment)
         {
             if (_shutdownManager.IsShuttingDown)
             {
@@ -62,7 +62,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             
             fromMoment = fromMoment.ToUniversalTime();
-            toMoment = toMoment.ToUniversalTime();
+            toMoment = toMoment?.ToUniversalTime();
             assetPairId = assetPairId.ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
@@ -77,7 +77,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {CandleTimeInterval.Unspecified}"));
             }
-            if (fromMoment >= toMoment)
+            if (toMoment.HasValue && fromMoment >= toMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early than To date"));
             }

@@ -62,7 +62,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment)
         {
             if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
             {
@@ -70,7 +70,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
 
             var alignedFromMoment = fromMoment.TruncateTo(timeInterval);
-            var alignedToMoment = toMoment.TruncateTo(timeInterval);
+            var alignedToMoment = toMoment?.TruncateTo(timeInterval);
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
@@ -93,14 +93,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <param name="fromMoment"></param>
         /// <param name="toMoment"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment)
         {
             var cachedHistory = _candlesCacheService
                 .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
 
-            // If cache empty or even oldest cached candle DateTime is after fromMoment and assetPairs has connection string, 
+            // If cache is empty or even oldest cached candle DateTime is after fromMoment and assetPairs has connection string, 
             // then try to read persistent history
             if (oldestCachedCandle == null || oldestCachedCandle.Timestamp > fromMoment)
             {
