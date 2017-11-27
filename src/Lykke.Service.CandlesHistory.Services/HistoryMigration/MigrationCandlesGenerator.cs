@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Services.Candles;
@@ -14,24 +13,52 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
     [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class MigrationCandlesGenerator : IHaveState<IImmutableDictionary<string, ICandle>>
     {
-        private ConcurrentDictionary<string, MigrationCandle> _candles;
+        private ConcurrentDictionary<string, Candle> _candles;
 
         public MigrationCandlesGenerator()
         {
-            _candles = new ConcurrentDictionary<string, MigrationCandle>();
+            _candles = new ConcurrentDictionary<string, Candle>();
         }
 
-        public MigrationCandleMergeResult Merge(ICandle candle, CandleTimeInterval timeInterval)
+        public MigrationCandleMergeResult Merge(string assetPair, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime timestamp, double open, double close, double low, double high)
         {
-            var key = GetKey(candle.AssetPairId, timeInterval, candle.PriceType);
+            var key = GetKey(assetPair, timeInterval, priceType);
 
-            MigrationCandle oldCandle = null;
+            Candle oldCandle = null;
             var newCandle = _candles.AddOrUpdate(key,
-                addValueFactory: k => MigrationCandle.Create(candle, timeInterval),
+                addValueFactory: k => Candle.Create(
+                    assetPair: assetPair,
+                    priceType: priceType,
+                    timeInterval: timeInterval,
+                    timestamp: timestamp,
+                    open: open,
+                    close: close,
+                    high: high,
+                    low: low,
+                    tradingVolume: 0,
+                    lastUpdateTimestamp: timestamp),
                 updateValueFactory: (k, old) =>
                 {
                     oldCandle = old;
-                    return oldCandle.Merge(candle);
+
+                    // Start new candle?
+                    var intervalTimestamp = timestamp.TruncateTo(timeInterval);
+                    if (oldCandle.Timestamp != intervalTimestamp)
+                    {
+                        return Candle.Create(
+                            assetPair: assetPair,
+                            priceType: priceType,
+                            timeInterval: timeInterval,
+                            timestamp: intervalTimestamp,
+                            open: open,
+                            close: close,
+                            high: high,
+                            low: low,
+                            tradingVolume: 0,
+                            lastUpdateTimestamp: timestamp);
+                    }
+
+                    return oldCandle.Update(close, low, high, 0, timestamp);
                 });
 
             return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));
@@ -54,9 +81,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 throw new InvalidOperationException("Candles generator state already not empty");
             }
 
-            _candles = new ConcurrentDictionary<string, MigrationCandle>(state.ToDictionary(
+            _candles = new ConcurrentDictionary<string, Candle>(state.ToDictionary(
                 i => i.Key,
-                i => MigrationCandle.Create(i.Value)));
+                i => Candle.Copy(i.Value)));
         }
 
         public string DescribeState(IImmutableDictionary<string, ICandle> state)

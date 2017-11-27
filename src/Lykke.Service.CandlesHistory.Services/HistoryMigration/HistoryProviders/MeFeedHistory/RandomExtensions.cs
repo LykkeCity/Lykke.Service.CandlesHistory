@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Lykke.Service.CandlesHistory.Core.Extensions
+namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory
 {
     public static class RandomExtensions
     {

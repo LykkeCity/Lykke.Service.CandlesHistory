@@ -233,11 +233,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Setup(s => s.GetCandles(It.IsAny<string>(), It.IsAny<CandlePriceType>(), It.IsAny<CandleTimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                  .Returns((string a, CandlePriceType p, CandleTimeInterval i, DateTime f, DateTime t) => new ICandle[]
                 {
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00)},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00)},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00)},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00)},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00)},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
+                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
                 });
 
             // Act

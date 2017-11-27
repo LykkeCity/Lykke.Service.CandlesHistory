@@ -25,8 +25,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("V")]
         public double TradingVolume { get; private set; }
 
+        [JsonProperty("U")]
+        public DateTime LastUpdateTimestamp { get; private set; }
+
         [JsonConstructor]
-        public CandleHistoryItem(double open, double close, double high, double low, int tick, double tradingVolume)
+        public CandleHistoryItem(double open, double close, double high, double low, int tick, double tradingVolume, DateTime lastUpdateTimestamp)
         {
             Open = open;
             Close = close;
@@ -34,11 +37,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             Low = low;
             Tick = tick;
             TradingVolume = tradingVolume;
+            LastUpdateTimestamp = lastUpdateTimestamp;
         }
 
         public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime, CandleTimeInterval timeInterval)
         {
-            return new Candle
+            return Candle.Create
             (
                 open: Open,
                 close: Close,
@@ -48,20 +52,27 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 priceType: priceType,
                 timeInterval: timeInterval,
                 timestamp: baseTime.AddIntervalTicks(Tick, timeInterval),
-                tradingVolume: TradingVolume
+                tradingVolume: TradingVolume,
+                lastUpdateTimestamp: LastUpdateTimestamp
             );
         }
 
         /// <summary>
         /// Merges candle change with the same asset pair, price type, time interval and timestamp
         /// </summary>
-        /// <param name="candleChange">Candle change</param>
-        public void InplaceMergeWith(ICandle candleChange)
+        /// <param name="candleState">Candle state</param>
+        public void InplaceMergeWith(ICandle candleState)
         {
-            Close = candleChange.Close;
-            High = Math.Max(High, candleChange.High);
-            Low = Math.Min(Low, candleChange.Low);
-            TradingVolume += candleChange.TradingVolume;
+            if (LastUpdateTimestamp >= candleState.LastUpdateTimestamp)
+            {
+                return;
+            }
+
+            Close = candleState.Close;
+            High = Math.Max(High, candleState.High);
+            Low = Math.Min(Low, candleState.Low);
+            TradingVolume = candleState.TradingVolume;
+            LastUpdateTimestamp = candleState.LastUpdateTimestamp;
         }
     }
 }

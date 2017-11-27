@@ -13,7 +13,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 high: candle.High,
                 low: candle.Low,
                 tick: tick,
-                tradingVolume: candle.TradingVolume
+                tradingVolume: candle.TradingVolume,
+                lastUpdateTimestamp: candle.LastUpdateTimestamp
             );
         }
     }

@@ -261,7 +261,15 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         return true;
                     }
 
-                    var mergingResult = _candlesGenerator.Merge(candle, interval);
+                    var mergingResult = _candlesGenerator.Merge(
+                        assetPair: candle.AssetPairId,
+                        priceType: candle.PriceType,
+                        timeInterval: interval,
+                        timestamp: candle.Timestamp,
+                        open: candle.Open,
+                        close: candle.Close,
+                        low: candle.Low,
+                        high: candle.High);
 
                     if (mergingResult.WasChanged)
                     {

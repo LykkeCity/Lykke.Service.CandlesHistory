@@ -14,7 +14,9 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
 
         public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime)
         {
-            return new Candle(
+            var timeStamp = baseTime.AddSeconds(Tick);
+
+            return Candle.Create(
                 open: Open,
                 close: Close,
                 high: High,
@@ -22,8 +24,9 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: CandleTimeInterval.Sec,
-                timestamp: baseTime.AddSeconds(Tick),
-                tradingVolume: 0);
+                timestamp: timeStamp,
+                tradingVolume: 0,
+                lastUpdateTimestamp: timeStamp);
         }
     }
 }

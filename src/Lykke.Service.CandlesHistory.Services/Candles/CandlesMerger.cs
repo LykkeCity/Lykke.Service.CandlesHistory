@@ -35,6 +35,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var priceType = CandlePriceType.Unspecified;
             var timeInterval = CandleTimeInterval.Unspecified;
             var timestamp = DateTime.MinValue;
+            var lastUpdateTimestamp = DateTime.MinValue;
             var count = 0;
 
             using (var enumerator = candles.GetEnumerator())
@@ -54,6 +55,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         priceType = candle.PriceType;
                         timeInterval = candle.TimeInterval;
                         timestamp = candle.Timestamp;
+                        lastUpdateTimestamp = candle.LastUpdateTimestamp;
                     }
                     else
                     {
@@ -81,6 +83,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         high = Math.Max(high, candle.High);
                         low = Math.Min(low, candle.Low);
                         tradingVolume += candle.TradingVolume;
+                        lastUpdateTimestamp = candle.LastUpdateTimestamp > lastUpdateTimestamp
+                            ? candle.LastUpdateTimestamp
+                            : lastUpdateTimestamp;
                     }
 
                     count++;
@@ -89,7 +94,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             if (count > 0)
             {
-                return new Candle(
+                return Candle.Create(
                     open: open,
                     close: close,
                     high: high,
@@ -98,7 +103,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     priceType: priceType,
                     timeInterval: timeInterval,
                     timestamp: newTimestamp ?? timestamp,
-                    tradingVolume: tradingVolume);
+                    tradingVolume: tradingVolume,
+                    lastUpdateTimestamp: lastUpdateTimestamp);
             }
 
             return null;

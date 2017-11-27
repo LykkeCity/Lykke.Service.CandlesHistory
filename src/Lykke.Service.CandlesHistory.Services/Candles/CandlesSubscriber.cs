@@ -75,7 +75,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     return;
                 }
 
-                _candlesManager.ProcessCandle(new Candle(
+                _candlesManager.ProcessCandle(Candle.Create(
                     assetPair: candle.AssetPairId,
                     priceType: candle.PriceType,
                     timeInterval: candle.TimeInterval,
@@ -84,7 +84,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     close: candle.Close,
                     low: candle.Low,
                     high: candle.High,
-                    tradingVolume: candle.TradingVolume));
+                    tradingVolume: candle.TradingVolume,
+                    lastUpdateTimestamp: candle.LastUpdateTimestamp));
             }
             catch (Exception)
             {

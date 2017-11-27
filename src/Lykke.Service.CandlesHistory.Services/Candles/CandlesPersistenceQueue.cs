@@ -23,6 +23,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly IHealthService _healthService;
         private readonly PersistenceSettings _settings;
 
+        // TODO: Make dictionary with timestamp, assetPair, priceType, timeInterval key 
+        // store only the last state of the candle, and thus, reduce memory consumtion
+
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
         public CandlesPersistenceQueue(

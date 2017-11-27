@@ -9,7 +9,6 @@ using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory
@@ -324,7 +323,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                 //    $"{timestamp},{t},{mid},{min},{max},{open},{close},{low},{high},{maxClosePriceDeviation},{rangeMinMaxDeviationFactor},{height}"
                 //});
 
-                var newCandle = new Candle(
+                var newCandle = Candle.Create(
                     assetPair: assetPair.Id,
                     priceType: priceType,
                     timeInterval: CandleTimeInterval.Sec,
@@ -333,7 +332,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                     close: (double) Math.Round(close, assetPair.Accuracy),
                     high: (double) Math.Round(high, assetPair.Accuracy),
                     low: (double) Math.Round(low, assetPair.Accuracy),
-                    tradingVolume: 0);
+                    tradingVolume: 0,
+                    lastUpdateTimestamp: timestamp);
 
                 if (open == 0 || close == 0 || high == 0 || low == 0)
                 {
@@ -414,12 +414,13 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                 high = high == 0 ? lastNonZeroPrice : high;
                 low = low == 0 ? lastNonZeroPrice : low;
 
-                return new Candle(candle.AssetPairId, candle.PriceType, candle.TimeInterval, candle.Timestamp,
+                return Candle.Create(candle.AssetPairId, candle.PriceType, candle.TimeInterval, candle.Timestamp,
                     (double) open,
                     (double) close,
                     (double) high,
                     (double) low,
-                    0);
+                    0,
+                    candle.Timestamp);
             }
 
             return candle;

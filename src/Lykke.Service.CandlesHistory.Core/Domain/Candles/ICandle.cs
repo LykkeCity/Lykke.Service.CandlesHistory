@@ -14,5 +14,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         double High { get; }
         double Low { get; }
         double TradingVolume { get; }
+        DateTime LastUpdateTimestamp { get; }
     }
 }

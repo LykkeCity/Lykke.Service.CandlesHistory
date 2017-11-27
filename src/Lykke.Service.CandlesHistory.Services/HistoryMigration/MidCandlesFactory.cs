@@ -44,7 +44,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 throw new InvalidOperationException($"Can't create mid candle from candles with different timestamps. candle1={askCandle.ToJson()}, candle2={bidCandle.ToJson()}");
             }
 
-            return new Candle(
+            return Candle.Create(
                 open: (askCandle.Open + bidCandle.Open) / 2,
                 close: (askCandle.Close + bidCandle.Close) / 2,
                 high: (askCandle.High + bidCandle.High) / 2,
@@ -53,7 +53,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 priceType: CandlePriceType.Mid,
                 timeInterval: askCandle.TimeInterval,
                 timestamp: askCandle.Timestamp,
-                tradingVolume: askCandle.TradingVolume);
+                tradingVolume: askCandle.TradingVolume,
+                lastUpdateTimestamp: askCandle.LastUpdateTimestamp > bidCandle.LastUpdateTimestamp
+                    ? askCandle.LastUpdateTimestamp
+                    : bidCandle.LastUpdateTimestamp);
         }
     }
 }
