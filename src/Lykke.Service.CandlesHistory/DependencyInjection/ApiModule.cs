@@ -164,7 +164,10 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 builder.RegisterType<FeedHistoryRepository>()
                     .As<IFeedHistoryRepository>()
                     .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
-                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), 
+                        "FeedHistory", 
+                        _log, 
+                        maxExecutionTimeout: TimeSpan.FromMinutes(5))))
                     .SingleInstance();
             }
 
