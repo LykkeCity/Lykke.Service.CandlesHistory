@@ -10,11 +10,13 @@ using Lykke.Domain.Prices;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Extensions;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry;
+using Lykke.Service.CandlesHistory.Services.Settings;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
@@ -27,20 +29,23 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private readonly IHistoryProvider _historyProvider;
         private readonly ICandlesHistoryMigrationService _candlesHistoryMigrationService;
         private readonly Action<string> _onStoppedAction;
+        private readonly MigrationSettings _settings;
         private readonly CancellationTokenSource _cts;
+        private readonly IHealthService _healthService;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
         private readonly MigrationCandlesGenerator _candlesGenerator;
         private DateTime _prevAskTimestamp;
         private DateTime _prevBidTimestamp;
         private DateTime _prevMidTimestamp;
         private volatile bool _isAskOrBidMigrationCompleted;
-
+        
         private readonly ImmutableArray<TimeInterval> _intervalsToGenerate = Constants
             .StoredIntervals
             .Where(i => i != TimeInterval.Sec)
             .ToImmutableArray();
 
         public AssetPairMigrationManager(
+            IHealthService healthService,
             ICandlesPersistenceQueue candlesPersistenceQueue,
             MigrationCandlesGenerator candlesGenerator,
             AssetPairMigrationTelemetryService telemetryService,
@@ -49,8 +54,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             BidAskHCacheService bidAskHCacheService,
             IHistoryProvider historyProvider,
             ICandlesHistoryMigrationService candlesHistoryMigrationService,
-            Action<string> onStoppedAction)
+            Action<string> onStoppedAction, 
+            MigrationSettings settings)
         {
+            _healthService = healthService;
             _candlesPersistenceQueue = candlesPersistenceQueue;
             _candlesGenerator = candlesGenerator;
             _telemetryService = telemetryService;
@@ -60,6 +67,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             _historyProvider = historyProvider;
             _candlesHistoryMigrationService = candlesHistoryMigrationService;
             _onStoppedAction = onStoppedAction;
+            _settings = settings;
 
             _cts = new CancellationTokenSource();
         }
@@ -247,35 +255,42 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         private bool ProcessSecCandles(IEnumerable<ICandle> secCandles)
         {
-            var changedCandles = new Dictionary<(TimeInterval interval, DateTime timestamp), ICandle>();
-
             foreach (var candle in secCandles)
             {
+                if (_cts.IsCancellationRequested)
+                {
+                    return true;
+                }
+
+                if (_healthService.CandlesToDispatchQueueLength > _settings.CandlesToDispatchLengthThrottlingThreshold)
+                {
+                    try
+                    {
+                        Task.Delay(_settings.ThrottlingDelay).GetAwaiter().GetResult();
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        return true;
+                    }
+                }
+
                 _telemetryService.UpdateCurrentHistoryDate(candle.Timestamp, candle.PriceType);
                 
                 CheckCandleOrder(candle);
 
-                foreach (var interval in _intervalsToGenerate)
-                {
-                    if (_cts.IsCancellationRequested)
-                    {
-                        return true;
-                    }
-
-                    var mergingResult = _candlesGenerator.Merge(candle, interval);
-
-                    if (mergingResult.WasChanged)
-                    {
-                        changedCandles[(interval, mergingResult.Candle.Timestamp)] = mergingResult.Candle;
-                    }
-                }
-
                 _candlesPersistenceQueue.EnqueueCandle(candle);
-            }
 
-            foreach (var changedCandle in changedCandles.Values)
-            {
-                _candlesPersistenceQueue.EnqueueCandle(changedCandle);
+                _intervalsToGenerate
+                    .AsParallel()
+                    .ForAll(interval =>
+                    {
+                        var mergingResult = _candlesGenerator.Merge(candle, interval);
+
+                        if (mergingResult.WasChanged)
+                        {
+                            _candlesPersistenceQueue.EnqueueCandle(mergingResult.Candle);
+                        }
+                    });
             }
 
             return false;

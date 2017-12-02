@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
@@ -21,7 +22,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             _assetsServiceMock = new Mock<ICachedAssetsService>();
 
-            _manager = new AssetPairsManager(_assetsServiceMock.Object);
+            _manager = new AssetPairsManager(new LogToMemory(), _assetsServiceMock.Object);
         }
 
         #region Getting enabled pair
