@@ -43,25 +43,25 @@ namespace Lykke.Service.CandlesHistory.Services
 
         public async Task StartAsync()
         {
-            //await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing persistence queue async...");
-            
-            //var tasks = new List<Task>
-            //{
-            //    _snapshotSerializer.DeserializeAsync(_persistenceQueue, _persistenceQueueSnapshotRepository)
-            //};
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing persistence queue async...");
 
-            //await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing cache...");
+            var tasks = new List<Task>
+            {
+                _snapshotSerializer.DeserializeAsync(_persistenceQueue, _persistenceQueueSnapshotRepository)
+            };
 
-            //if (!await _snapshotSerializer.DeserializeAsync(_candlesCacheService, _candlesCacheSnapshotRepository))
-            //{
-            //    await _log.WriteInfoAsync(nameof(StartAsync), "", "Initializing cache from the history async...");
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing cache...");
 
-            //    tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
-            //}
+            if (!await _snapshotSerializer.DeserializeAsync(_candlesCacheService, _candlesCacheSnapshotRepository))
+            {
+                await _log.WriteInfoAsync(nameof(StartAsync), "", "Initializing cache from the history async...");
 
-            //await _log.WriteInfoAsync(nameof(StartAsync), "", "Waiting for async tasks...");
+                tasks.Add(_cacheInitalizationService.InitializeCacheAsync());
+            }
 
-            //await Task.WhenAll(tasks);
+            await _log.WriteInfoAsync(nameof(StartAsync), "", "Waiting for async tasks...");
+
+            await Task.WhenAll(tasks);
 
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting persistence queue...");
 
@@ -69,11 +69,11 @@ namespace Lykke.Service.CandlesHistory.Services
 
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting persistence manager...");
 
-            //_persistenceManager.Start();
+            _persistenceManager.Start();
 
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Starting candles subscriber...");
 
-            //_candlesSubscriber.Start();
+            _candlesSubscriber.Start();
 
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Started up");
         }
