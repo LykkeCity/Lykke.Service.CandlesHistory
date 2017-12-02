@@ -8,5 +8,6 @@
         public QueueMonitorSettings QueueMonitor { get; set; }
         public PersistenceSettings Persistence { get; set; }
         public DbSettings Db { get; set; }
+        public MigrationSettings Migration { get; set; }
     }
 }

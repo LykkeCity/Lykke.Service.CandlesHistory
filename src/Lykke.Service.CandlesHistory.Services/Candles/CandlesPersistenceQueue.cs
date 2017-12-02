@@ -2,23 +2,26 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
+using Polly;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
+    [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class CandlesPersistenceQueue : 
         ProducerConsumer<IReadOnlyCollection<ICandle>>,
         ICandlesPersistenceQueue
     {
         private readonly ICandlesHistoryRepository _repository;
-        private readonly IFailedToPersistCandlesPublisher _failedToPersistCandlesPublisher;
         private readonly ILog _log;
         private readonly IHealthService _healthService;
         private readonly PersistenceSettings _settings;
@@ -30,7 +33,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         
         public CandlesPersistenceQueue(
             ICandlesHistoryRepository repository,
-            IFailedToPersistCandlesPublisher failedToPersistCandlesPublisher,
             ILog log,
             IHealthService healthService,
             PersistenceSettings settings) :
@@ -38,7 +40,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             base(nameof(CandlesPersistenceQueue), log)
         {
             _repository = repository;
-            _failedToPersistCandlesPublisher = failedToPersistCandlesPublisher;
             _log = log;
             _healthService = healthService;
             _settings = settings;
@@ -49,7 +50,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             if (_healthService.CandlesToDispatchQueueLength > _settings.CandlesToDispatchLengthThrottlingThreshold)
             {
-                Task.Delay(_settings.ThrottlingEnqueueDelay).Wait();
+                Task.Delay(_settings.ThrottlingEnqueueDelay).GetAwaiter().GetResult();
             }
 
             _candlesToDispatch.Enqueue(candle);
@@ -112,10 +113,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         protected override async Task Consume(IReadOnlyCollection<ICandle> candles)
         {
-#if DEBUG
-            await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
-                $"Consuming candles batch with {candles.Count} candles. Amount of batches in queue={_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath={_healthService.CandlesToDispatchQueueLength}");
-#endif
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 await PersistCandles(candles);
@@ -124,10 +123,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 _healthService.TraceCandlesBatchPersisted(candles.Count);
             }
-#if DEBUG
-            await _log.WriteInfoAsync(nameof(CandlesPersistenceQueue), nameof(Consume), "", 
-                $"Candles batch with {candles.Count} candles is persisted. Amount of batches in queue={_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath={_healthService.CandlesToDispatchQueueLength}");
-#endif
+
+            sw.Stop();
+
+            await _log.WriteInfoAsync("Persist candes batch", string.Empty, 
+                $"Candles batch with {candles.Count} candles is persisted in {sw.Elapsed}. Amount of batches in queue = {_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath = {_healthService.CandlesToDispatchQueueLength}");
         }
 
         private async Task PersistCandles(IReadOnlyCollection<ICandle> candles)
@@ -145,18 +145,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 var tasks = new List<Task>();
 
                 foreach (var group in grouppedCandles)
-                {
+                {   
                     tasks.Add(InsertAssetPairCandlesAsync(group, group.Key));
                 }
 
-                try
-                {
-                    await Task.WhenAll(tasks);
-                }
-                catch (Exception ex)
-                {
-                    await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(PersistCandles), "", ex);
-                }
+                await Task.WhenAll(tasks);
             }
             finally
             {
@@ -170,25 +163,22 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             foreach (var group in grouppedCandles)
             {
-                try
-                {
-                    await _repository.InsertOrMergeAsync(
+                await Policy
+                    .Handle<Exception>()
+                    // If we can't store the candles, we can't do anything else, so just retries until success
+                    .WaitAndRetryForeverAsync(
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, timeSpan) =>
+                        {
+                            var context = $"{assetPairId}-{group.Key.PriceType}-{group.Key.TimeInterval}";
+
+                            return _log.WriteErrorAsync("Persist asset pair candles with retries", context, exception);
+                        })
+                    .ExecuteAsync(() => _repository.InsertOrMergeAsync(
                         group.ToArray(),
                         assetPairId,
                         group.Key.PriceType,
-                        group.Key.TimeInterval);
-                }
-                catch (Exception ex)
-                {
-                    await _log.WriteErrorAsync(nameof(CandlesPersistenceQueue), nameof(InsertAssetPairCandlesAsync), "", ex);
-
-                    await _failedToPersistCandlesPublisher.ProduceAsync(new FailedCandlesEnvelope
-                    {
-                        ProcessingMoment = DateTime.UtcNow,
-                        Exception = ex.ToString(),
-                        Candles = group
-                    });
-                }
+                        group.Key.TimeInterval));
             }
         }
     }

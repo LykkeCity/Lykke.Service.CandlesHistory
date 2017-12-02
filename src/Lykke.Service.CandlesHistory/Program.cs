@@ -48,7 +48,8 @@ namespace Lykke.Service.CandlesHistory
                         {
                             Console.ReadKey(true);
                         }))
-                    .Wait();
+                    .GetAwaiter()
+                    .GetResult();
             }
 
             Console.WriteLine("Terminated");
