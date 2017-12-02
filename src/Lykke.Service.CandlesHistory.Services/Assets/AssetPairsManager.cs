@@ -24,7 +24,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
         {
             return Policy
                 .Handle<Exception>()
-                .WaitAndRetryForever(
+                .WaitAndRetryForeverAsync(
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timespan) => _log.WriteErrorAsync("Get asset pair with retry", assetPairId, exception))
                 .ExecuteAsync(() => _apiService.TryGetAssetPairAsync(assetPairId));
