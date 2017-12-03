@@ -1,26 +1,30 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.SettingsReader;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
+    [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class CandlesHistoryRepository : ICandlesHistoryRepository
     {
+        private readonly IHealthService _healthService;
         private readonly ILog _log;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
         private readonly ConcurrentDictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
 
-        public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
+        public CandlesHistoryRepository(IHealthService healthService, ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
+            _healthService = healthService;
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
 
@@ -35,13 +39,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Insert or merge candles. Assumed that all candles have the same AssetPairId, PriceType, Timeinterval
         /// </summary>
-        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval)
         {
-            if (!candles.Any())
-            {
-                return;
-            }
-
             var repo = GetRepo(assetPairId, timeInterval);
             try
             {
@@ -102,8 +101,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             {
                 return _assetPairRepositories.AddOrUpdate(
                     key: key,
-                    addValueFactory: k => new AssetPairCandlesHistoryRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)),
-                    updateValueFactory: (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(assetPairId, timeInterval, CreateStorage(assetPairId, tableName)));
+                    addValueFactory: k => new AssetPairCandlesHistoryRepository(_healthService, _log, assetPairId, timeInterval, CreateStorage(assetPairId, tableName)),
+                    updateValueFactory: (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(_healthService, _log, assetPairId, timeInterval, CreateStorage(assetPairId, tableName)));
             }
 
             return repo;
@@ -120,7 +119,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             var storage = AzureTableStorage<CandleHistoryEntity>.Create(
                 _assetConnectionStrings.ConnectionString(x => x[assetPairId]), 
                 tableName, 
-                _log);
+                _log,
+                maxExecutionTimeout: TimeSpan.FromMinutes(1),
+                onGettingRetryCount: 10,
+                onModificationRetryCount: 10,
+                retryDelay: TimeSpan.FromSeconds(1));
 
             // Create and preload table info
             storage.GetDataAsync(assetPairId, "1900-01-01").Wait();

@@ -4,23 +4,32 @@ using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
 using Common;
+using Common.Log;
 using Lykke.Domain.Prices;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Microsoft.WindowsAzure.Storage.Table;
+using Polly;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     internal sealed class AssetPairCandlesHistoryRepository
     {
+        private readonly IHealthService _healthService;
+        private readonly ILog _log;
         private readonly string _assetPairId;
         private readonly TimeInterval _timeInterval;
         private readonly INoSQLTableStorage<CandleHistoryEntity> _tableStorage;
 
         public AssetPairCandlesHistoryRepository(
+            IHealthService healthService,
+            ILog log,
             string assetPairId,
             TimeInterval timeInterval,
             INoSQLTableStorage<CandleHistoryEntity> tableStorage)
         {
+            _healthService = healthService;
+            _log = log;
             _assetPairId = assetPairId;
             _timeInterval = timeInterval;
             _tableStorage = tableStorage;
@@ -29,29 +38,37 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Assumed that all candles have the same AssetPair, PriceType, and Timeinterval
         /// </summary>
-        public async Task InsertOrMergeAsync(IReadOnlyCollection<ICandle> candles, PriceType priceType)
+        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, PriceType priceType)
         {
-            foreach (var candle in candles)
-            {
-                if (candle.AssetPairId != _assetPairId)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid AssetPriceId", nameof(candles));
-                }
-                if (candle.TimeInterval != _timeInterval)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid TimeInterval", nameof(candles));
-                }
-                if (candle.PriceType != priceType)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid PriceType", nameof(candles));
-                }
-            }
-
             var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
 
-            var candleByRows = candles
+            // Despite of AzureTableStorage already split requests to chunks,
+            // splits to the chunks here to reduse cost of operation timeout
+
+            var candleByRowsChunks = candles
                 .GroupBy(candle => CandleHistoryEntity.GenerateRowKey(candle.Timestamp, _timeInterval))
-                .ToDictionary(g => g.Key, g => g.AsEnumerable());
+                .ToChunks(100);
+
+            foreach (var candleByRowsChunk in candleByRowsChunks)
+            {
+                // If we can't store the candles, we can't do anything else, so just retries until success
+                await Policy
+                    .Handle<Exception>()
+                    .WaitAndRetryForeverAsync(
+                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, timeSpan) =>
+                        {
+                            var context = $"{_assetPairId}-{priceType}-{_timeInterval}";
+
+                            return _log.WriteErrorAsync("Persist candle rows chunk with retries", context, exception);
+                        })
+                    .ExecuteAsync(() => SaveCandlesBatchAsync(candleByRowsChunk, partitionKey));
+            }
+        }
+
+        private async Task SaveCandlesBatchAsync(IEnumerable<IGrouping<string, ICandle>> candleByRowsChunk, string partitionKey)
+        {
+            var candleByRows = candleByRowsChunk.ToDictionary(g => g.Key, g => g.AsEnumerable());
 
             // updates existing entities
 
@@ -59,7 +76,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in existingEntities)
             {
-                entity.MergeCandles(candleByRows[entity.RowKey], _timeInterval);
+                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
             }
 
             // creates new entities
@@ -69,10 +86,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in newEntities)
             {
-                entity.MergeCandles(candleByRows[entity.RowKey], _timeInterval);
+                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
             }
 
             // save changes
+
+            _healthService.TraceCandleRowsPersisted(existingEntities.Length + newEntities.Length);
 
             await _tableStorage.InsertOrReplaceBatchAsync(existingEntities.Concat(newEntities));
         }

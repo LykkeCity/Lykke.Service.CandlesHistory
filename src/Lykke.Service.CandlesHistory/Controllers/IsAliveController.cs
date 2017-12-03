@@ -1,5 +1,4 @@
-﻿using System;
-using Lykke.Service.CandlesHistory.Core.Services;
+﻿using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -33,15 +32,27 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 Name = PlatformServices.Default.Application.ApplicationName,
                 Version = PlatformServices.Default.Application.ApplicationVersion,
-                Env = Environment.GetEnvironmentVariable("ENV_INFO"),
-                BatchesToPersistQueueLength = _healthService.BatchesToPersistQueueLength,
-                CandlesToDispatchQueueLength = _healthService.CandlesToDispatchQueueLength,
-                AveragePersistTime = _healthService.AveragePersistTime,
-                AverageCandlesPersistedPersSecond = _healthService.AverageCandlesPersistedPerSecond,
-                TotalPersistTime = _healthService.TotalPersistTime,
-                TotalCandlesPersistedCount = _healthService.TotalCandlesPersistedCount,
+                Env = Program.EnvInfo,
                 IsShuttingDown = _shutdownManager.IsShuttingDown,
-                IsShuttedDown = _shutdownManager.IsShuttedDown
+                IsShuttedDown = _shutdownManager.IsShuttedDown,
+                Persistence = new IsAliveResponse.PersistenceInfo
+                {
+                    Times = new IsAliveResponse.Times
+                    {
+                        AveragePersistTime = _healthService.AveragePersistTime,
+                        LastPersistTime = _healthService.LastPersistTime,
+                        TotalPersistTime = _healthService.TotalPersistTime,
+                    },
+                    Throughput = new IsAliveResponse.Throughput
+                    {
+                        AverageCandlesPersistedPerSecond = _healthService.AverageCandlesPersistedPerSecond,
+                        AverageCandleRowsPersistedPerSecond = _healthService.AverageCandleRowsPersistedPerSecond
+                    },
+                    BatchesToPersistQueueLength = _healthService.BatchesToPersistQueueLength,
+                    CandlesToDispatchQueueLength = _healthService.CandlesToDispatchQueueLength,
+                    TotalCandlesPersistedCount = _healthService.TotalCandlesPersistedCount,
+                    TotalCandleRowsPersistedCount = _healthService.TotalCandleRowsPersistedCount,
+                }
             };
         }
     }
