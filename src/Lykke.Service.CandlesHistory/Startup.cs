@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
+using Lykke.Logs.Slack;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
@@ -202,6 +203,10 @@ namespace Lykke.Service.CandlesHistory
 
                 aggregateLogger.AddLog(azureStorageLogger);
             }
+
+            var logToSlack = LykkeLogToSlack.Create(slackService, "Prices");
+
+            aggregateLogger.AddLog(logToSlack);
 
             return aggregateLogger;
         }

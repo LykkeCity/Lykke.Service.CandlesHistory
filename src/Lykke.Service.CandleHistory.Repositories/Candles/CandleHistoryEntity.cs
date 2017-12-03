@@ -45,7 +45,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
         }
 
-        public CandlePriceType CandlePriceType
+        public CandlePriceType PriceType
         {
             get
             {
@@ -135,16 +135,30 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             return FormatRowKey(time);
         }
 
-        public void MergeCandles(IEnumerable<ICandle> candles, CandleTimeInterval timeInterval)
+        public void MergeCandles(string assetPair, CandleTimeInterval timeInterval, IEnumerable<ICandle> candles)
         {
             foreach (var candle in candles)
             {
-                MergeCandle(candle, timeInterval);
+                MergeCandle(assetPair, timeInterval, candle);
             }
         }
 
-        private void MergeCandle(ICandle candle, CandleTimeInterval interval)
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        private void MergeCandle(string assetPair, CandleTimeInterval interval, ICandle candle)
         {
+            if (candle.AssetPairId != assetPair)
+            {
+                throw new InvalidOperationException($"Candle {candle.ToJson()} has invalid AssetPriceId");
+            }
+            if (candle.TimeInterval != interval)
+            {
+                throw new InvalidOperationException($"Candle {candle.ToJson()} has invalid TimeInterval");
+            }
+            if (candle.PriceType != PriceType)
+            {
+                throw new InvalidOperationException($"Candle {candle.ToJson()} has invalid PriceType");
+            }
+
             // 1. Check if candle with specified time already exist
             // 2. If found - merge, else - add to list
 

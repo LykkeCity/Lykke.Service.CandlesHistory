@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Common;
 using Common.Log;
 using JetBrains.Annotations;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -141,13 +142,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             try
             {
-                var grouppedCandles = candles.GroupBy(c => c.AssetPairId);
-                var tasks = new List<Task>();
-
-                foreach (var group in grouppedCandles)
-                {   
-                    tasks.Add(InsertAssetPairCandlesAsync(group, group.Key));
-                }
+                var grouppedCandles = candles
+                    .GroupBy(c => new
+                    {
+                        c.AssetPairId,
+                        c.PriceType,
+                        c.TimeInterval
+                    });
+                var tasks = grouppedCandles
+                    .Select(g => InsertSinglePartitionCandlesAsync(g, g.Key.AssetPairId, g.Key.PriceType, g.Key.TimeInterval));
 
                 await Task.WhenAll(tasks);
             }
@@ -157,29 +160,24 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        private async Task InsertAssetPairCandlesAsync(IEnumerable<ICandle> candles, string assetPairId)
+        private Task InsertSinglePartitionCandlesAsync(IEnumerable<ICandle> candles, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
-            var grouppedCandles = candles.GroupBy(c => new {c.PriceType, c.TimeInterval});
+            return Policy
+                .Handle<Exception>()
+                // If we can't store the candles, we can't do anything else, so just retries until success
+                .WaitAndRetryForeverAsync(
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timeSpan) =>
+                    {
+                        var context = $"{assetPairId}-{priceType}-{timeInterval}";
 
-            foreach (var group in grouppedCandles)
-            {
-                await Policy
-                    .Handle<Exception>()
-                    // If we can't store the candles, we can't do anything else, so just retries until success
-                    .WaitAndRetryForeverAsync(
-                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                        (exception, timeSpan) =>
-                        {
-                            var context = $"{assetPairId}-{group.Key.PriceType}-{group.Key.TimeInterval}";
-
-                            return _log.WriteErrorAsync("Persist asset pair candles with retries", context, exception);
-                        })
-                    .ExecuteAsync(() => _repository.InsertOrMergeAsync(
-                        group.ToArray(),
-                        assetPairId,
-                        group.Key.PriceType,
-                        group.Key.TimeInterval));
-            }
+                        return _log.WriteErrorAsync("Persist single partition candles with retries", context, exception);
+                    })
+                .ExecuteAsync(() => _repository.InsertOrMergeAsync(
+                    candles,
+                    assetPairId,
+                    priceType,
+                    timeInterval));
         }
     }
 }
