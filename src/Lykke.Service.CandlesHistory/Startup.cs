@@ -35,6 +35,7 @@ namespace Lykke.Service.CandlesHistory
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("env.json", optional: true)
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
         }

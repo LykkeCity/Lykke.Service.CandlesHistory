@@ -289,3 +289,4 @@ __pycache__/
 /client/Lykke.Service.CandlesHistory.Client/Service.CandlesHistory.json
 
 **/appsettings.*.json
+/src/Lykke.Service.CandlesHistory/env.json

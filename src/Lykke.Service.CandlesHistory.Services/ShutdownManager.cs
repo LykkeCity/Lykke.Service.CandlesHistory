@@ -48,6 +48,10 @@ namespace Lykke.Service.CandlesHistory.Services
         {
             IsShuttingDown = true;
 
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping candles subscriber...");
+
+            _candlesSubcriber.Stop();
+
             await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping persistence manager...");
                 
             _persistenceManager.Stop();
@@ -56,19 +60,16 @@ namespace Lykke.Service.CandlesHistory.Services
                 
             _persistenceQueue.Stop();
 
-            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping candles subscriber...");
-                
-            _candlesSubcriber.Stop();
-
-            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping candles migration manager...");
-
-            _migrationManager.Stop();
-
+            
             await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Serializing state...");
 
             await Task.WhenAll(
                 _snapshotSerializer.SerializeAsync(_persistenceQueue, _persistenceQueueSnapshotRepository),
                 _snapshotSerializer.SerializeAsync(_candlesCacheService, _candlesCacheSnapshotRepository));
+
+            await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Stopping candles migration manager...");
+
+            _migrationManager.Stop();
 
             await _log.WriteInfoAsync(nameof(ShutdownAsync), "", "Shutted down");
 
