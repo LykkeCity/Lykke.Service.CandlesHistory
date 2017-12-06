@@ -124,7 +124,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             sw.Stop();
 
-            await _log.WriteInfoAsync("Persist candes batch", string.Empty, 
+            await _log.WriteInfoAsync("Persist candles batch", string.Empty, 
                 $"Candles batch with {candles.Count} candles is persisted in {sw.Elapsed}. Amount of batches in queue = {_healthService.BatchesToPersistQueueLength}. Amount of candles to dispath = {_healthService.CandlesToDispatchQueueLength}");
         }
 
