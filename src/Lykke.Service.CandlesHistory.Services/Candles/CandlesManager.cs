@@ -72,6 +72,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var alignedFromMoment = fromMoment.TruncateTo(timeInterval);
             var alignedToMoment = toMoment.TruncateTo(timeInterval);
 
+            if (alignedFromMoment == alignedToMoment)
+            {
+                alignedToMoment = alignedFromMoment.AddIntervalTicks(1, timeInterval);
+            }
+
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
                 return await GetStoredCandlesAsync(assetPairId, priceType, timeInterval, alignedFromMoment, alignedToMoment);
