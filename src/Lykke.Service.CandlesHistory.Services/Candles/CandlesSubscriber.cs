@@ -33,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public void Start()
         {
             var settings = RabbitMqSubscriptionSettings
-                .CreateForSubscriber(_settings.ConnectionString, _settings.Namespace, "candles", _settings.Namespace, "candleshistory")
+                .CreateForSubscriber(_settings.ConnectionString, _settings.Namespace, "candles-v2", _settings.Namespace, "candleshistory")
                 .MakeDurable();
 
             try
@@ -43,7 +43,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                             retryTimeout: TimeSpan.FromSeconds(10),
                             retryNum: 10,
                             next: new DeadQueueErrorHandlingStrategy(_log, settings)))
-                    .SetMessageDeserializer(new JsonMessageDeserializer<CandlesUpdatedEvent>())
+                    .SetMessageDeserializer(new MessagePackMessageDeserializer<CandlesUpdatedEvent>())
                     .SetMessageReadStrategy(new MessageReadQueueStrategy())
                     .Subscribe(ProcessCandlesUpdatedEventAsync)
                     .CreateDefaultBinding()
