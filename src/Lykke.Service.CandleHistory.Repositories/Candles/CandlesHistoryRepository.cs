@@ -56,7 +56,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Returns buy or sell candle values for the specified interval from the specified time range.
         /// </summary>
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType, DateTime from, DateTime? to)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType, DateTime from, DateTime to)
         {
             var repo = GetRepo(assetPairId, interval);
             try
