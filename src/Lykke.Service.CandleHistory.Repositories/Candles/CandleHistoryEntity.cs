@@ -135,7 +135,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             return FormatRowKey(time);
         }
 
-        public void MergeCandles(string assetPair, CandleTimeInterval timeInterval, IEnumerable<ICandle> candles)
+        public void MergeCandles(IEnumerable<ICandle> candles, string assetPair, CandleTimeInterval timeInterval)
         {
             foreach (var candle in candles)
             {

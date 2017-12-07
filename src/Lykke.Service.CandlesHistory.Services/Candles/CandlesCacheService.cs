@@ -33,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<ICandle>(candles.Limit(_amountOfCandlesToStore));
 
-            foreach(var candle in candlesList)
+            foreach (var candle in candlesList)
             {
                 if (candle.AssetPairId != assetPairId)
                 {
@@ -127,7 +127,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private static LinkedList<ICandle> AddNewCandlesHistory(ICandle candle)
         {
             var history = new LinkedList<ICandle>();
-            
+
             history.AddLast(candle);
 
             return history;

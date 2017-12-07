@@ -76,7 +76,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in existingEntities)
             {
-                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
+                entity.MergeCandles(candleByRows[entity.RowKey], _assetPairId, _timeInterval);
             }
 
             // creates new entities
@@ -86,7 +86,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in newEntities)
             {
-                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
+                entity.MergeCandles(candleByRows[entity.RowKey], _assetPairId, _timeInterval);
             }
 
             // save changes

@@ -9,7 +9,6 @@ using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
-using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory
 {
@@ -103,7 +102,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
 
         public void RemoveAssetPair(string assetPair)
         {
-            foreach (var priceType in Constants.StoredPriceTypes)
+            foreach (var priceType in Candles.Constants.StoredPriceTypes)
             {
                 _lastCandles.TryRemove(GetKey(assetPair, priceType), out var _);
             }
