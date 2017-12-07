@@ -93,9 +93,9 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         public void RemoveAssetPair(string assetPair)
         {
-            foreach (var priceType in Constants.StoredPriceTypes)
+            foreach (var priceType in Candles.Constants.StoredPriceTypes)
             {
-                foreach (var timeInterval in Constants.StoredIntervals)
+                foreach (var timeInterval in Candles.Constants.StoredIntervals)
                 {
                     _candles.TryRemove(GetKey(assetPair, timeInterval, priceType), out var _);
                 }

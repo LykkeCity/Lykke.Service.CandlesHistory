@@ -12,7 +12,6 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
-using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -34,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private DateTime _prevMidTimestamp;
         private volatile bool _isAskOrBidMigrationCompleted;
 
-        private readonly ImmutableArray<CandleTimeInterval> _intervalsToGenerate = Constants
+        private readonly ImmutableArray<CandleTimeInterval> _intervalsToGenerate = Candles.Constants
             .StoredIntervals
             .Where(i => i != CandleTimeInterval.Sec)
             .ToImmutableArray();
