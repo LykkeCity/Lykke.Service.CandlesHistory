@@ -4,9 +4,11 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
+using Lykke.Logs.Slack;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
@@ -22,23 +24,23 @@ using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
 {
+    [UsedImplicitly]
     public class Startup
     {
-        public IHostingEnvironment HostingEnvironment { get; }
-        public IContainer ApplicationContainer { get; private set; }
-        public IConfigurationRoot Configuration { get; }
-        public ILog Log { get; private set; }
+        private IContainer ApplicationContainer { get; set; }
+        private IConfigurationRoot Configuration { get; }
+        private ILog Log { get; set; }
 
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("env.json", optional: true)
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
-
-            HostingEnvironment = env;
         }
 
+        [UsedImplicitly]
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             try
@@ -88,6 +90,7 @@ namespace Lykke.Service.CandlesHistory
             }
         }
 
+        [UsedImplicitly]
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
         {
             try
@@ -104,9 +107,9 @@ namespace Lykke.Service.CandlesHistory
                 app.UseSwaggerUi();
                 app.UseStaticFiles();
 
-                appLifetime.ApplicationStarted.Register(() => StartApplication().Wait());
-                appLifetime.ApplicationStopping.Register(() => StopApplication().Wait());
-                appLifetime.ApplicationStopped.Register(() => CleanUp().Wait());
+                appLifetime.ApplicationStarted.Register(() => StartApplication().GetAwaiter().GetResult());
+                appLifetime.ApplicationStopping.Register(() => StopApplication().GetAwaiter().GetResult());
+                appLifetime.ApplicationStopped.Register(() => CleanUp().GetAwaiter().GetResult());
             }
             catch (Exception ex)
             {
@@ -121,7 +124,7 @@ namespace Lykke.Service.CandlesHistory
             {
                 await ApplicationContainer.Resolve<IStartupManager>().StartAsync();
 
-                await Log.WriteMonitorAsync("", $"Env: {Program.EnvInfo}", "Started");
+                await Log.WriteMonitorAsync("", "", "Started");
             }
             catch (Exception ex)
             {
@@ -201,6 +204,10 @@ namespace Lykke.Service.CandlesHistory
 
                 aggregateLogger.AddLog(azureStorageLogger);
             }
+
+            var logToSlack = LykkeLogToSlack.Create(slackService, "Prices");
+
+            aggregateLogger.AddLog(logToSlack);
 
             return aggregateLogger;
         }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.CandlesHistory", "src\Lykke.Service.CandlesHistory\Lykke.Service.CandlesHistory.csproj", "{CE46136E-58E5-4B5C-9063-FD9DC59EAA7E}"
 EndProject
@@ -31,6 +31,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{16E0B0C8-DF64-47BD-BC16-BE88605BBCAA}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		Performance1.psess = Performance1.psess
 	EndProjectSection
 EndProject
 Global

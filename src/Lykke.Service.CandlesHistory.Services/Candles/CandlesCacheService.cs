@@ -33,7 +33,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<ICandle>(candles.Limit(_amountOfCandlesToStore));
 
-            foreach(var candle in candlesList)
+            foreach (var candle in candlesList)
             {
                 if (candle.AssetPairId != assetPairId)
                 {
@@ -127,7 +127,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private static LinkedList<ICandle> AddNewCandlesHistory(ICandle candle)
         {
             var history = new LinkedList<ICandle>();
-            
+
             history.AddLast(candle);
 
             return history;
@@ -137,93 +137,78 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             lock (history)
             {
-                try
+                // Starting from the latest candle, moving down to the history
+                for (var node = history.Last; node != null; node = node.Previous)
                 {
-                    if (history.Count == 0)
+                    // Candle at given point already exists, so replace it
+                    if (node.Value.Timestamp == candle.Timestamp)
                     {
-                        int a = 1;
-                    }
-
-                    // Starting from the latest candle, moving down to the history
-                    for (var node = history.Last; node != null; node = node.Previous)
-                    {
-                        // Candle at given point already exists, so replace it
-                        if (node.Value.Timestamp == candle.Timestamp)
+                        if (node.Value.LastUpdateTimestamp < candle.LastUpdateTimestamp)
                         {
-                            if (node.Value.LastUpdateTimestamp < candle.LastUpdateTimestamp)
-                            {
-                                node.Value = candle;
-                            }
-
-                            if (node != history.Last)
-                            {
-                                _log.WriteWarningAsync(
-                                    nameof(CandlesCacheService),
-                                    nameof(UpdateCandlesHistory),
-                                    candle.ToJson(),
-                                    $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that candles was missordered. Last cached candle: {history.Last.Value.ToJson()}");
-                            }
-
-                            return history;
+                            node.Value = candle;
                         }
 
-                        // If we found more early point than candle,
-                        // that's the point after which we should add candle
-                        if (node.Value.Timestamp < candle.Timestamp)
+                        if (node != history.Last)
                         {
-                            var newNode = history.AddAfter(node, candle);
-
-                            // Should we remove oldest candle?
-                            if (history.Count > _amountOfCandlesToStore)
-                            {
-                                history.RemoveFirst();
-                            }
-
-                            if (newNode != history.Last)
-                            {
-                                _log.WriteWarningAsync(
-                                    nameof(CandlesCacheService),
-                                    nameof(UpdateCandlesHistory),
-                                    candle.ToJson(),
-                                    $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
-                            }
-
-                            return history;
+                            _log.WriteWarningAsync(
+                                nameof(CandlesCacheService),
+                                nameof(UpdateCandlesHistory),
+                                candle.ToJson(),
+                                $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that candles was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                         }
+
+                        return history;
                     }
 
-                    if (history.Count < _amountOfCandlesToStore)
+                    // If we found more early point than candle,
+                    // that's the point after which we should add candle
+                    if (node.Value.Timestamp < candle.Timestamp)
                     {
-                        // Cache is not full, so we can store the candle as earliest point in the history
-                        history.AddBefore(history.First, candle);
+                        var newNode = history.AddAfter(node, candle);
 
-                        _log.WriteWarningAsync(
-                            nameof(CandlesCacheService),
-                            nameof(UpdateCandlesHistory),
-                            candle.ToJson(),
-                            $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
+                        // Should we remove oldest candle?
+                        if (history.Count > _amountOfCandlesToStore)
+                        {
+                            history.RemoveFirst();
+                        }
+
+                        if (newNode != history.Last)
+                        {
+                            _log.WriteWarningAsync(
+                                nameof(CandlesCacheService),
+                                nameof(UpdateCandlesHistory),
+                                candle.ToJson(),
+                                $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
+                        }
+
+                        return history;
                     }
-                    else
-                    {
-                        // Cache is full, so we can't store the candle there, because, probably
-                        // there is persisted candle at this point
-
-                        _log.WriteWarningAsync(
-                            nameof(CandlesCacheService),
-                            nameof(UpdateCandlesHistory),
-                            candle.ToJson(),
-                            $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
-                    }
-
-                    return history;
                 }
-                finally
+
+                if (history.Count < _amountOfCandlesToStore)
                 {
-                    if (history.Count == 0)
-                    {
-                        int q = 1;
-                    }
+                    // Cache is not full, so we can store the candle as earliest point in the history
+                    history.AddBefore(history.First, candle);
+
+                    _log.WriteWarningAsync(
+                        nameof(CandlesCacheService),
+                        nameof(UpdateCandlesHistory),
+                        candle.ToJson(),
+                        $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                 }
+                else
+                {
+                    // Cache is full, so we can't store the candle there, because, probably
+                    // there is persisted candle at this point
+
+                    _log.WriteWarningAsync(
+                        nameof(CandlesCacheService),
+                        nameof(UpdateCandlesHistory),
+                        candle.ToJson(),
+                        $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
+                }
+
+                return history;
             }
         }
 

@@ -3,6 +3,5 @@
     public class RabbitSettings
     {
         public RabbitEndpointSettings CandlesSubscription { get; set; }
-        public RabbitEndpointSettings FailedToPersistPublication { get; set; }
     }
 }

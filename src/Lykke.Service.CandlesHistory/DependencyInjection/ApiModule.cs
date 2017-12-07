@@ -133,15 +133,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.QueueMonitor))
                 .AutoActivate();
 
-            builder.RegisterType<FailedToPersistCandlesPublisher>()
-                .As<IFailedToPersistCandlesPublisher>()
-                .As<IStartable>()
-                .WithParameter(TypedParameter.From(_settings.Rabbit.FailedToPersistPublication))
-                .WithParameter(TypedParameter.From<IPublishingQueueRepository>(
-                    new MessagePackBlobPublishingQueueRepository(
-                        AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10)))))
-                .SingleInstance();
-
             builder.RegisterType<CandlesCacheInitalizationService>()
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .As<ICandlesCacheInitalizationService>();
@@ -164,12 +155,16 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 builder.RegisterType<FeedHistoryRepository>()
                     .As<IFeedHistoryRepository>()
                     .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
-                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), "FeedHistory", _log)))
+                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), 
+                        "FeedHistory", 
+                        _log, 
+                        maxExecutionTimeout: TimeSpan.FromMinutes(5))))
                     .SingleInstance();
             }
 
             builder.RegisterType<CandlesMigrationManager>()
                 .AsSelf()
+                .WithParameter(TypedParameter.From(_settings.Migration))
                 .SingleInstance();
 
             builder.RegisterType<CandlesesHistoryMigrationService>()
