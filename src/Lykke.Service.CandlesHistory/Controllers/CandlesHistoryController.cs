@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -45,11 +46,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="timeInterval">Time interval</param>
         /// <param name="fromMoment">From moment in ISO 8601 (inclusive)</param>
         /// <param name="toMoment">To moment in ISO 8601 (exclusive)</param>
-        [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime?}")]
+        [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
         [SwaggerOperation("GetCandlesHistoryOrError")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment)
+        public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (_shutdownManager.IsShuttingDown)
             {
@@ -62,7 +63,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             
             fromMoment = fromMoment.ToUniversalTime();
-            toMoment = toMoment?.ToUniversalTime();
+            toMoment = toMoment.ToUniversalTime();
             assetPairId = assetPairId.ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
@@ -77,9 +78,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {CandleTimeInterval.Unspecified}"));
             }
-            if (toMoment.HasValue && fromMoment >= toMoment)
+            if (fromMoment > toMoment)
             {
-                return BadRequest(ErrorResponse.Create("From date should be early than To date"));
+                return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
             }
             if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
             {
@@ -88,6 +89,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found in dictionary or disabled"));
+            }
+
+            if (toMoment == fromMoment)
+            {
+                toMoment = fromMoment.AddIntervalTicks(1, timeInterval);
             }
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);

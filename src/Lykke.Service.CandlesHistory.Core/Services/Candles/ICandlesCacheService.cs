@@ -10,6 +10,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
     {
         void Initialize(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles);
         void Cache(ICandle candle);
-        IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment);
+        IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
 }

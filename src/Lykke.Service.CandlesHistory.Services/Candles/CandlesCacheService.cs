@@ -64,15 +64,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle));
         }
 
-        public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime? toMoment)
+        public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (fromMoment.Kind != DateTimeKind.Utc)
             {
                 throw new ArgumentException($"Date kind should be Utc, but it is {fromMoment.Kind}", nameof(fromMoment));
             }
-            if (toMoment.HasValue && toMoment.Value.Kind != DateTimeKind.Utc)
+            if (toMoment.Kind != DateTimeKind.Utc)
             {
-                throw new ArgumentException($"Date kind should be Utc, but it is {toMoment.Value.Kind}", nameof(toMoment));
+                throw new ArgumentException($"Date kind should be Utc, but it is {toMoment.Kind}", nameof(toMoment));
             }
 
             var key = GetKey(assetPairId, priceType, timeInterval);
@@ -87,13 +87,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 // TODO: binnary search could increase speed
 
-                var result = localHistory.SkipWhile(i => i.Timestamp < fromMoment);
-
-                if (toMoment.HasValue)
-                {
-                    result = result.TakeWhile(i => i.Timestamp < toMoment);
-                }
-
+                var result = localHistory
+                    .SkipWhile(i => i.Timestamp < fromMoment)
+                    .TakeWhile(i => i.Timestamp < toMoment);
+                
                 return result;
             }
 

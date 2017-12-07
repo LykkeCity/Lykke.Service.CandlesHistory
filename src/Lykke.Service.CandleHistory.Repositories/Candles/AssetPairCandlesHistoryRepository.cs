@@ -96,16 +96,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             await _tableStorage.InsertOrReplaceBatchAsync(existingEntities.Concat(newEntities));
         }
 
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(CandlePriceType priceType, CandleTimeInterval interval, DateTime from, DateTime? to)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(CandlePriceType priceType, CandleTimeInterval interval, DateTime from, DateTime to)
         {
             if (priceType == CandlePriceType.Unspecified)
             {
                 throw new ArgumentException(nameof(priceType));
             }
 
-            var query = to.HasValue
-                ? GetTableQuery(priceType, interval, from, to.Value)
-                : GetTableQuery(priceType, interval, from);
+            var query = GetTableQuery(priceType, interval, from, to);
             var entities = await _tableStorage.WhereAsync(query);
             var candles = entities
                 .SelectMany(e => e.Candles.Select(ci => ci.ToCandle(_assetPairId, e.PriceType, e.DateTime, interval)));
@@ -121,23 +119,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 ?.Candles
                 .First()
                 .ToCandle(_assetPairId, priceType, candleEntity.DateTime, timeInterval);
-        }
-
-        private static TableQuery<CandleHistoryEntity> GetTableQuery(
-            CandlePriceType priceType,
-            CandleTimeInterval interval,
-            DateTime from)
-        {
-            var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
-            var rowKey = CandleHistoryEntity.GenerateRowKey(from, interval);
-
-            var pkeyFilter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey);
-            var rowkeyFilter = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, rowKey);
-
-            return new TableQuery<CandleHistoryEntity>
-            {
-                FilterString = TableQuery.CombineFilters(pkeyFilter, TableOperators.And, rowkeyFilter)
-            };
         }
 
         private static TableQuery<CandleHistoryEntity> GetTableQuery(
