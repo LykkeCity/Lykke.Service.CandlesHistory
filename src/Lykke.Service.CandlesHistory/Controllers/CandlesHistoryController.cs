@@ -91,11 +91,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found in dictionary or disabled"));
             }
 
-            if (toMoment == fromMoment)
-            {
-                toMoment = fromMoment.AddIntervalTicks(1, timeInterval);
-            }
-
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
             return Ok(new CandlesHistoryResponseModel
