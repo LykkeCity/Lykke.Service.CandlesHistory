@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -101,7 +100,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     Open = c.Open,
                     Close = c.Close,
                     High = c.High,
-                    Low = c.Low
+                    Low = c.Low,
+                    TradingVolume = c.TradingVolume
                 })
             });
         }

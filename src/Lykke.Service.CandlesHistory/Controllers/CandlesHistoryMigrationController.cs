@@ -3,10 +3,10 @@ using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProvide
 using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Lykke.Service.CandlesHistory.Controllers
 {
     [Route("api/[controller]")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class CandlesHistoryMigrationController : Controller
     {
         private readonly CandlesMigrationManager _candlesMigrationManager;

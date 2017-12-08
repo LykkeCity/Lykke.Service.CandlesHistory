@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Log;
+using JetBrains.Annotations;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services
 {
+    [UsedImplicitly]
     public class StartupManager : IStartupManager
     {
         private readonly ILog _log;
@@ -20,7 +22,7 @@ namespace Lykke.Service.CandlesHistory.Services
         private readonly ICandlesCacheInitalizationService _cacheInitalizationService;
 
         public StartupManager(
-            ILog log, 
+            ILog log,
             ICandlesCacheInitalizationService cacheInitalizationService,
             ICandlesSubscriber candlesSubscriber,
             ISnapshotSerializer snapshotSerializer,
@@ -44,7 +46,7 @@ namespace Lykke.Service.CandlesHistory.Services
         public async Task StartAsync()
         {
             await _log.WriteInfoAsync(nameof(StartAsync), "", "Deserializing persistence queue async...");
-            
+
             var tasks = new List<Task>
             {
                 _snapshotSerializer.DeserializeAsync(_persistenceQueue, _persistenceQueueSnapshotRepository)
