@@ -9,14 +9,14 @@ namespace Lykke.Service.CandlesHistory.Client
 {
     public static partial class CandleshistoryserviceExtensions
     {
-        public static async Task<CandlesHistoryResponseModel> TryGetCandlesHistoryAsync(this ICandleshistoryservice service, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<CandlesHistoryResponseModel> TryGetCandlesHistoryAsync(this ICandleshistoryservice service, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = await service.GetCandlesHistoryOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, cancellationToken);
 
             return result as CandlesHistoryResponseModel;
         }
 
-        public static async Task<CandlesHistoryResponseModel> GetCandlesHistoryAsync(this ICandleshistoryservice service, string assetPairId, PriceType priceType, TimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<CandlesHistoryResponseModel> GetCandlesHistoryAsync(this ICandleshistoryservice service, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = await service.GetCandlesHistoryOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, cancellationToken);
 
