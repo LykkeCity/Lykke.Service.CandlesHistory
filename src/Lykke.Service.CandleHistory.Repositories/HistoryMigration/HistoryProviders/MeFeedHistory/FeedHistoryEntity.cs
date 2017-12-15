@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -33,7 +32,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProvi
             }
         }
 
-        public PriceType PriceType
+        public CandlePriceType PriceType
         {
             get
             {
@@ -41,16 +40,16 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProvi
                 {
                     var value = PartitionKey.Split('_')[1];
 
-                    if (Enum.TryParse(value, out PriceType priceType))
+                    if (Enum.TryParse(value, out CandlePriceType priceType))
                     {
                         return priceType;
                     }
                 }
-                return PriceType.Unspecified;
+                return CandlePriceType.Unspecified;
             }
         }
 
-        public static string GeneratePartitionKey(string assetPair, PriceType priceType)
+        public static string GeneratePartitionKey(string assetPair, CandlePriceType priceType)
         {
             return $"{assetPair}_{priceType.ToString()}";
         }
@@ -85,12 +84,7 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProvi
 
         public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            var dict = new Dictionary<string, EntityProperty>
-            {
-                {"Data", new EntityProperty(Candles.ToFeedHistoryData())}
-            };
-
-            return dict;
+            throw new NotSupportedException();
         }
 
         private static DateTime ParseRowKey(string value, DateTimeKind kind)

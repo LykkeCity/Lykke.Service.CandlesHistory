@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Newtonsoft.Json;
 
@@ -8,23 +8,44 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     public class CandleHistoryItem
     {
         [JsonProperty("O")]
-        public double Open { get; internal set; }
+        public double Open { get; private set; }
 
         [JsonProperty("C")]
-        public double Close { get; internal set; }
+        public double Close { get; private set; }
 
         [JsonProperty("H")]
-        public double High { get; internal set; }
+        public double High { get; private set; }
 
         [JsonProperty("L")]
-        public double Low { get; internal set; }
+        public double Low { get; private set; }
 
         [JsonProperty("T")]
-        public int Tick { get; set; }
+        public int Tick { get; }
 
-        public ICandle ToCandle(string assetPairId, PriceType priceType, DateTime baseTime, TimeInterval timeInterval)
+        [JsonProperty("V")]
+        public double TradingVolume { get; private set; }
+
+        [JsonProperty("U")]
+        public DateTime LastUpdateTimestamp { get; private set; }
+
+        [JsonConstructor]
+        public CandleHistoryItem(double open, double close, double high, double low, int tick, double tradingVolume, DateTime lastUpdateTimestamp)
         {
-            return new Candle(
+            Open = open;
+            Close = close;
+            High = high;
+            Low = low;
+            Tick = tick;
+            TradingVolume = tradingVolume;
+            LastUpdateTimestamp = lastUpdateTimestamp;
+        }
+
+        public ICandle ToCandle(string assetPairId, CandlePriceType priceType, DateTime baseTime, CandleTimeInterval timeInterval)
+        {
+            var normalizedTick = Tick - GetIntervalTickOrigin(timeInterval);
+
+            return Candle.Create
+            (
                 open: Open,
                 close: Close,
                 high: High,
@@ -32,18 +53,51 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 assetPair: assetPairId,
                 priceType: priceType,
                 timeInterval: timeInterval,
-                timestamp: baseTime.AddIntervalTicks(Tick, timeInterval));
+                timestamp: baseTime.AddIntervalTicks(normalizedTick, timeInterval),
+                tradingVolume: TradingVolume,
+                lastUpdateTimestamp: LastUpdateTimestamp
+            );
         }
 
         /// <summary>
         /// Merges candle change with the same asset pair, price type, time interval and timestamp
         /// </summary>
-        /// <param name="candleChange">Candle change</param>
-        public void InplaceMergeWith(ICandle candleChange)
+        /// <param name="candleState">Candle state</param>
+        public void InplaceMergeWith(ICandle candleState)
         {
-            Close = candleChange.Close;
-            High = Math.Max(High, candleChange.High);
-            Low = Math.Min(Low, candleChange.Low);
+            if (LastUpdateTimestamp >= candleState.LastUpdateTimestamp)
+            {
+                return;
+            }
+
+            Close = candleState.Close;
+            High = Math.Max(High, candleState.High);
+            Low = Math.Min(Low, candleState.Low);
+            TradingVolume = candleState.TradingVolume;
+            LastUpdateTimestamp = candleState.LastUpdateTimestamp;
+        }
+
+        private static int GetIntervalTickOrigin(CandleTimeInterval interval)
+        {
+            switch (interval)
+            {
+                case CandleTimeInterval.Month:
+                case CandleTimeInterval.Day:
+                    return 1;
+                case CandleTimeInterval.Week:
+                case CandleTimeInterval.Hour12:
+                case CandleTimeInterval.Hour6:
+                case CandleTimeInterval.Hour4:
+                case CandleTimeInterval.Hour:
+                case CandleTimeInterval.Min30:
+                case CandleTimeInterval.Min15:
+                case CandleTimeInterval.Min5:
+                case CandleTimeInterval.Minute:
+                case CandleTimeInterval.Sec:
+                    return 0;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(interval), interval, "Unexpected TimeInterval value.");
+            }
         }
     }
 }

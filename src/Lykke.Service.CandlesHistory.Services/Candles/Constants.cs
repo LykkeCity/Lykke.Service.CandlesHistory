@@ -1,25 +1,25 @@
 ﻿using System.Collections.Immutable;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public static class Constants
     {
-        public static readonly ImmutableArray<TimeInterval> StoredIntervals = ImmutableArray.Create
+        public static readonly ImmutableArray<CandleTimeInterval> StoredIntervals = ImmutableArray.Create
         (
-            TimeInterval.Sec,
-            TimeInterval.Minute,
-            TimeInterval.Hour,
-            TimeInterval.Day,
-            TimeInterval.Week,
-            TimeInterval.Month
+            CandleTimeInterval.Sec,
+            CandleTimeInterval.Minute,
+            CandleTimeInterval.Hour,
+            CandleTimeInterval.Day,
+            CandleTimeInterval.Week,
+            CandleTimeInterval.Month
         );
 
-        public static readonly ImmutableArray<PriceType> StoredPriceTypes = ImmutableArray.Create
+        public static readonly ImmutableArray<CandlePriceType> StoredPriceTypes = ImmutableArray.Create
         (
-            PriceType.Ask,
-            PriceType.Bid,
-            PriceType.Mid
+            CandlePriceType.Ask,
+            CandlePriceType.Bid,
+            CandlePriceType.Mid
         );
     }
 }

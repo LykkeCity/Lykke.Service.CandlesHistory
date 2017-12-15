@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Common.Log;
 using JetBrains.Annotations;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry
 {
@@ -73,19 +73,19 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry
             BidEndDate = bidEndDate;
         }
         
-        public void UpdateCurrentHistoryDate(DateTime date, PriceType priceType)
+        public void UpdateCurrentHistoryDate(DateTime date, CandlePriceType priceType)
         {
             switch (priceType)
             {
-                case PriceType.Bid:
+                case CandlePriceType.Bid:
                     CurrentBidDate = date;
                     break;
 
-                case PriceType.Ask:
+                case CandlePriceType.Ask:
                     CurrentAskDate = date;
                     break;
 
-                case PriceType.Mid:
+                case CandlePriceType.Mid:
                     CurrentMidDate = date;
                     break;
 

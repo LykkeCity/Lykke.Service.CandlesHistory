@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Common;
 using Common.Log;
 using JetBrains.Annotations;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -26,6 +26,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private readonly ILog _log;
         private readonly IHealthService _healthService;
         private readonly PersistenceSettings _settings;
+
+        // TODO: Make dictionary with timestamp, assetPair, priceType, timeInterval key 
+        // store only the last state of the candle, and thus, reduce memory consumtion
 
         private ConcurrentQueue<ICandle> _candlesToDispatch;
         
@@ -157,7 +160,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        private Task InsertSinglePartitionCandlesAsync(IEnumerable<ICandle> candles, string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        private Task InsertSinglePartitionCandlesAsync(IEnumerable<ICandle> candles, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             return Policy
                 .Handle<Exception>()

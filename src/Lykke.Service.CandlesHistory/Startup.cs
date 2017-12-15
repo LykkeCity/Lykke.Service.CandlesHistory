@@ -155,7 +155,7 @@ namespace Lykke.Service.CandlesHistory
             {
                 if (Log != null)
                 {
-                    await Log.WriteMonitorAsync("", "", "Terminating");
+                    await Log.WriteMonitorAsync("", $"Env: {Program.EnvInfo}", "Terminating");
                 }
 
                 ApplicationContainer.Dispose();

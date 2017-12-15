@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
@@ -87,8 +87,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                         {
                             storageItem.Value = (
                                 storedCandle.timestamp,
-                                pushedCandle.PriceType == PriceType.Ask ? pushedCandle : storedCandle.ask,
-                                pushedCandle.PriceType == PriceType.Bid ? pushedCandle : storedCandle.bid);
+                                pushedCandle.PriceType == CandlePriceType.Ask ? pushedCandle : storedCandle.ask,
+                                pushedCandle.PriceType == CandlePriceType.Bid ? pushedCandle : storedCandle.bid);
                             found = true;
                             break;
                         }
@@ -103,8 +103,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     {
                         _storage.AddLast((
                             pushedCandle.Timestamp,
-                            pushedCandle.PriceType == PriceType.Ask ? pushedCandle : null,
-                            pushedCandle.PriceType == PriceType.Bid ? pushedCandle : null));
+                            pushedCandle.PriceType == CandlePriceType.Ask ? pushedCandle : null,
+                            pushedCandle.PriceType == CandlePriceType.Bid ? pushedCandle : null));
                     }
                 }
 
@@ -120,11 +120,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         {
             switch (lastCandle.PriceType)
             {
-                case PriceType.Ask:
+                case CandlePriceType.Ask:
                     _lastPushedAskCandle = lastCandle;
                     break;
 
-                case PriceType.Bid:
+                case CandlePriceType.Bid:
                     _lastPushedBidCandle = lastCandle;
                     break;
 

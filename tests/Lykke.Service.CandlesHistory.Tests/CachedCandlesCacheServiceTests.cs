@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -35,8 +35,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5,
                     Close = 1.6,
                     Low = 1.3,
@@ -46,8 +46,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.7,
                     Low = 1.4,
@@ -57,8 +57,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.2,
                     Low = 1.3,
@@ -68,8 +68,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3,
                     Close = 1.6,
                     Low = 1.3,
@@ -79,8 +79,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.6,
                     Low = 1.4,
@@ -90,9 +90,9 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(5, obtainedHistory.Length);
@@ -112,8 +112,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5,
                     Close = 1.6,
                     Low = 1.3,
@@ -123,8 +123,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.7,
                     Low = 1.4,
@@ -134,8 +134,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.2,
                     Low = 1.3,
@@ -145,8 +145,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3,
                     Close = 1.6,
                     Low = 1.3,
@@ -156,8 +156,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.6,
                     Low = 1.4,
@@ -167,8 +167,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.6,
                     Low = 1.4,
@@ -178,9 +178,9 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(5, obtainedHistory.Length);
@@ -200,8 +200,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5,
                     Close = 1.6,
                     Low = 1.3,
@@ -211,8 +211,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.7,
                     Low = 1.4,
@@ -222,8 +222,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6,
                     Close = 1.2,
                     Low = 1.3,
@@ -233,8 +233,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3,
                     Close = 1.6,
                     Low = 1.3,
@@ -244,9 +244,9 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(4, obtainedHistory.Length);
@@ -268,8 +268,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Day,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
                 Timestamp = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                 Open = 2,
                 Close = 2,
@@ -280,7 +280,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             // Act
             _service.Cache(candle);
 
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(1, candles.Length);
@@ -289,8 +289,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(2, candles[0].Low);
             Assert.AreEqual(2, candles[0].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Day, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Day, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23), candles[0].Timestamp);
         }
 
@@ -303,61 +303,68 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
-                    Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
+                    Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc),
+                    LastUpdateTimestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
-                    Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
+                    Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc),
+                    LastUpdateTimestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
-                    Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
+                    Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc),
+                    LastUpdateTimestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
-                    Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8, Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
+                    Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
+                    Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc),
+                    LastUpdateTimestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7,
-                    Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
+                    Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc),
+                    LastUpdateTimestamp = new DateTime(2017, 06, 14, 0, 0, 10, DateTimeKind.Utc)
                 }
             };
             var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Day,
-                Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
                 Open = 2,
                 Close = 2,
                 Low = 2,
-                High = 2
+                High = 2,
+                Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                LastUpdateTimestamp = new DateTime(2017, 06, 14, 0, 0, 20, DateTimeKind.Utc)
             };
 
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
             _service.Cache(candle);
 
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(5, candles.Length);
@@ -367,8 +374,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(2, candles[4].Low);
             Assert.AreEqual(2, candles[4].High);
             Assert.AreEqual("EURUSD", candles[4].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[4].PriceType);
-            Assert.AreEqual(TimeInterval.Day, candles[4].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[4].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Day, candles[4].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 14), candles[4].Timestamp);
         }
 
@@ -379,9 +386,10 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle1 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Day,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
                 Timestamp = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                LastUpdateTimestamp = new DateTime(2017, 06, 23, 0, 0, 0, 10, DateTimeKind.Utc),
                 Open = 2,
                 Close = 2,
                 Low = 2,
@@ -390,9 +398,10 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle2 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Day,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
                 Timestamp = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                LastUpdateTimestamp = new DateTime(2017, 06, 23, 0, 0, 0, 20, DateTimeKind.Utc),
                 Open = 4,
                 Close = 4,
                 Low = 4,
@@ -403,7 +412,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _service.Cache(candle1);
             _service.Cache(candle2);
 
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(1, candles.Length);
@@ -412,8 +421,55 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(4, candles[0].Low);
             Assert.AreEqual(4, candles[0].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Day, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Day, candles[0].TimeInterval);
+            Assert.AreEqual(new DateTime(2017, 06, 23), candles[0].Timestamp);
+        }
+
+        [TestMethod]
+        public void Outdated_candle_addition_ignored()
+        {
+            // Arrange
+            var candle1 = new TestCandle
+            {
+                AssetPairId = "EURUSD",
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
+                Timestamp = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                LastUpdateTimestamp = new DateTime(2017, 06, 23, 0, 0, 0, 10, DateTimeKind.Utc),
+                Open = 2,
+                Close = 2,
+                Low = 2,
+                High = 2
+            };
+            var candle2 = new TestCandle
+            {
+                AssetPairId = "EURUSD",
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
+                Timestamp = new DateTime(2017, 06, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                LastUpdateTimestamp = new DateTime(2017, 06, 23, 0, 0, 0, 05, DateTimeKind.Utc),
+                Open = 4,
+                Close = 4,
+                Low = 4,
+                High = 4,
+            };
+
+            // Act
+            _service.Cache(candle1);
+            _service.Cache(candle2);
+
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+
+            // Assert
+            Assert.AreEqual(1, candles.Length);
+            Assert.AreEqual(2, candles[0].Open);
+            Assert.AreEqual(2, candles[0].Close);
+            Assert.AreEqual(2, candles[0].Low);
+            Assert.AreEqual(2, candles[0].High);
+            Assert.AreEqual("EURUSD", candles[0].AssetPairId);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Day, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23), candles[0].Timestamp);
         }
 
@@ -424,8 +480,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle1 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 23, 0, DateTimeKind.Utc),
                 Open = 2,
                 Close = 2,
@@ -435,8 +491,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle2 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 24, 0, DateTimeKind.Utc),
                 Open = 1,
                 Close = 1,
@@ -446,8 +502,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle3 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 25, 0, DateTimeKind.Utc),
                 Open = 5,
                 Close = 5,
@@ -457,8 +513,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle4 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 26, 0, DateTimeKind.Utc),
                 Open = 4,
                 Close = 4,
@@ -468,8 +524,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle5 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 27, 0, DateTimeKind.Utc),
                 Open = 3,
                 Close = 3,
@@ -479,8 +535,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle6 = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Sec,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Sec,
                 Timestamp = new DateTime(2017, 06, 23, 13, 49, 28, 0, DateTimeKind.Utc),
                 Open = 7,
                 Close = 7,
@@ -496,7 +552,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _service.Cache(candle5);
             _service.Cache(candle6);
 
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(5, candles.Length);
@@ -506,8 +562,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(1, candles[0].Low);
             Assert.AreEqual(1, candles[0].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Sec, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Sec, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 24), candles[0].Timestamp);
 
             Assert.AreEqual(5, candles[1].Open);
@@ -515,8 +571,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(5, candles[1].Low);
             Assert.AreEqual(5, candles[1].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Sec, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Sec, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 25), candles[1].Timestamp);
 
             Assert.AreEqual(4, candles[2].Open);
@@ -524,8 +580,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(4, candles[2].Low);
             Assert.AreEqual(4, candles[2].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Sec, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Sec, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 26), candles[2].Timestamp);
 
             Assert.AreEqual(3, candles[3].Open);
@@ -533,8 +589,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(3, candles[3].Low);
             Assert.AreEqual(3, candles[3].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Sec, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Sec, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 27), candles[3].Timestamp);
 
             Assert.AreEqual(7, candles[4].Open);
@@ -542,8 +598,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             Assert.AreEqual(7, candles[4].Low);
             Assert.AreEqual(7, candles[4].High);
             Assert.AreEqual("EURUSD", candles[0].AssetPairId);
-            Assert.AreEqual(PriceType.Ask, candles[0].PriceType);
-            Assert.AreEqual(TimeInterval.Sec, candles[0].TimeInterval);
+            Assert.AreEqual(CandlePriceType.Ask, candles[0].PriceType);
+            Assert.AreEqual(CandleTimeInterval.Sec, candles[0].TimeInterval);
             Assert.AreEqual(new DateTime(2017, 06, 23, 13, 49, 28), candles[4].Timestamp);
         }
 
@@ -556,7 +612,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void Getting_empty_history_returns_empty_enumerable()
         {
             // Act
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsNotNull(candles);
@@ -572,49 +628,49 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7,
                     Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
                 },
             };
 
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            var candles = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)).ToArray();
 
             // Assert
             Assert.AreEqual(3, candles.Length);
@@ -632,50 +688,50 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7,
                     Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
                 },
             };
 
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            var candles1 = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
-            var candles2 = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 07, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 13, 0, 0, 0, DateTimeKind.Utc));
+            var candles1 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
+            var candles2 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 07, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 13, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsFalse(candles1.Any());
@@ -691,40 +747,40 @@ namespace Lykke.Service.CandlesHistory.Tests
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.5, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 10, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.7, Low = 1.4, High = 1.9,
                     Timestamp = new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.2, Low = 1.3, High = 1.5,
                     Timestamp = new DateTime(2017, 06, 12, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.3, Close = 1.6, Low = 1.3, High = 1.8,
                     Timestamp = new DateTime(2017, 06, 13, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new TestCandle
                 {
                     AssetPairId = "EURUSD",
-                    PriceType = PriceType.Ask,
-                    TimeInterval = TimeInterval.Day,
+                    PriceType = CandlePriceType.Ask,
+                    TimeInterval = CandleTimeInterval.Day,
                     Open = 1.6, Close = 1.6, Low = 1.4, High = 1.7,
                     Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)
                 },
@@ -733,8 +789,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candle = new TestCandle
             {
                 AssetPairId = "EURUSD",
-                PriceType = PriceType.Ask,
-                TimeInterval = TimeInterval.Day,
+                PriceType = CandlePriceType.Ask,
+                TimeInterval = CandleTimeInterval.Day,
                 Timestamp = new DateTime(2017, 06, 14, 0, 0, 0, 0, DateTimeKind.Utc),
                 Open = 2,
                 Close = 2,
@@ -742,13 +798,13 @@ namespace Lykke.Service.CandlesHistory.Tests
                 High = 2
             };
 
-            _service.Initialize("EURUSD", PriceType.Ask, TimeInterval.Day, history);
+            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
             _service.Cache(candle);
 
             // Act
-            var candles1 = _service.GetCandles("USDCHF", PriceType.Ask, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
-            var candles2 = _service.GetCandles("EURUSD", PriceType.Bid, TimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
-            var candles3 = _service.GetCandles("EURUSD", PriceType.Ask, TimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles1 = _service.GetCandles("USDCHF", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles2 = _service.GetCandles("EURUSD", CandlePriceType.Bid, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles3 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsFalse(candles1.Any());

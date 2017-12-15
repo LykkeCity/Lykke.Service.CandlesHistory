@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AzureStorage;
 using Common;
 using JetBrains.Annotations;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -21,14 +21,14 @@ namespace Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProvi
             _tableStorage = tableStorage;
         }
 
-        public async Task<IFeedHistory> GetTopRecordAsync(string assetPair, PriceType priceType)
+        public async Task<IFeedHistory> GetTopRecordAsync(string assetPair, CandlePriceType priceType)
         {
             var entity = await _tableStorage.GetTopRecordAsync($"{assetPair}_{priceType}");
 
-            return FeedHistory.Create(entity);
+            return entity != null ? FeedHistory.Create(entity) : null;
         }
 
-        public Task GetCandlesByChunksAsync(string assetPair, PriceType priceType, DateTime endDate, Func<IEnumerable<IFeedHistory>, Task> readChunkFunc)
+        public Task GetCandlesByChunksAsync(string assetPair, CandlePriceType priceType, DateTime endDate, Func<IEnumerable<IFeedHistory>, Task> readChunkFunc)
         {
             var partition = FeedHistoryEntity.GeneratePartitionKey(assetPair, priceType);
             var filter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partition);

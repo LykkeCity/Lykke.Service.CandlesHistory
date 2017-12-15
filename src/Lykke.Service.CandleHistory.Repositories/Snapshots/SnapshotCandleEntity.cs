@@ -1,5 +1,5 @@
 ﻿using System;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using MessagePack;
 
@@ -12,10 +12,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         public string AssetPairId { get; set; }
 
         [Key(1)]
-        public PriceType PriceType { get; set; }
+        public CandlePriceType PriceType { get; set; }
 
         [Key(2)]
-        public TimeInterval TimeInterval { get; set; }
+        public CandleTimeInterval TimeInterval { get; set; }
 
         [Key(3)]
         public DateTime Timestamp { get; set; }
@@ -32,6 +32,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         [Key(7)]
         public decimal Low { get; set; }
 
+        [Key(8)]
+        public decimal TradingVolume { get; set; }
+
+        [Key(9)]
+        public DateTime LastUpdateTimestamp { get; set; }
+
         double ICandle.Open => (double) Open;
 
         double ICandle.Close => (double) Close;
@@ -40,7 +46,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 
         double ICandle.Low => (double) Low;
 
-        public static SnapshotCandleEntity Create(ICandle candle)
+        double ICandle.TradingVolume => (double) TradingVolume;
+
+        public static SnapshotCandleEntity Copy(ICandle candle)
         {
             return new SnapshotCandleEntity
             {
@@ -48,14 +56,16 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
                 PriceType = candle.PriceType,
                 TimeInterval = candle.TimeInterval,
                 Timestamp = candle.Timestamp,
-                Open = ConvertPrice(candle.Open),
-                Close = ConvertPrice(candle.Close),
-                Low = ConvertPrice(candle.Low),
-                High = ConvertPrice(candle.High)
+                Open = ConvertDouble(candle.Open),
+                Close = ConvertDouble(candle.Close),
+                Low = ConvertDouble(candle.Low),
+                High = ConvertDouble(candle.High),
+                TradingVolume = ConvertDouble(candle.TradingVolume),
+                LastUpdateTimestamp = candle.LastUpdateTimestamp
             };
         }
 
-        private static decimal ConvertPrice(double d)
+        private static decimal ConvertDouble(double d)
         {
             try
             {

@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
@@ -28,12 +28,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             _candles = new ConcurrentDictionary<string, LinkedList<ICandle>>();
         }
 
-        public void Initialize(string assetPairId, PriceType priceType, TimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
+        public void Initialize(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<ICandle>(candles.Limit(_amountOfCandlesToStore));
 
-            foreach(var candle in candles)
+            foreach (var candle in candlesList)
             {
                 if (candle.AssetPairId != assetPairId)
                 {
@@ -49,7 +49,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 }
             }
 
-            _candles.TryAdd(key, candlesList);
+            if (candlesList.Any())
+            {
+                _candles.TryAdd(key, candlesList);
+            }
         }
 
         public void Cache(ICandle candle)
@@ -61,7 +64,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle));
         }
 
-        public IEnumerable<ICandle> GetCandles(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (fromMoment.Kind != DateTimeKind.Utc)
             {
@@ -83,9 +86,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 }
 
                 // TODO: binnary search could increase speed
-                return localHistory
+
+                var result = localHistory
                     .SkipWhile(i => i.Timestamp < fromMoment)
                     .TakeWhile(i => i.Timestamp < toMoment);
+                
+                return result;
             }
 
             return Enumerable.Empty<ICandle>();
@@ -103,8 +109,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 throw new InvalidOperationException("Cache state can't be set when cache already not empty");
             }
 
-            _candles = new ConcurrentDictionary<string, LinkedList<ICandle>>(
-                state.Select(i => KeyValuePair.Create(i.Key, new LinkedList<ICandle>(i.Value))));
+            var pairs = state
+                .Where(i => i.Value.Any())
+                .Select(i => KeyValuePair.Create(i.Key, new LinkedList<ICandle>(i.Value)));
+
+            _candles = new ConcurrentDictionary<string, LinkedList<ICandle>>(pairs);
         }
 
         public string DescribeState(IImmutableDictionary<string, IImmutableList<ICandle>> state)
@@ -115,7 +124,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         private static LinkedList<ICandle> AddNewCandlesHistory(ICandle candle)
         {
             var history = new LinkedList<ICandle>();
-            
+
             history.AddLast(candle);
 
             return history;
@@ -131,7 +140,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     // Candle at given point already exists, so replace it
                     if (node.Value.Timestamp == candle.Timestamp)
                     {
-                        node.Value = candle;
+                        if (node.Value.LastUpdateTimestamp < candle.LastUpdateTimestamp)
+                        {
+                            node.Value = candle;
+                        }
 
                         if (node != history.Last)
                         {
@@ -142,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                                 $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that candles was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                         }
 
-                        break;
+                        return history;
                     }
 
                     // If we found more early point than candle,
@@ -166,43 +178,38 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                                 $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                         }
 
-                        break;
-                    }
-
-                    // If we achieve first node, we should check if cache is full or not
-                    if (node == history.First)
-                    {
-                        if (history.Count < _amountOfCandlesToStore)
-                        {
-                            // Cache is not full, so we can store the candle as earliest point in the history
-                            history.AddBefore(history.First, candle);
-
-                            _log.WriteWarningAsync(
-                                nameof(CandlesCacheService),
-                                nameof(UpdateCandlesHistory),
-                                candle.ToJson(),
-                                $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
-                        }
-                        else
-                        {
-                            // Cache is full, so we can't store the candle there, because, probably
-                            // there is persisted candle at this point
-
-                            _log.WriteWarningAsync(
-                                nameof(CandlesCacheService),
-                                nameof(UpdateCandlesHistory),
-                                candle.ToJson(),
-                                $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
-                        }
-                        break;
+                        return history;
                     }
                 }
-            }
 
-            return history;
+                if (history.Count < _amountOfCandlesToStore)
+                {
+                    // Cache is not full, so we can store the candle as earliest point in the history
+                    history.AddBefore(history.First, candle);
+
+                    _log.WriteWarningAsync(
+                        nameof(CandlesCacheService),
+                        nameof(UpdateCandlesHistory),
+                        candle.ToJson(),
+                        $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
+                }
+                else
+                {
+                    // Cache is full, so we can't store the candle there, because, probably
+                    // there is persisted candle at this point
+
+                    _log.WriteWarningAsync(
+                        nameof(CandlesCacheService),
+                        nameof(UpdateCandlesHistory),
+                        candle.ToJson(),
+                        $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
+                }
+
+                return history;
+            }
         }
 
-        private static string GetKey(string assetPairId, PriceType priceType, TimeInterval timeInterval)
+        private static string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             return $"{assetPairId.Trim().ToUpper()}-{priceType}-{timeInterval}";
         }

@@ -24,7 +24,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         {
             using (var stream = new MemoryStream())
             {
-                var model = state.ToDictionary(i => i.Key, i => i.Value.Select(SnapshotCandleEntity.Create));
+                var model = state.ToDictionary(i => i.Key, i => i.Value.Select(SnapshotCandleEntity.Copy));
 
                 MessagePackSerializer.Serialize(stream, model);
 

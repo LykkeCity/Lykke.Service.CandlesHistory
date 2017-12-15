@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
@@ -26,7 +26,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
             _missedCandlesGenerator = missedCandlesGenerator;
         }
 
-        public async Task<DateTime?> GetStartDateAsync(string assetPair, PriceType priceType)
+        public async Task<DateTime?> GetStartDateAsync(string assetPair, CandlePriceType priceType)
         {
             var oldestFeedHistory = await _feedHistoryRepository.GetTopRecordAsync(assetPair, priceType);
 
@@ -38,7 +38,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
 
         public async Task GetHistoryByChunksAsync(
             IAssetPair assetPair, 
-            PriceType priceType, 
+            CandlePriceType priceType, 
             DateTime endDate, 
             ICandle endCandle, 
             Func<IReadOnlyList<ICandle>, Task> readChunkFunc, 

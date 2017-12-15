@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
+using JetBrains.Annotations;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using MessagePack;
 
 namespace Lykke.Service.CandleHistory.Repositories.Snapshots
 {
+    [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class CandlesPersistenceQueueSnapshotRepository : ICandlesPersistenceQueueSnapshotRepository
     {
         private const string Key = "CandlesPersistenceQueue";
@@ -24,7 +26,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         {
             using (var stream = new MemoryStream())
             {
-                var model = state.Select(SnapshotCandleEntity.Create);
+                var model = state.Select(SnapshotCandleEntity.Copy);
 
                 MessagePackSerializer.Serialize(stream, model);
 

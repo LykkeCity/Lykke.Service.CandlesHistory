@@ -6,15 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Extensions;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
-using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.Telemetry;
 using Lykke.Service.CandlesHistory.Services.Settings;
 
@@ -38,10 +36,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private DateTime _prevBidTimestamp;
         private DateTime _prevMidTimestamp;
         private volatile bool _isAskOrBidMigrationCompleted;
-        
-        private readonly ImmutableArray<TimeInterval> _intervalsToGenerate = Constants
+
+        private readonly ImmutableArray<CandleTimeInterval> _intervalsToGenerate = Candles.Constants
             .StoredIntervals
-            .Where(i => i != TimeInterval.Sec)
+            .Where(i => i != CandleTimeInterval.Sec)
             .ToImmutableArray();
 
         public AssetPairMigrationManager(
@@ -131,8 +129,8 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private async Task<(DateTime? askStartDate, DateTime? bidStartDate)> GetStartDatesAsync()
         {
             var startDates = await Task.WhenAll(
-                _historyProvider.GetStartDateAsync(_assetPair.Id, PriceType.Ask),
-                _historyProvider.GetStartDateAsync(_assetPair.Id, PriceType.Bid));
+                _historyProvider.GetStartDateAsync(_assetPair.Id, CandlePriceType.Ask),
+                _historyProvider.GetStartDateAsync(_assetPair.Id, CandlePriceType.Bid));
 
             return (askStartDate: startDates[0], bidStartDate: startDates[1]);
         }
@@ -140,10 +138,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
         private async Task<(ICandle askCandle, ICandle bidCandle)> GetFirstTargetHistoryCandlesAsync(DateTime? askStartDate, DateTime? bidStartDate)
         {
             var getAskEndCandleTask = askStartDate.HasValue
-                ? _candlesHistoryMigrationService.GetFirstCandleOfHistoryAsync(_assetPair.Id, PriceType.Ask)
+                ? _candlesHistoryMigrationService.GetFirstCandleOfHistoryAsync(_assetPair.Id, CandlePriceType.Ask)
                 : Task.FromResult<ICandle>(null);
             var getBidEndCandleTask = bidStartDate.HasValue
-                ? _candlesHistoryMigrationService.GetFirstCandleOfHistoryAsync(_assetPair.Id, PriceType.Bid)
+                ? _candlesHistoryMigrationService.GetFirstCandleOfHistoryAsync(_assetPair.Id, CandlePriceType.Bid)
                 : Task.FromResult<ICandle>(null);
             var endCandles = await Task.WhenAll(getAskEndCandleTask, getBidEndCandleTask);
 
@@ -157,10 +155,10 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
             try
             {
                 var processAskCandlesTask = askStartDate.HasValue
-                    ? _historyProvider.GetHistoryByChunksAsync(_assetPair, PriceType.Ask, askEndDate, askEndCandle, ProcessHistoryChunkAsync, _cts.Token)
+                    ? _historyProvider.GetHistoryByChunksAsync(_assetPair, CandlePriceType.Ask, askEndDate, askEndCandle, ProcessHistoryChunkAsync, _cts.Token)
                     : Task.CompletedTask;
                 var processBidkCandlesTask = bidStartDate.HasValue
-                    ? _historyProvider.GetHistoryByChunksAsync(_assetPair, PriceType.Bid, bidEndDate, bidEndCandle, ProcessHistoryChunkAsync, _cts.Token)
+                    ? _historyProvider.GetHistoryByChunksAsync(_assetPair, CandlePriceType.Bid, bidEndDate, bidEndCandle, ProcessHistoryChunkAsync, _cts.Token)
                     : Task.CompletedTask;
 
                 await Task.WhenAny(processAskCandlesTask, processBidkCandlesTask);
@@ -204,7 +202,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
                     foreach (var item in bidAskHistory)
                     {
-                        _telemetryService.UpdateCurrentHistoryDate(item.timestamp, PriceType.Mid);
+                        _telemetryService.UpdateCurrentHistoryDate(item.timestamp, CandlePriceType.Mid);
 
                         if (_cts.IsCancellationRequested)
                         {
@@ -218,7 +216,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                             continue;
                         }
 
-                        var midSecCandle = item.ask.CreateMidCandle(item.bid);
+                        var midSecCandle = MidCandlesFactory.Create(item.ask, item.bid);
 
                         secMidCandles.Add(midSecCandle);
                     }
@@ -284,7 +282,15 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     .AsParallel()
                     .ForAll(interval =>
                     {
-                        var mergingResult = _candlesGenerator.Merge(candle, interval);
+                        var mergingResult = _candlesGenerator.Merge(
+                            assetPair: candle.AssetPairId,
+                            priceType: candle.PriceType,
+                            timeInterval: interval,
+                            timestamp: candle.Timestamp,
+                            open: candle.Open,
+                            close: candle.Close,
+                            low: candle.Low,
+                            high: candle.High);
 
                         if (mergingResult.WasChanged)
                         {
@@ -298,7 +304,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
         private void CheckCandleOrder(ICandle candle)
         {
-            DateTime CheckTimestamp(PriceType priceType, DateTime prevTimestamp, DateTime currentTimestamp)
+            DateTime CheckTimestamp(CandlePriceType priceType, DateTime prevTimestamp, DateTime currentTimestamp)
             {
                 var distance = currentTimestamp - prevTimestamp;
 
@@ -320,14 +326,14 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 
             switch (candle.PriceType)
             {
-                case PriceType.Ask:
-                    _prevAskTimestamp = CheckTimestamp(PriceType.Ask, _prevAskTimestamp, candle.Timestamp);
+                case CandlePriceType.Ask:
+                    _prevAskTimestamp = CheckTimestamp(CandlePriceType.Ask, _prevAskTimestamp, candle.Timestamp);
                     break;
-                case PriceType.Bid:
-                    _prevBidTimestamp = CheckTimestamp(PriceType.Bid, _prevBidTimestamp, candle.Timestamp);
+                case CandlePriceType.Bid:
+                    _prevBidTimestamp = CheckTimestamp(CandlePriceType.Bid, _prevBidTimestamp, candle.Timestamp);
                     break;
-                case PriceType.Mid:
-                    _prevMidTimestamp = CheckTimestamp(PriceType.Mid, _prevMidTimestamp, candle.Timestamp);
+                case CandlePriceType.Mid:
+                    _prevMidTimestamp = CheckTimestamp(CandlePriceType.Mid, _prevMidTimestamp, candle.Timestamp);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(candle.PriceType), candle.PriceType, "Invalid price type");

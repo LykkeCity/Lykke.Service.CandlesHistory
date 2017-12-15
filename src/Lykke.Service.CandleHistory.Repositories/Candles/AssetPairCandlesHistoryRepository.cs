@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AzureStorage;
 using Common;
 using Common.Log;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -18,14 +18,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         private readonly IHealthService _healthService;
         private readonly ILog _log;
         private readonly string _assetPairId;
-        private readonly TimeInterval _timeInterval;
+        private readonly CandleTimeInterval _timeInterval;
         private readonly INoSQLTableStorage<CandleHistoryEntity> _tableStorage;
 
         public AssetPairCandlesHistoryRepository(
             IHealthService healthService,
             ILog log,
             string assetPairId,
-            TimeInterval timeInterval,
+            CandleTimeInterval timeInterval,
             INoSQLTableStorage<CandleHistoryEntity> tableStorage)
         {
             _healthService = healthService;
@@ -38,7 +38,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// <summary>
         /// Assumed that all candles have the same AssetPair, PriceType, and Timeinterval
         /// </summary>
-        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, PriceType priceType)
+        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, CandlePriceType priceType)
         {
             var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
 
@@ -76,7 +76,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in existingEntities)
             {
-                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
+                entity.MergeCandles(candleByRows[entity.RowKey], _assetPairId, _timeInterval);
             }
 
             // creates new entities
@@ -86,7 +86,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             foreach (var entity in newEntities)
             {
-                entity.MergeCandles(_assetPairId, _timeInterval, candleByRows[entity.RowKey]);
+                entity.MergeCandles(candleByRows[entity.RowKey], _assetPairId, _timeInterval);
             }
 
             // save changes
@@ -96,34 +96,22 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             await _tableStorage.InsertOrReplaceBatchAsync(existingEntities.Concat(newEntities));
         }
 
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(PriceType priceType, TimeInterval interval, DateTime from, DateTime to)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(CandlePriceType priceType, CandleTimeInterval interval, DateTime from, DateTime to)
         {
-            if (priceType == PriceType.Unspecified) { throw new ArgumentException(nameof(priceType)); }
+            if (priceType == CandlePriceType.Unspecified)
+            {
+                throw new ArgumentException(nameof(priceType));
+            }
 
-            var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
-            var rowKeyFrom = CandleHistoryEntity.GenerateRowKey(from, interval);
-            var rowKeyTo = CandleHistoryEntity.GenerateRowKey(to, interval);
-
-            var query = new TableQuery<CandleHistoryEntity>();
-            var pkeyFilter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey);
-
-            var rowkeyCondFrom = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.GreaterThanOrEqual, rowKeyFrom);
-            var rowkeyCondTo = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.LessThanOrEqual, rowKeyTo);
-            var rowkeyFilter = TableQuery.CombineFilters(rowkeyCondFrom, TableOperators.And, rowkeyCondTo);
-
-            query.FilterString = TableQuery.CombineFilters(pkeyFilter, TableOperators.And, rowkeyFilter);
-
+            var query = GetTableQuery(priceType, interval, from, to);
             var entities = await _tableStorage.WhereAsync(query);
+            var candles = entities
+                .SelectMany(e => e.Candles.Select(ci => ci.ToCandle(_assetPairId, e.PriceType, e.DateTime, interval)));
 
-            var result = from e in entities
-                         select e.Candles.Select(ci => ci.ToCandle(_assetPairId, e.PriceType, e.DateTime, interval));
-
-            return result
-                .SelectMany(c => c)
-                .Where(c => c.Timestamp >= from && c.Timestamp < to);
+            return candles.Where(c => c.Timestamp >= from && c.Timestamp < to);
         }
 
-        public async Task<ICandle> TryGetFirstCandleAsync(PriceType priceType, TimeInterval timeInterval)
+        public async Task<ICandle> TryGetFirstCandleAsync(CandlePriceType priceType, CandleTimeInterval timeInterval)
         {
             var candleEntity = await _tableStorage.GetTopRecordAsync(CandleHistoryEntity.GeneratePartitionKey(priceType));
 
@@ -131,6 +119,28 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 ?.Candles
                 .First()
                 .ToCandle(_assetPairId, priceType, candleEntity.DateTime, timeInterval);
+        }
+
+        private static TableQuery<CandleHistoryEntity> GetTableQuery(
+            CandlePriceType priceType,
+            CandleTimeInterval interval,
+            DateTime from,
+            DateTime to)
+        {
+            var partitionKey = CandleHistoryEntity.GeneratePartitionKey(priceType);
+            var rowKeyFrom = CandleHistoryEntity.GenerateRowKey(from, interval);
+            var rowKeyTo = CandleHistoryEntity.GenerateRowKey(to, interval);
+
+            var pkeyFilter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, partitionKey);
+
+            var rowkeyFromFilter = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.GreaterThanOrEqual, rowKeyFrom);
+            var rowkeyToFilter = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.LessThanOrEqual, rowKeyTo);
+            var rowkeyFilter = TableQuery.CombineFilters(rowkeyFromFilter, TableOperators.And, rowkeyToFilter);
+
+            return new TableQuery<CandleHistoryEntity>
+            {
+                FilterString = TableQuery.CombineFilters(pkeyFilter, TableOperators.And, rowkeyFilter)
+            };
         }
     }
 }

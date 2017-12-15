@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Lykke.Domain.Prices;
+using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -49,7 +49,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [SwaggerOperation("GetCandlesHistoryOrError")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetCandlesHistory(string assetPairId, PriceType priceType, TimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (_shutdownManager.IsShuttingDown)
             {
@@ -69,17 +69,17 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is required"));
             }
-            if (priceType == PriceType.Unspecified)
+            if (priceType == CandlePriceType.Unspecified)
             {
-                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Price type should not be {PriceType.Unspecified}"));
+                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Price type should not be {CandlePriceType.Unspecified}"));
             }
-            if (timeInterval == TimeInterval.Unspecified)
+            if (timeInterval == CandleTimeInterval.Unspecified)
             {
-                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {TimeInterval.Unspecified}"));
+                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {CandleTimeInterval.Unspecified}"));
             }
-            if (fromMoment >= toMoment)
+            if (fromMoment > toMoment)
             {
-                return BadRequest(ErrorResponse.Create("From date should be early than To date"));
+                return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
             }
             if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
             {
@@ -100,7 +100,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     Open = c.Open,
                     Close = c.Close,
                     High = c.High,
-                    Low = c.Low
+                    Low = c.Low,
+                    TradingVolume = c.TradingVolume
                 })
             });
         }
