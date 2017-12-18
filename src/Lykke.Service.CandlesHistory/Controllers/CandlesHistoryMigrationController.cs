@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lykke.Service.CandlesHistory.Controllers
 {
     [Route("api/[controller]")]
-    [ApiExplorerSettings(IgnoreApi = true)]
     public class CandlesHistoryMigrationController : Controller
     {
         private readonly CandlesMigrationManager _candlesMigrationManager;
