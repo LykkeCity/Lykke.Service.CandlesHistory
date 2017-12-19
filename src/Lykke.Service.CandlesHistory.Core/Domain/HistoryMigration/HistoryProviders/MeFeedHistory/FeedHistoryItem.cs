@@ -26,6 +26,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProvi
                 timeInterval: CandleTimeInterval.Sec,
                 timestamp: timeStamp,
                 tradingVolume: 0,
+                lastTradePrice: 0,
                 lastUpdateTimestamp: timeStamp);
         }
     }

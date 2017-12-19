@@ -25,6 +25,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("V")]
         public double TradingVolume { get; private set; }
 
+        [JsonProperty("LTP")]
+        public double LastTradePrice { get; private set; }
+
         [JsonProperty("U")]
         public DateTime LastUpdateTimestamp { get; private set; }
 
@@ -55,6 +58,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 timeInterval: timeInterval,
                 timestamp: baseTime.AddIntervalTicks(normalizedTick, timeInterval),
                 tradingVolume: TradingVolume,
+                lastTradePrice: LastTradePrice,
                 lastUpdateTimestamp: LastUpdateTimestamp
             );
         }

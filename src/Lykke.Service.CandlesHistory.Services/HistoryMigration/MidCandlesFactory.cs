@@ -53,7 +53,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                 priceType: CandlePriceType.Mid,
                 timeInterval: askCandle.TimeInterval,
                 timestamp: askCandle.Timestamp,
-                tradingVolume: askCandle.TradingVolume,
+                tradingVolume: askCandle.LastUpdateTimestamp > bidCandle.LastUpdateTimestamp
+                    ? askCandle.TradingVolume
+                    : bidCandle.TradingVolume,
+                lastTradePrice: askCandle.LastUpdateTimestamp > bidCandle.LastUpdateTimestamp
+                    ? askCandle.LastTradePrice
+                    : bidCandle.LastTradePrice,
                 lastUpdateTimestamp: askCandle.LastUpdateTimestamp > bidCandle.LastUpdateTimestamp
                     ? askCandle.LastUpdateTimestamp
                     : bidCandle.LastUpdateTimestamp);

@@ -31,6 +31,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var high = 0d;
             var low = 0d;
             var tradingVolume = 0d;
+            var lastTradePrice = 0d;
             var assetPairId = string.Empty;
             var priceType = CandlePriceType.Unspecified;
             var timeInterval = CandleTimeInterval.Unspecified;
@@ -51,6 +52,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         high = candle.High;
                         low = candle.Low;
                         tradingVolume = candle.TradingVolume;
+                        lastTradePrice = candle.LastTradePrice;
                         assetPairId = candle.AssetPairId;
                         priceType = candle.PriceType;
                         timeInterval = candle.TimeInterval;
@@ -86,6 +88,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         lastUpdateTimestamp = candle.LastUpdateTimestamp > lastUpdateTimestamp
                             ? candle.LastUpdateTimestamp
                             : lastUpdateTimestamp;
+                        lastTradePrice = candle.LastUpdateTimestamp > lastUpdateTimestamp
+                            ? candle.LastTradePrice
+                            : lastTradePrice;
                     }
 
                     count++;
@@ -104,6 +109,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     timeInterval: timeInterval,
                     timestamp: newTimestamp ?? timestamp,
                     tradingVolume: tradingVolume,
+                    lastTradePrice: lastTradePrice,
                     lastUpdateTimestamp: lastUpdateTimestamp);
             }
 
