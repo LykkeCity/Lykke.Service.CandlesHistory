@@ -87,6 +87,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         low: candleUpdate.Low,
                         high: candleUpdate.High,
                         tradingVolume: candleUpdate.TradingVolume,
+                        lastTradePrice: candleUpdate.LastTradePrice,
                         lastUpdateTimestamp: candleUpdate.ChangeTimestamp));
                 }
             }

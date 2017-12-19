@@ -7,6 +7,8 @@ namespace Lykke.Service.CandlesHistory.Client
     using Lykke.Service;
     using Lykke.Service.CandlesHistory;
     using Models;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -15,6 +17,60 @@ namespace Lykke.Service.CandlesHistory.Client
     /// </summary>
     public static partial class CandleshistoryserviceExtensions
     {
+            /// <summary>
+            /// Pairs for which hisotry can be requested
+            /// </summary>
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            public static IList<string> GetAvailableAssetPairs(this ICandleshistoryservice operations)
+            {
+                return operations.GetAvailableAssetPairsAsync().GetAwaiter().GetResult();
+            }
+
+            /// <summary>
+            /// Pairs for which hisotry can be requested
+            /// </summary>
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task<IList<string>> GetAvailableAssetPairsAsync(this ICandleshistoryservice operations, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                using (var _result = await operations.GetAvailableAssetPairsWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Body;
+                }
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='request'>
+            /// </param>
+            public static object GetCandlesHistoryBatchOrError(this ICandleshistoryservice operations, GetCandlesHistoryBatchRequest request = default(GetCandlesHistoryBatchRequest))
+            {
+                return operations.GetCandlesHistoryBatchOrErrorAsync(request).GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='request'>
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task<object> GetCandlesHistoryBatchOrErrorAsync(this ICandleshistoryservice operations, GetCandlesHistoryBatchRequest request = default(GetCandlesHistoryBatchRequest), CancellationToken cancellationToken = default(CancellationToken))
+            {
+                using (var _result = await operations.GetCandlesHistoryBatchOrErrorWithHttpMessagesAsync(request, null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Body;
+                }
+            }
+
             /// <summary>
             /// Asset's candles history
             /// </summary>

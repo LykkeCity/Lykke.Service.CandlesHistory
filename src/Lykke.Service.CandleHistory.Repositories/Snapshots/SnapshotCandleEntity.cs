@@ -38,6 +38,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         [Key(9)]
         public DateTime LastUpdateTimestamp { get; set; }
 
+        [Key(10)]
+        public decimal LastTradePrice { get; set; }
+
+
         double ICandle.Open => (double) Open;
 
         double ICandle.Close => (double) Close;
@@ -47,6 +51,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         double ICandle.Low => (double) Low;
 
         double ICandle.TradingVolume => (double) TradingVolume;
+
+        double ICandle.LastTradePrice => (double) LastTradePrice;
 
         public static SnapshotCandleEntity Copy(ICandle candle)
         {
@@ -61,6 +67,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
                 Low = ConvertDouble(candle.Low),
                 High = ConvertDouble(candle.High),
                 TradingVolume = ConvertDouble(candle.TradingVolume),
+                LastTradePrice = ConvertDouble(candle.LastTradePrice),
                 LastUpdateTimestamp = candle.LastUpdateTimestamp
             };
         }

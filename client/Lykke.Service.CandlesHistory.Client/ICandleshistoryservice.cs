@@ -35,6 +35,27 @@ namespace Lykke.Service.CandlesHistory.Client
 
 
         /// <summary>
+        /// Pairs for which hisotry can be requested
+        /// </summary>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse<IList<string>>> GetAvailableAssetPairsWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <param name='request'>
+        /// </param>
+        /// <param name='customHeaders'>
+        /// The headers that will be added to request.
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        Task<HttpOperationResponse<object>> GetCandlesHistoryBatchOrErrorWithHttpMessagesAsync(GetCandlesHistoryBatchRequest request = default(GetCandlesHistoryBatchRequest), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
         /// Asset's candles history
         /// </summary>
         /// <param name='assetPairId'>

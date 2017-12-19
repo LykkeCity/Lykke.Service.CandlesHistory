@@ -6,7 +6,6 @@ using JetBrains.Annotations;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
-using Lykke.Service.CandlesHistory.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
 {
@@ -36,6 +35,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     high: high,
                     low: low,
                     tradingVolume: 0,
+                    lastTradePrice: 0,
                     lastUpdateTimestamp: timestamp),
                 updateValueFactory: (k, old) =>
                 {
@@ -55,10 +55,11 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                             high: high,
                             low: low,
                             tradingVolume: 0,
+                            lastTradePrice: 0,
                             lastUpdateTimestamp: timestamp);
                     }
 
-                    return oldCandle.Update(close, low, high, 0, timestamp);
+                    return oldCandle.Update(close, low, high, 0, 0, timestamp);
                 });
 
             return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));

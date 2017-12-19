@@ -332,6 +332,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                     high: (double) Math.Round(high, assetPair.Accuracy),
                     low: (double) Math.Round(low, assetPair.Accuracy),
                     tradingVolume: 0,
+                    lastTradePrice: 0,
                     lastUpdateTimestamp: timestamp);
 
                 if (open == 0 || close == 0 || high == 0 || low == 0)
@@ -418,6 +419,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProvider
                     (double) close,
                     (double) high,
                     (double) low,
+                    0,
                     0,
                     candle.Timestamp);
             }
