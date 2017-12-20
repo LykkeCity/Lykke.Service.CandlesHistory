@@ -35,7 +35,7 @@ namespace Lykke.Service.CandlesHistory.Client
             throw new InvalidOperationException($"Unexpected response type: {result?.GetType()}");
         }
 
-        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> TryGetCandlesHistoryBatch(
+        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> TryGetCandlesHistoryBatchAsync(
             this ICandleshistoryservice service, 
             IList<string> assetPairs, 
             CandlePriceType priceType,
@@ -49,7 +49,7 @@ namespace Lykke.Service.CandlesHistory.Client
             return result as IReadOnlyDictionary<string, CandlesHistoryResponseModel>;
         }
 
-        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> GetCandlesHistoryBatch(
+        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> GetCandlesHistoryBatchAsync(
             this ICandleshistoryservice service,
             IList<string> assetPairs,
             CandlePriceType priceType,
