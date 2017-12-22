@@ -145,15 +145,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                             node.Value = candle;
                         }
 
-                        if (node != history.Last)
-                        {
-                            _log.WriteWarningAsync(
-                                nameof(CandlesCacheService),
-                                nameof(UpdateCandlesHistory),
-                                candle.ToJson(),
-                                $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that candles was missordered. Last cached candle: {history.Last.Value.ToJson()}");
-                        }
-
                         return history;
                     }
 
@@ -161,21 +152,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     // that's the point after which we should add candle
                     if (node.Value.Timestamp < candle.Timestamp)
                     {
-                        var newNode = history.AddAfter(node, candle);
+                        history.AddAfter(node, candle);
 
                         // Should we remove oldest candle?
-                        if (history.Count > _amountOfCandlesToStore)
+                        while (history.Count > _amountOfCandlesToStore)
                         {
                             history.RemoveFirst();
-                        }
-
-                        if (newNode != history.Last)
-                        {
-                            _log.WriteWarningAsync(
-                                nameof(CandlesCacheService),
-                                nameof(UpdateCandlesHistory),
-                                candle.ToJson(),
-                                $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                         }
 
                         return history;
@@ -186,12 +168,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 {
                     // Cache is not full, so we can store the candle as earliest point in the history
                     history.AddBefore(history.First, candle);
-
-                    _log.WriteWarningAsync(
-                        nameof(CandlesCacheService),
-                        nameof(UpdateCandlesHistory),
-                        candle.ToJson(),
-                        $"Cached candle {candle.ToJson()} was not the last one in the cache. It seems that quotes was missordered. Last cached candle: {history.Last.Value.ToJson()}");
                 }
                 else
                 {

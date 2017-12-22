@@ -124,16 +124,19 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             await Task.WhenAll(tasks);
 
-            return Ok(allHistory.ToDictionary(x => x.Key, x => x.Value.Select(c => new CandlesHistoryResponseModel.Candle
+            return Ok(allHistory.ToDictionary(x => x.Key, x => new CandlesHistoryResponseModel
             {
-                DateTime = c.Timestamp,
-                Open = c.Open,
-                Close = c.Close,
-                High = c.High,
-                Low = c.Low,
-                TradingVolume = c.TradingVolume,
-                LastTradePrice = c.LastTradePrice
-            })));
+                History = x.Value.Select(c => new CandlesHistoryResponseModel.Candle
+                {
+                    DateTime = c.Timestamp,
+                    Open = c.Open,
+                    Close = c.Close,
+                    High = c.High,
+                    Low = c.Low,
+                    TradingVolume = c.TradingVolume,
+                    LastTradePrice = c.LastTradePrice
+                })
+            }));
         }
 
         /// <summary>
