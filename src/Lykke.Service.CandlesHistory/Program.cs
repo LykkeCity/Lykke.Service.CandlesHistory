@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 
@@ -18,6 +19,16 @@ namespace Lykke.Service.CandlesHistory
             Console.WriteLine("Is RELEASE");
 #endif
             Console.WriteLine($"ENV_INFO: {EnvInfo}");
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                Console.WriteLine($"Unhandled exception: {e?.ExceptionObject}");
+
+                if (e?.IsTerminating == true)
+                {
+                    Console.WriteLine("Terminating...");
+                }
+            };
 
             try
             {
