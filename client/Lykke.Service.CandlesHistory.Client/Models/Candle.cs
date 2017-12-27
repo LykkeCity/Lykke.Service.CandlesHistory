@@ -23,7 +23,7 @@ namespace Lykke.Service.CandlesHistory.Client.Models
         /// <summary>
         /// Initializes a new instance of the Candle class.
         /// </summary>
-        public Candle(System.DateTime dateTime, double open, double close, double high, double low, double tradingVolume)
+        public Candle(System.DateTime dateTime, double open, double close, double high, double low, double tradingVolume, double lastTradePrice)
         {
             DateTime = dateTime;
             Open = open;
@@ -31,6 +31,7 @@ namespace Lykke.Service.CandlesHistory.Client.Models
             High = high;
             Low = low;
             TradingVolume = tradingVolume;
+            LastTradePrice = lastTradePrice;
             CustomInit();
         }
 
@@ -68,6 +69,11 @@ namespace Lykke.Service.CandlesHistory.Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "TradingVolume")]
         public double TradingVolume { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "LastTradePrice")]
+        public double LastTradePrice { get; set; }
 
         /// <summary>
         /// Validate the object.
