@@ -133,6 +133,71 @@ namespace Lykke.Service.CandlesHistory.Client
                 }
             }
 
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='assetPair'>
+            /// </param>
+            public static void ApiCandlesHistoryMigrationByAssetPairPost(this ICandleshistoryservice operations, string assetPair)
+            {
+                operations.ApiCandlesHistoryMigrationByAssetPairPostAsync(assetPair).GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='assetPair'>
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task ApiCandlesHistoryMigrationByAssetPairPostAsync(this ICandleshistoryservice operations, string assetPair, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                (await operations.ApiCandlesHistoryMigrationByAssetPairPostWithHttpMessagesAsync(assetPair, null, cancellationToken).ConfigureAwait(false)).Dispose();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            public static void ApiCandlesHistoryMigrationHealthGet(this ICandleshistoryservice operations)
+            {
+                operations.ApiCandlesHistoryMigrationHealthGetAsync().GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task ApiCandlesHistoryMigrationHealthGetAsync(this ICandleshistoryservice operations, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                (await operations.ApiCandlesHistoryMigrationHealthGetWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false)).Dispose();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='assetPair'>
+            /// </param>
+            public static void ApiCandlesHistoryMigrationHealthByAssetPairGet(this ICandleshistoryservice operations, string assetPair)
+            {
+                operations.ApiCandlesHistoryMigrationHealthByAssetPairGetAsync(assetPair).GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='assetPair'>
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task ApiCandlesHistoryMigrationHealthByAssetPairGetAsync(this ICandleshistoryservice operations, string assetPair, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                (await operations.ApiCandlesHistoryMigrationHealthByAssetPairGetWithHttpMessagesAsync(assetPair, null, cancellationToken).ConfigureAwait(false)).Dispose();
+            }
+
             /// <summary>
             /// Checks service is alive
             /// </summary>
