@@ -25,6 +25,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("V")]
         public double TradingVolume { get; private set; }
 
+        [JsonProperty("OV")]
+        public  double TradingOppositeVolume { get; private set; }
+
         [JsonProperty("LTP")]
         public double LastTradePrice { get; private set; }
 
@@ -32,7 +35,15 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         public DateTime LastUpdateTimestamp { get; private set; }
 
         [JsonConstructor]
-        public CandleHistoryItem(double open, double close, double high, double low, int tick, double tradingVolume, DateTime lastUpdateTimestamp)
+        public CandleHistoryItem(
+            double open, 
+            double close, 
+            double high, 
+            double low, 
+            int tick, 
+            double tradingVolume, 
+            double tradingOppositeVolume,
+            DateTime lastUpdateTimestamp)
         {
             Open = open;
             Close = close;
@@ -40,6 +51,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             Low = low;
             Tick = tick;
             TradingVolume = tradingVolume;
+            TradingOppositeVolume = tradingOppositeVolume;
             LastUpdateTimestamp = lastUpdateTimestamp;
         }
 
@@ -58,6 +70,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 timeInterval: timeInterval,
                 timestamp: baseTime.AddIntervalTicks(normalizedTick, timeInterval),
                 tradingVolume: TradingVolume,
+                tradingOppositeVolume: TradingOppositeVolume,
                 lastTradePrice: LastTradePrice,
                 lastUpdateTimestamp: LastUpdateTimestamp
             );
@@ -78,6 +91,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             High = Math.Max(High, candleState.High);
             Low = Math.Min(Low, candleState.Low);
             TradingVolume = candleState.TradingVolume;
+            TradingOppositeVolume = candleState.TradingOppositeVolume;
             LastUpdateTimestamp = candleState.LastUpdateTimestamp;
         }
 

@@ -41,7 +41,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         [Key(10)]
         public decimal LastTradePrice { get; set; }
 
-
+        [Key(11)]
+        public decimal TradingOppositeVolume { get; set; }
+        
         double ICandle.Open => (double) Open;
 
         double ICandle.Close => (double) Close;
@@ -51,6 +53,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
         double ICandle.Low => (double) Low;
 
         double ICandle.TradingVolume => (double) TradingVolume;
+
+        double ICandle.TradingOppositeVolume => (double) TradingOppositeVolume;
 
         double ICandle.LastTradePrice => (double) LastTradePrice;
 
@@ -67,6 +71,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Snapshots
                 Low = ConvertDouble(candle.Low),
                 High = ConvertDouble(candle.High),
                 TradingVolume = ConvertDouble(candle.TradingVolume),
+                TradingOppositeVolume = ConvertDouble(candle.TradingOppositeVolume),
                 LastTradePrice = ConvertDouble(candle.LastTradePrice),
                 LastUpdateTimestamp = candle.LastUpdateTimestamp
             };

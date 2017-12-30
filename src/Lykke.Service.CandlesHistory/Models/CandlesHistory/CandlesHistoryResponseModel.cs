@@ -29,6 +29,9 @@ namespace Lykke.Service.CandlesHistory.Models.CandlesHistory
             public double TradingVolume { get; set; }
 
             [Required]
+            public double TradingOppositeVolume { get; set; }
+
+            [Required]
             public double LastTradePrice { get; set; }
         }
     }
