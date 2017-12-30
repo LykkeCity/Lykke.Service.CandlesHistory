@@ -31,6 +31,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var high = 0d;
             var low = 0d;
             var tradingVolume = 0d;
+            var tradingOppositeVolume = 0d;
             var lastTradePrice = 0d;
             var assetPairId = string.Empty;
             var priceType = CandlePriceType.Unspecified;
@@ -52,6 +53,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         high = candle.High;
                         low = candle.Low;
                         tradingVolume = candle.TradingVolume;
+                        tradingOppositeVolume = candle.TradingOppositeVolume;
                         lastTradePrice = candle.LastTradePrice;
                         assetPairId = candle.AssetPairId;
                         priceType = candle.PriceType;
@@ -85,6 +87,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                         high = Math.Max(high, candle.High);
                         low = Math.Min(low, candle.Low);
                         tradingVolume += candle.TradingVolume;
+                        tradingOppositeVolume += candle.TradingOppositeVolume;
                         lastUpdateTimestamp = candle.LastUpdateTimestamp > lastUpdateTimestamp
                             ? candle.LastUpdateTimestamp
                             : lastUpdateTimestamp;
@@ -109,6 +112,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     timeInterval: timeInterval,
                     timestamp: newTimestamp ?? timestamp,
                     tradingVolume: tradingVolume,
+                    tradingOppositeVolume: tradingOppositeVolume,
                     lastTradePrice: lastTradePrice,
                     lastUpdateTimestamp: lastUpdateTimestamp);
             }

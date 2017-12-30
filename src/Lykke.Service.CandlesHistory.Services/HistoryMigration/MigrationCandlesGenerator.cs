@@ -35,6 +35,7 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                     high: high,
                     low: low,
                     tradingVolume: 0,
+                    tradingOppositeVolume: 0,
                     lastTradePrice: 0,
                     lastUpdateTimestamp: timestamp),
                 updateValueFactory: (k, old) =>
@@ -55,11 +56,12 @@ namespace Lykke.Service.CandlesHistory.Services.HistoryMigration
                             high: high,
                             low: low,
                             tradingVolume: 0,
+                            tradingOppositeVolume: 0,
                             lastTradePrice: 0,
                             lastUpdateTimestamp: timestamp);
                     }
 
-                    return oldCandle.Update(close, low, high, 0, 0, timestamp);
+                    return oldCandle.Update(close, low, high, 0, 0, 0, timestamp);
                 });
 
             return new MigrationCandleMergeResult(newCandle, !newCandle.Equals(oldCandle));

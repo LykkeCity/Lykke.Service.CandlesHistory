@@ -15,6 +15,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public double High { get; set; }
         public double Low { get; set; }
         public double TradingVolume { get; set; }
+        public double TradingOppositeVolume { get; set; }
         public double LastTradePrice { get; set; }
         public DateTime LastUpdateTimestamp { get; set; }
     }
