@@ -5,8 +5,6 @@ using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Blob;
 using AzureStorage.Tables;
 using Common.Log;
-using Lykke.RabbitMq.Azure;
-using Lykke.RabbitMqBroker.Publisher;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProviders.MeFeedHistory;
@@ -25,6 +23,7 @@ using Lykke.Service.CandlesHistory.Services.HistoryMigration;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders;
 using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Services.Settings;
+using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -144,6 +143,10 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
                 .As<ICandlesPersistenceQueueSnapshotRepository>()
                 .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
+
+            builder.RegisterType<CandlesHistorySizeValidator>()
+                .AsSelf()
+                .WithParameter(TypedParameter.From(_settings.MaxCandlesCountWhichCanBeRequested));
 
             RegisterCandlesMigration(builder);
         }

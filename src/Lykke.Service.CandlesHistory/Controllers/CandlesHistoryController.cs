@@ -11,8 +11,9 @@ using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
+using Lykke.Service.CandlesHistory.Validation;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.SwaggerGen.Annotations;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.CandlesHistory.Controllers
 {
@@ -26,17 +27,20 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
         private readonly IShutdownManager _shutdownManager;
+        private readonly CandlesHistorySizeValidator _candlesHistorySizeValidator;
 
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
             Dictionary<string, string> candleHistoryAssetConnections,
-            IShutdownManager shutdownManager)
+            IShutdownManager shutdownManager,
+            CandlesHistorySizeValidator candlesHistorySizeValidator)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
             _shutdownManager = shutdownManager;
+            _candlesHistorySizeValidator = candlesHistorySizeValidator;
         }
 
         /// <summary>
@@ -67,8 +71,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (_shutdownManager.IsShuttedDown)
             {
                 return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
-                
             }
+
             if (request.AssetPairs == null || !request.AssetPairs.Any())
             {
                 return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
@@ -89,6 +93,10 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (request.FromMoment > request.ToMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
+            }
+            if (!_candlesHistorySizeValidator.CanBeRequested(request.FromMoment, request.ToMoment, request.TimeInterval, request.AssetPairs.Length))
+            {
+                return BadRequest(ErrorResponse.Create($"Too many candles requested at once. Amount of returned candles should not exceed {_candlesHistorySizeValidator.MaxCandlesCountWhichCanBeRequested}"));
             }
 
             var notConfiguerdAssetPairs = request.AssetPairs
@@ -184,15 +192,19 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
             }
+            if (!_candlesHistorySizeValidator.CanBeRequested(fromMoment, toMoment, timeInterval))
+            {
+                return BadRequest(ErrorResponse.Create($"Too many candles requested at once. Amount of returned candles should not exceed {_candlesHistorySizeValidator.MaxCandlesCountWhichCanBeRequested}"));
+            }
             if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
             {
-                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Connection string for asset pair not configured"));
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is not configured"));
             }
             if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
             {
-                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found in dictionary or disabled"));
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
             }
-
+            
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
             return Ok(new CandlesHistoryResponseModel
