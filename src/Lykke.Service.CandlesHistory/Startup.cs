@@ -20,7 +20,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
-using Microsoft.ApplicationInsights.Extensibility;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
@@ -67,8 +66,6 @@ namespace Lykke.Service.CandlesHistory
                 var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
-
-                TelemetryConfiguration.Active.InstrumentationKey = candlesHistory.CurrentValue.InstrumentationKey;
 
                 Log = CreateLogWithSlack(
                     services,
