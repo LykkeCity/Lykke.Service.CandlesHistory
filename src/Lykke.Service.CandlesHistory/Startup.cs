@@ -20,6 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
+using Microsoft.ApplicationInsights.Extensibility;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
@@ -67,6 +68,8 @@ namespace Lykke.Service.CandlesHistory
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
+                TelemetryConfiguration.Active.InstrumentationKey = candlesHistory.CurrentValue.InstrumentationKey;
+
                 Log = CreateLogWithSlack(
                     services,
                     settings.CurrentValue.SlackNotifications,
@@ -103,8 +106,15 @@ namespace Lykke.Service.CandlesHistory
                 app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
 
                 app.UseMvc();
-                app.UseSwagger();
-                app.UseSwaggerUi();
+                app.UseSwagger(c =>
+                {
+                    c.PreSerializeFilters.Add((swagger, httpReq) => swagger.Host = httpReq.Host.Value);
+                });
+                app.UseSwaggerUI(x =>
+                {
+                    x.RoutePrefix = "swagger/ui";
+                    x.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+                });
                 app.UseStaticFiles();
 
                 appLifetime.ApplicationStarted.Register(() => StartApplication().GetAwaiter().GetResult());
@@ -155,7 +165,7 @@ namespace Lykke.Service.CandlesHistory
             {
                 if (Log != null)
                 {
-                    await Log.WriteMonitorAsync("", $"Env: {Program.EnvInfo}", "Terminating");
+                    await Log.WriteMonitorAsync("", "", "Terminating");
                 }
 
                 ApplicationContainer.Dispose();

@@ -31,7 +31,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public void Initialize(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
-            var candlesList = new LinkedList<ICandle>(candles.Limit(_amountOfCandlesToStore));
+            var candlesList = new LinkedList<ICandle>(candles.Take(_amountOfCandlesToStore));
 
             foreach (var candle in candlesList)
             {
