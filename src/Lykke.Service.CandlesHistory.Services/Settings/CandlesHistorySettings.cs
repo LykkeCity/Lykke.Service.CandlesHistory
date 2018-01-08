@@ -10,6 +10,5 @@
         public MigrationSettings Migration { get; set; }
         public int HistoryTicksCacheSize { get; set; }
         public int MaxCandlesCountWhichCanBeRequested { get; set; }
-        public string InstrumentationKey { get; set; }
     }
 }

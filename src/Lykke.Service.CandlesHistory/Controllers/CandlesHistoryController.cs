@@ -107,7 +107,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(
                     ErrorResponse.Create(nameof(request.AssetPairs), 
-                    $"Connection string for asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] not configured"));
+                    $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not configured"));
             }
 
             var disabledAssetPairs = request.AssetPairs
@@ -118,7 +118,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(
                     ErrorResponse.Create(nameof(request.AssetPairs),
-                        $"Asset pair [{string.Join(", ", notConfiguerdAssetPairs)}] not found or disabled"));
+                        $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not found or disabled"));
             }
 
             var allHistory = new ConcurrentDictionary<string, ICandle[]>();
