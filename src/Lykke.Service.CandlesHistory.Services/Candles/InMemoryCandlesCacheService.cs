@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using Common;
 using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
@@ -11,7 +12,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
-    public class CandlesCacheService : ICandlesCacheService
+    public class InMemoryCandlesCacheService : ICandlesCacheService
     {
         private readonly int _amountOfCandlesToStore;
         private readonly ILog _log;
@@ -21,14 +22,14 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// </summary>
         private ConcurrentDictionary<string, LinkedList<ICandle>> _candles;
 
-        public CandlesCacheService(int amountOfCandlesToStore, ILog log)
+        public InMemoryCandlesCacheService(int amountOfCandlesToStore, ILog log)
         {
             _amountOfCandlesToStore = amountOfCandlesToStore;
             _log = log;
             _candles = new ConcurrentDictionary<string, LinkedList<ICandle>>();
         }
 
-        public void Initialize(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
+        public Task InitializeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, IReadOnlyCollection<ICandle> candles)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var candlesList = new LinkedList<ICandle>(candles.Take(_amountOfCandlesToStore));
@@ -53,18 +54,22 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 _candles.TryAdd(key, candlesList);
             }
+
+            return Task.CompletedTask;
         }
 
-        public void Cache(ICandle candle)
+        public Task CacheAsync(ICandle candle)
         {
             var key = GetKey(candle.AssetPairId, candle.PriceType, candle.TimeInterval);
 
             _candles.AddOrUpdate(key,
                 addValueFactory: k => AddNewCandlesHistory(candle),
                 updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle));
+
+            return Task.CompletedTask;
         }
 
-        public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (fromMoment.Kind != DateTimeKind.Utc)
             {
@@ -91,10 +96,10 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     .SkipWhile(i => i.Timestamp < fromMoment)
                     .TakeWhile(i => i.Timestamp < toMoment);
                 
-                return result;
+                return Task.FromResult(result);
             }
 
-            return Enumerable.Empty<ICandle>();
+            return Task.FromResult(Enumerable.Empty<ICandle>());
         }
 
         public IImmutableDictionary<string, IImmutableList<ICandle>> GetState()
@@ -175,7 +180,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     // there is persisted candle at this point
 
                     _log.WriteWarningAsync(
-                        nameof(CandlesCacheService),
+                        nameof(InMemoryCandlesCacheService),
                         nameof(UpdateCandlesHistory),
                         candle.ToJson(),
                         $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");

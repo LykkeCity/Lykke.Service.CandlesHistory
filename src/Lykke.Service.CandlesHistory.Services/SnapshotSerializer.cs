@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -28,7 +29,17 @@ namespace Lykke.Service.CandlesHistory.Services
         {
             await log.WriteInfoAsync(nameof(SerializeAsync), "", "Gettings state...");
 
-            var state = stateHolder.GetState();
+            TState state;
+
+            try
+            {
+                state = stateHolder.GetState();
+            }
+            catch (NotSupportedException)
+            {
+                await log.WriteWarningAsync(nameof(SerializeAsync), "", "Not supported, skipping");
+                return;
+            }
 
             await log.WriteInfoAsync(nameof(SerializeAsync), stateHolder.DescribeState(state), "Saving state...");
 
@@ -51,9 +62,29 @@ namespace Lykke.Service.CandlesHistory.Services
                 return false;
             }
 
-            await log.WriteInfoAsync(nameof(DeserializeAsync), stateHolder.DescribeState(state), "Settings state...");
+            string stateDescription;
 
-            stateHolder.SetState(state);
+            try
+            {
+                stateDescription = stateHolder.DescribeState(state);
+            }
+            catch (NotSupportedException)
+            {
+                await log.WriteWarningAsync(nameof(DeserializeAsync), "", "Not supported, skipping");
+                return false;
+            }
+
+            await log.WriteInfoAsync(nameof(DeserializeAsync), stateDescription, "Settings state...");
+
+            try
+            {
+                stateHolder.SetState(state);
+            }
+            catch (NotSupportedException)
+            {
+                await log.WriteWarningAsync(nameof(DeserializeAsync), "", "Not supported, skipping");
+                return false;
+            }
 
             await log.WriteInfoAsync(nameof(DeserializeAsync), "", "State was set");
 

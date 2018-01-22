@@ -9,6 +9,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Logs.Slack;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
@@ -60,10 +61,14 @@ namespace Lykke.Service.CandlesHistory
 
                 var builder = new ContainerBuilder();
                 var settings = Configuration.LoadSettings<AppSettings>();
-                var candlesHistory = settings.CurrentValue.CandlesHistory != null
+                var marketType = settings.CurrentValue.CandlesHistory != null
+                    ? MarketType.Spot
+                    : MarketType.Mt;
+
+                var candlesHistory = marketType == MarketType.Spot
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
-                var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
+                var candleHistoryAssetConnection = marketType == MarketType.Spot
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
@@ -73,8 +78,10 @@ namespace Lykke.Service.CandlesHistory
                     candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
 
                 builder.RegisterModule(new ApiModule(
+                    marketType,
                     candlesHistory.CurrentValue,
                     settings.CurrentValue.Assets,
+                    settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
                     candlesHistory.Nested(x => x.Db),
                     Log));

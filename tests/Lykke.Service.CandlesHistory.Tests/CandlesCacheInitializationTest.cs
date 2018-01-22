@@ -110,7 +110,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                             Times.Once);
 
                         _cacheServiceMock.Verify(s =>
-                                s.Initialize(
+                                s.InitializeAsync(
                                     It.Is<string>(a => a == assetPairId),
                                     It.Is<CandlePriceType>(p => p == priceType),
                                     It.Is<CandleTimeInterval>(i => i == interval),
@@ -130,7 +130,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Times.Never);
 
             _cacheServiceMock.Verify(s =>
-                    s.Initialize(
+                    s.InitializeAsync(
                         It.Is<string>(a => !new[] { "EURUSD", "USDCHF" }.Contains(a)),
                         It.IsAny<CandlePriceType>(),
                         It.IsAny<CandleTimeInterval>(),

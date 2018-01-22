@@ -77,7 +77,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 foreach (var candleUpdate in candlesUpdate.Candles)
                 {
-                    _candlesManager.ProcessCandle(Candle.Create(
+                    await _candlesManager.ProcessCandleAsync(Candle.Create(
                         assetPair: candleUpdate.AssetPairId,
                         priceType: candleUpdate.PriceType,
                         timeInterval: candleUpdate.TimeInterval,
