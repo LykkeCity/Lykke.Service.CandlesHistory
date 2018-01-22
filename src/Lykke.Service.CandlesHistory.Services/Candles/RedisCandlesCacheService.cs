@@ -102,23 +102,28 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             // depending on the order of the remove/add calls
 
             var transaction = _database.CreateTransaction();
-           
+
             // Removes old candle
 
             var currentCandleKey = candle.Timestamp.ToString(TimestampFormat);
             var nextCandleKey = candle.Timestamp.AddIntervalTicks(1, candle.TimeInterval).ToString(TimestampFormat);
 
-            await transaction.SortedSetRemoveRangeByValueAsync(key, currentCandleKey, nextCandleKey, Exclude.Stop);
+            var candleRemovalTask = transaction.SortedSetRemoveRangeByValueAsync(key, currentCandleKey, nextCandleKey, Exclude.Stop);
 
             // Adds new candle
 
-            await transaction.SortedSetAddAsync(key, serializedValue, 0);
+            var candleAdditionTask = transaction.SortedSetAddAsync(key, serializedValue, 0);
 
             if (!await transaction.ExecuteAsync())
             {
                 throw new InvalidOperationException("Redis transaction is rolled back");
             }
-            
+
+            // Operations in the transaction can't be awaited before transaction is executed, so
+            // saves tasks and waits they here, just to calm down the Resharper
+
+            await Task.WhenAll(candleRemovalTask, candleAdditionTask);
+
             // Truncates candles set to the _amountOfCandlesToStore. 
             // The older candles will be removed, since they goes first in the set
 
