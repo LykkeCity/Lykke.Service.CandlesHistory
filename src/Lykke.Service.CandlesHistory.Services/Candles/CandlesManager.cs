@@ -24,41 +24,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
-        private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
 
         public CandlesManager(
             ICandlesCacheService candlesCacheService,
-            ICandlesHistoryRepository candlesHistoryRepository,
-            ICandlesPersistenceQueue candlesPersistenceQueue)
+            ICandlesHistoryRepository candlesHistoryRepository)
         {
             _candlesCacheService = candlesCacheService;
             _candlesHistoryRepository = candlesHistoryRepository;
-            _candlesPersistenceQueue = candlesPersistenceQueue;
         }
-
-        public void ProcessCandle(ICandle candle)
-        {
-            try
-            {
-                if (!_candlesHistoryRepository.CanStoreAssetPair(candle.AssetPairId))
-                {
-                    return;
-                }
-
-                if (!Constants.StoredIntervals.Contains(candle.TimeInterval))
-                {
-                    return;
-                }
-                
-                _candlesCacheService.Cache(candle);
-                _candlesPersistenceQueue.EnqueueCandle(candle);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to process candle: {candle.ToJson()}", ex);
-            }
-        }
-
+        
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>

@@ -55,15 +55,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        public void Cache(ICandle candle)
-        {
-            var key = GetKey(candle.AssetPairId, candle.PriceType, candle.TimeInterval);
-
-            _candles.AddOrUpdate(key,
-                addValueFactory: k => AddNewCandlesHistory(candle),
-                updateValueFactory: (k, hisotry) => UpdateCandlesHistory(hisotry, candle));
-        }
-
         public IEnumerable<ICandle> GetCandles(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             if (fromMoment.Kind != DateTimeKind.Utc)
@@ -119,70 +110,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public string DescribeState(IImmutableDictionary<string, IImmutableList<ICandle>> state)
         {
             return $"Assets: {state.Count}, Total Candles: {state.Values.Sum(list => list.Count)}";
-        }
-
-        private static LinkedList<ICandle> AddNewCandlesHistory(ICandle candle)
-        {
-            var history = new LinkedList<ICandle>();
-
-            history.AddLast(candle);
-
-            return history;
-        }
-
-        private LinkedList<ICandle> UpdateCandlesHistory(LinkedList<ICandle> history, ICandle candle)
-        {
-            lock (history)
-            {
-                // Starting from the latest candle, moving down to the history
-                for (var node = history.Last; node != null; node = node.Previous)
-                {
-                    // Candle at given point already exists, so replace it
-                    if (node.Value.Timestamp == candle.Timestamp)
-                    {
-                        if (node.Value.LastUpdateTimestamp < candle.LastUpdateTimestamp)
-                        {
-                            node.Value = candle;
-                        }
-
-                        return history;
-                    }
-
-                    // If we found more early point than candle,
-                    // that's the point after which we should add candle
-                    if (node.Value.Timestamp < candle.Timestamp)
-                    {
-                        history.AddAfter(node, candle);
-
-                        // Should we remove oldest candle?
-                        while (history.Count > _amountOfCandlesToStore)
-                        {
-                            history.RemoveFirst();
-                        }
-
-                        return history;
-                    }
-                }
-
-                if (history.Count < _amountOfCandlesToStore)
-                {
-                    // Cache is not full, so we can store the candle as earliest point in the history
-                    history.AddBefore(history.First, candle);
-                }
-                else
-                {
-                    // Cache is full, so we can't store the candle there, because, probably
-                    // there is persisted candle at this point
-
-                    _log.WriteWarningAsync(
-                        nameof(CandlesCacheService),
-                        nameof(UpdateCandlesHistory),
-                        candle.ToJson(),
-                        $"Can't cache candle it's too old to store in cache. Current history length for {candle.AssetPairId}:{candle.PriceType}:{candle.TimeInterval} = {history.Count}. First cached candle: {history.First.Value.ToJson()}, Last cached candle: {history.Last.Value.ToJson()}");
-                }
-
-                return history;
-            }
         }
 
         private static string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)

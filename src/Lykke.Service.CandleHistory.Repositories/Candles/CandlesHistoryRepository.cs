@@ -37,23 +37,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         }
 
         /// <summary>
-        /// Insert or merge candles. Assumed that all candles have the same AssetPairId, PriceType, Timeinterval
-        /// </summary>
-        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
-        {
-            var repo = GetRepo(assetPairId, timeInterval);
-            try
-            {
-                await repo.InsertOrMergeAsync(candles, priceType);
-            }
-            catch
-            {
-                ResetRepo(assetPairId, timeInterval);
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Returns buy or sell candle values for the specified interval from the specified time range.
         /// </summary>
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType, DateTime from, DateTime to)
@@ -117,8 +100,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
 
             var storage = AzureTableStorage<CandleHistoryEntity>.Create(
-                _assetConnectionStrings.ConnectionString(x => x[assetPairId]), 
-                tableName, 
+                _assetConnectionStrings.ConnectionString(x => x[assetPairId]),
+                tableName,
                 _log,
                 maxExecutionTimeout: TimeSpan.FromMinutes(1),
                 onGettingRetryCount: 10,
