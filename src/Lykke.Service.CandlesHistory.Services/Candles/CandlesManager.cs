@@ -24,41 +24,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
-        private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
 
         public CandlesManager(
             ICandlesCacheService candlesCacheService,
-            ICandlesHistoryRepository candlesHistoryRepository,
-            ICandlesPersistenceQueue candlesPersistenceQueue)
+            ICandlesHistoryRepository candlesHistoryRepository)
         {
             _candlesCacheService = candlesCacheService;
             _candlesHistoryRepository = candlesHistoryRepository;
-            _candlesPersistenceQueue = candlesPersistenceQueue;
         }
-
-        public async Task ProcessCandleAsync(ICandle candle)
-        {
-            try
-            {
-                if (!_candlesHistoryRepository.CanStoreAssetPair(candle.AssetPairId))
-                {
-                    return;
-                }
-
-                if (!Constants.StoredIntervals.Contains(candle.TimeInterval))
-                {
-                    return;
-                }
-                
-                await _candlesCacheService.CacheAsync(candle);
-                _candlesPersistenceQueue.EnqueueCandle(candle);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to process candle: {candle.ToJson()}", ex);
-            }
-        }
-
+        
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>
@@ -100,8 +74,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <returns></returns>
         private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            var cachedHistory = (await _candlesCacheService
-                .GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment))
+            var cachedHistory = _candlesCacheService
+                .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
 
