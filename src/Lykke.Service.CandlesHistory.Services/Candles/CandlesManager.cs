@@ -74,8 +74,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <returns></returns>
         private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            var cachedHistory = _candlesCacheService
-                .GetCandles(assetPairId, priceType, timeInterval, fromMoment, toMoment)
+            var cachedHistory = (await _candlesCacheService
+                .GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment))
                 .ToArray();
             var oldestCachedCandle = cachedHistory.FirstOrDefault();
 
