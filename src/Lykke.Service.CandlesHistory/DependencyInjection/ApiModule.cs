@@ -16,28 +16,35 @@ using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace Lykke.Service.CandlesHistory.DependencyInjection
 {
     public class ApiModule : Module
     {
         private readonly IServiceCollection _services;
+        private readonly MarketType _marketType;
         private readonly CandlesHistorySettings _settings;
         private readonly AssetsSettings _assetSettings;
+        private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
         private readonly IReloadingManager<DbSettings> _dbSettings;
         private readonly ILog _log;
 
         public ApiModule(
+            MarketType marketType,
             CandlesHistorySettings settings,
             AssetsSettings assetSettings,  
+            RedisSettings redisSettings,
             IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
             IReloadingManager<DbSettings> dbSettings,
             ILog log)
         {
+            _marketType = marketType;
             _services = new ServiceCollection();
             _settings = settings;
             _assetSettings = assetSettings;
+            _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
             _dbSettings = dbSettings;
             _log = log;
@@ -55,10 +62,22 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_candleHistoryAssetConnections.CurrentValue)
                 .AsSelf();
 
+            RegisterRedis(builder);
+
             RegisterAssets(builder);
             RegisterCandles(builder);
 
             builder.Populate(_services);
+        }
+
+        private void RegisterRedis(ContainerBuilder builder)
+        {
+            builder.Register(c => ConnectionMultiplexer.Connect(_redisSettings.Configuration))
+                .As<IConnectionMultiplexer>()
+                .SingleInstance();
+
+            builder.Register(c => c.Resolve<IConnectionMultiplexer>().GetDatabase())
+                .As<IDatabase>();
         }
 
         private void RegisterAssets(ContainerBuilder builder)
@@ -93,8 +112,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .As<ICandlesManager>()
                 .SingleInstance();
 
-            builder.RegisterType<CandlesCacheService>()
+            builder.RegisterType<RedisCandlesCacheService>()
                 .As<ICandlesCacheService>()
+                .WithParameter(TypedParameter.From(_marketType))
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
