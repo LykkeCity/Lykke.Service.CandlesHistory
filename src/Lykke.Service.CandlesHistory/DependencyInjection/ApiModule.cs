@@ -98,10 +98,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
-            builder.RegisterType<CandlesCacheInitalizationService>()
-                .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
-                .As<ICandlesCacheInitalizationService>();
-
             builder.RegisterType<CandlesHistorySizeValidator>()
                 .AsSelf()
                 .WithParameter(TypedParameter.From(_settings.MaxCandlesCountWhichCanBeRequested));

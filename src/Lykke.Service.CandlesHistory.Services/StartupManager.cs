@@ -12,16 +12,13 @@ namespace Lykke.Service.CandlesHistory.Services
     {
         private readonly ILog _log;
         private readonly ICandlesCacheService _candlesCacheService;
-        private readonly ICandlesCacheInitalizationService _cacheInitalizationService;
 
         public StartupManager(
             ILog log,
-            ICandlesCacheInitalizationService cacheInitalizationService,
             ICandlesCacheService candlesCacheService)
         {
             _log = log.CreateComponentScope(nameof(StartupManager));
             _candlesCacheService = candlesCacheService;
-            _cacheInitalizationService = cacheInitalizationService;
         }
 
         public async Task StartAsync()
