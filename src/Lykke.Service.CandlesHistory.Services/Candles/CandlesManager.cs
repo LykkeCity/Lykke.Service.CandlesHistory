@@ -7,6 +7,8 @@ using Common;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
+using Common.Log;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
@@ -22,18 +24,24 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             KeyValuePair.Create(CandleTimeInterval.Hour12, CandleTimeInterval.Hour)
         });
 
+        private readonly ILog _log;
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
         private readonly ICandlesPersistenceQueue _candlesPersistenceQueue;
+        private readonly ErrorManagementSettings _errorSettings;
 
         public CandlesManager(
+            ILog log,
             ICandlesCacheService candlesCacheService,
             ICandlesHistoryRepository candlesHistoryRepository,
-            ICandlesPersistenceQueue candlesPersistenceQueue)
+            ICandlesPersistenceQueue candlesPersistenceQueue,
+            ErrorManagementSettings settings)
         {
+            _log = log;
             _candlesCacheService = candlesCacheService;
             _candlesHistoryRepository = candlesHistoryRepository;
             _candlesPersistenceQueue = candlesPersistenceQueue;
+            _errorSettings = settings;
         }
 
         public async Task ProcessCandleAsync(ICandle candle)
@@ -42,6 +50,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             {
                 if (!_candlesHistoryRepository.CanStoreAssetPair(candle.AssetPairId))
                 {
+                    if (_errorSettings.ExceptionOnCantStoreAssetPair)
+                        _log?.WriteErrorAsync(nameof(CandlesManager),
+                            nameof(ProcessCandle),
+                            null,
+                            new ArgumentOutOfRangeException($"Connection string for asset pair {candle.AssetPairId} not configured"));
+
                     return;
                 }
 
