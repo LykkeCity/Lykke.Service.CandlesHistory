@@ -114,6 +114,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<SnapshotSerializer>()
                 .As<ISnapshotSerializer>();
 
+            builder.RegisterType<CandlesChecker>()
+                .As<ICandlesChecker>()
+                .WithParameter(TypedParameter.From(_settings.ErrorManagement))
+                .SingleInstance();
+
             builder.RegisterType<CandlesSubscriber>()
                 .As<ICandlesSubscriber>()
                 .WithParameter(TypedParameter.From(_settings.Rabbit.CandlesSubscription))
@@ -121,7 +126,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesManager>()
                 .As<ICandlesManager>()
-                .WithParameter(TypedParameter.From(_settings.ErrorManagement))
                 .SingleInstance();
 
             builder.RegisterType<RedisCandlesCacheService>()
