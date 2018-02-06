@@ -109,6 +109,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
             builder.RegisterType<CandlesManager>()
                 .As<ICandlesManager>()
+                .WithParameter(TypedParameter.From(_settings.ErrorManagement))
                 .SingleInstance();
 
             builder.RegisterType<CandlesCacheService>()

@@ -8,6 +8,7 @@
         public PersistenceSettings Persistence { get; set; }
         public DbSettings Db { get; set; }
         public MigrationSettings Migration { get; set; }
+        public ErrorManagementSettings ErrorManagement { get; set; }
         public int HistoryTicksCacheSize { get; set; }
         public int MaxCandlesCountWhichCanBeRequested { get; set; }
     }
