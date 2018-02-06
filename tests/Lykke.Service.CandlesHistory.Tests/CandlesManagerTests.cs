@@ -12,8 +12,6 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Lykke.Service.CandlesHistory.Services.Settings;
-using Common.Log;
 
 namespace Lykke.Service.CandlesHistory.Tests
 {
@@ -40,8 +38,6 @@ namespace Lykke.Service.CandlesHistory.Tests
 
         private Mock<ICandlesPersistenceQueue> _persistenceQueueMock;
 
-        private ErrorManagementSettings _errorSetting;
-
         [TestInitialize]
         public void InitializeTest()
         {
@@ -49,9 +45,6 @@ namespace Lykke.Service.CandlesHistory.Tests
             _historyRepositoryMock = new Mock<ICandlesHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
             _persistenceQueueMock = new Mock<ICandlesPersistenceQueue>();
-            _errorSetting = new ErrorManagementSettings() { ExceptionOnCantStoreAssetPair = true };
-
-            var logMock = new Mock<ILog>();
 
             _assetPairs = new List<IAssetPair>
             {
@@ -71,11 +64,9 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Returns((string assetPairId) => new[] { "EURUSD", "USDCHF", "USDRUB" }.Contains(assetPairId));
 
             _manager = new CandlesManager(
-                logMock.Object,
                 _cacheServiceMock.Object,
                 _historyRepositoryMock.Object,
-                _persistenceQueueMock.Object,
-                _errorSetting);
+                _persistenceQueueMock.Object);
         }
 
 
