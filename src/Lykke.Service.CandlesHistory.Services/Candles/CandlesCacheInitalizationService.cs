@@ -63,7 +63,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     var alignedFromDate = alignedToDate.AddIntervalTicks(-_amountOfCandlesToStore, timeInterval);
                     var candles = await _candlesHistoryRepository.GetCandlesAsync(assetPair.Id, timeInterval, priceType, alignedFromDate, alignedToDate);
                     
-                    _candlesCacheService.Initialize(assetPair.Id, priceType, timeInterval, candles.ToArray());
+                    await _candlesCacheService.InitializeAsync(assetPair.Id, priceType, timeInterval, candles.ToArray());
                 }
             }
 

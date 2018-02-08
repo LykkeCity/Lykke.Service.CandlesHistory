@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -20,14 +21,14 @@ namespace Lykke.Service.CandlesHistory.Tests
         public void InitializeTest()
         {
             var logMock = new Mock<ILog>();
-            _service = new CandlesCacheService(AmountOfCandlesToStore, logMock.Object);
+            _service = new InMemoryCandlesCacheService(AmountOfCandlesToStore, logMock.Object);
         }
 
 
         #region History initialization
 
         [TestMethod]
-        public void History_initializes_and_then_obtains()
+        public async Task History_initializes_and_then_obtains()
         {
             // Arrange
             var history = new[]
@@ -90,9 +91,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(5, obtainedHistory.Length);
@@ -104,7 +108,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void To_many_history_truncated_at_initialization()
+        public async Task To_many_history_truncated_at_initialization()
         {
             // Arrange
             var history = new[]
@@ -178,9 +182,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(5, obtainedHistory.Length);
@@ -192,7 +199,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Not_full_history_initializes()
+        public async Task Not_full_history_initializes()
         {
             // Arrange
             var history = new[]
@@ -244,9 +251,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
-            var obtainedHistory = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(4, obtainedHistory.Length);
@@ -262,7 +272,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Candle adding
 
         [TestMethod]
-        public void Adding_candle_without_history_adds_candle()
+        public async Task Adding_candle_without_history_adds_candle()
         {
             // Arrange
             var candle = new TestCandle
@@ -278,9 +288,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Cache(candle);
+            _service.CacheAsync(candle);
 
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(1, candles.Length);
@@ -295,7 +308,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Adding_candle_replaces_history()
+        public async Task Adding_candle_replaces_history()
         {
             // Arrange
             var history = new[]
@@ -359,12 +372,15 @@ namespace Lykke.Service.CandlesHistory.Tests
                 LastUpdateTimestamp = new DateTime(2017, 06, 14, 0, 0, 20, DateTimeKind.Utc)
             };
 
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            _service.Cache(candle);
+            _service.CacheAsync(candle);
 
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(5, candles.Length);
@@ -380,7 +396,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Sequental_candles_addition_without_history_replaces_candles()
+        public async Task Sequental_candles_addition_without_history_replaces_candles()
         {
             // Arrange
             var candle1 = new TestCandle
@@ -409,10 +425,13 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Cache(candle1);
-            _service.Cache(candle2);
+            _service.CacheAsync(candle1);
+            _service.CacheAsync(candle2);
 
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(1, candles.Length);
@@ -427,7 +446,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Outdated_candle_addition_ignored()
+        public async Task Outdated_candle_addition_ignored()
         {
             // Arrange
             var candle1 = new TestCandle
@@ -456,10 +475,13 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Cache(candle1);
-            _service.Cache(candle2);
+            _service.CacheAsync(candle1);
+            _service.CacheAsync(candle2);
 
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(1, candles.Length);
@@ -474,7 +496,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void To_old_candles_evicts()
+        public async Task To_old_candles_evicts()
         {
             // Arrange
             var candle1 = new TestCandle
@@ -545,14 +567,17 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.Cache(candle1);
-            _service.Cache(candle2);
-            _service.Cache(candle3);
-            _service.Cache(candle4);
-            _service.Cache(candle5);
-            _service.Cache(candle6);
+            _service.CacheAsync(candle1);
+            _service.CacheAsync(candle2);
+            _service.CacheAsync(candle3);
+            _service.CacheAsync(candle4);
+            _service.CacheAsync(candle5);
+            _service.CacheAsync(candle6);
 
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec,
+                    new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(5, candles.Length);
@@ -609,10 +634,12 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Candles getting
 
         [TestMethod]
-        public void Getting_empty_history_returns_empty_enumerable()
+        public async Task Getting_empty_history_returns_empty_enumerable()
         {
             // Act
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsNotNull(candles);
@@ -620,7 +647,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Getting_filtered_by_from_and_to_moments_candles_returns_suitable_candles()
+        public async Task Getting_filtered_by_from_and_to_moments_candles_returns_suitable_candles()
         {
             // Arrange
             var history = new[]
@@ -667,10 +694,13 @@ namespace Lykke.Service.CandlesHistory.Tests
                 },
             };
 
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            var candles = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)).ToArray();
+            var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
+                    new DateTime(2017, 06, 11, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2017, 06, 14, 0, 0, 0, DateTimeKind.Utc)))
+                .ToArray();
 
             // Assert
             Assert.AreEqual(3, candles.Length);
@@ -680,7 +710,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Getting_filtered_by_from_and_to_moments_candles_returns_no_candles()
+        public async Task Getting_filtered_by_from_and_to_moments_candles_returns_no_candles()
         {
             // Arrange
             var history = new[]
@@ -727,11 +757,11 @@ namespace Lykke.Service.CandlesHistory.Tests
                 },
             };
 
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            var candles1 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
-            var candles2 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 07, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 13, 0, 0, 0, DateTimeKind.Utc));
+            var candles1 = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
+            var candles2 = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 07, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 13, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsFalse(candles1.Any());
@@ -739,7 +769,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         }
 
         [TestMethod]
-        public void Getting_candles_with_another_asset_pair_or_price_type_or_interval_returns_no_candles()
+        public async Task Getting_candles_with_another_asset_pair_or_price_type_or_interval_returns_no_candles()
         {
             // Arrange
             var history = new[]
@@ -798,13 +828,13 @@ namespace Lykke.Service.CandlesHistory.Tests
                 High = 2
             };
 
-            _service.Initialize("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
-            _service.Cache(candle);
+            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            _service.CacheAsync(candle);
 
             // Act
-            var candles1 = _service.GetCandles("USDCHF", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
-            var candles2 = _service.GetCandles("EURUSD", CandlePriceType.Bid, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
-            var candles3 = _service.GetCandles("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles1 = await _service.GetCandlesAsync("USDCHF", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles2 = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Bid, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
+            var candles3 = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
 
             // Assert
             Assert.IsFalse(candles1.Any());
