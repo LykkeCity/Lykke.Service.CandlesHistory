@@ -19,14 +19,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     {
         private readonly ILog _log;
         private readonly ICandlesManager _candlesManager;
+        private readonly ICandlesChecker _candlesChecker;
         private readonly RabbitEndpointSettings _settings;
 
         private RabbitMqSubscriber<CandlesUpdatedEvent> _subscriber;
 
-        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, RabbitEndpointSettings settings)
+        public CandlesSubscriber(ILog log, ICandlesManager candlesManager, ICandlesChecker checker, RabbitEndpointSettings settings)
         {
             _log = log;
             _candlesManager = candlesManager;
+            _candlesChecker = checker;
             _settings = settings;
         }
 
@@ -77,6 +79,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
                 foreach (var candleUpdate in candlesUpdate.Candles)
                 {
+                    // May be it would be better to move the next line outside the loop and check only the first candle in batch,
+                    // but not sure we always will obtain only a single-pairID batches.
+                    if (!_candlesChecker.CanHandleAssetPair(candleUpdate.AssetPairId)) continue; 
                     await _candlesManager.ProcessCandleAsync(Candle.Create(
                         assetPair: candleUpdate.AssetPairId,
                         priceType: candleUpdate.PriceType,
