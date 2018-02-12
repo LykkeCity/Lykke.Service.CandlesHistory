@@ -114,10 +114,18 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<SnapshotSerializer>()
                 .As<ISnapshotSerializer>();
 
-            builder.RegisterType<CandlesChecker>()
-                .As<ICandlesChecker>()
-                .WithParameter(TypedParameter.From(_settings.ErrorManagement))
-                .SingleInstance();
+            // Now creating a silent -or- logging candles checker object.
+            // CandlesChecker -- logs notifications on candles without properly configured connection strings for asset pair using the specified timeout between similar notifications.
+            // CandlesHistorySilent -- does not log notifications.
+            if (_settings.ErrorManagement.NotifyOnCantStoreAssetPair)
+                builder.RegisterType<CandlesChecker>()
+                    .As<ICandlesChecker>()
+                    .WithParameter(TypedParameter.From(_settings.ErrorManagement.NotifyOnCantStoreAssetPairTimeout))
+                    .SingleInstance();
+            else
+                builder.RegisterType<CandlesCheckerSilent>()
+                    .As<ICandlesChecker>()
+                    .SingleInstance();
 
             builder.RegisterType<CandlesSubscriber>()
                 .As<ICandlesSubscriber>()
