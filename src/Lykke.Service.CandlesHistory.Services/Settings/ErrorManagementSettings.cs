@@ -1,14 +1,16 @@
-﻿using Lykke.SettingsReader.Attributes;
+﻿using System;
 
 namespace Lykke.Service.CandlesHistory.Services.Settings
 {
     public class ErrorManagementSettings
     {
-        [AmqpCheck]
+        /// <summary>
+        /// The sign of whether we need to notify or not.
+        /// </summary>
         public bool NotifyOnCantStoreAssetPair { get; set; }
         /// <summary>
         /// Log notification timeout in seconds.
         /// </summary>
-        public int NotifyOnCantStoreAssetPairTimeout { get; set; }
+        public TimeSpan NotifyOnCantStoreAssetPairTimeout { get; set; }
     }
 }
