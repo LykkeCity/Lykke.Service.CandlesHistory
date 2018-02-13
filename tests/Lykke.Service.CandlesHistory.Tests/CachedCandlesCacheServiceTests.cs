@@ -91,7 +91,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -182,7 +182,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -251,7 +251,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             var obtainedHistory = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -288,7 +288,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.CacheAsync(candle);
+            await _service.CacheAsync(candle);
 
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -372,10 +372,10 @@ namespace Lykke.Service.CandlesHistory.Tests
                 LastUpdateTimestamp = new DateTime(2017, 06, 14, 0, 0, 20, DateTimeKind.Utc)
             };
 
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
-            _service.CacheAsync(candle);
+            await _service.CacheAsync(candle);
 
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -425,8 +425,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.CacheAsync(candle1);
-            _service.CacheAsync(candle2);
+            await _service.CacheAsync(candle1);
+            await _service.CacheAsync(candle2);
 
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -475,8 +475,8 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.CacheAsync(candle1);
-            _service.CacheAsync(candle2);
+            await _service.CacheAsync(candle1);
+            await _service.CacheAsync(candle2);
 
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -567,12 +567,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             };
 
             // Act
-            _service.CacheAsync(candle1);
-            _service.CacheAsync(candle2);
-            _service.CacheAsync(candle3);
-            _service.CacheAsync(candle4);
-            _service.CacheAsync(candle5);
-            _service.CacheAsync(candle6);
+            await _service.CacheAsync(candle1);
+            await _service.CacheAsync(candle2);
+            await _service.CacheAsync(candle3);
+            await _service.CacheAsync(candle4);
+            await _service.CacheAsync(candle5);
+            await _service.CacheAsync(candle6);
 
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Sec,
                     new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc),
@@ -694,7 +694,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 },
             };
 
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
             var candles = (await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day,
@@ -757,7 +757,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 },
             };
 
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
 
             // Act
             var candles1 = await _service.GetCandlesAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 05, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 05, 13, 0, 0, 0, DateTimeKind.Utc));
@@ -828,8 +828,8 @@ namespace Lykke.Service.CandlesHistory.Tests
                 High = 2
             };
 
-            _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
-            _service.CacheAsync(candle);
+            await _service.InitializeAsync("EURUSD", CandlePriceType.Ask, CandleTimeInterval.Day, history);
+            await _service.CacheAsync(candle);
 
             // Act
             var candles1 = await _service.GetCandlesAsync("USDCHF", CandlePriceType.Ask, CandleTimeInterval.Day, new DateTime(2017, 06, 01, 0, 0, 0, DateTimeKind.Utc), new DateTime(2017, 07, 01, 0, 0, 0, DateTimeKind.Utc));
