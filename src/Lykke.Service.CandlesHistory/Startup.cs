@@ -22,7 +22,6 @@ using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory
 {

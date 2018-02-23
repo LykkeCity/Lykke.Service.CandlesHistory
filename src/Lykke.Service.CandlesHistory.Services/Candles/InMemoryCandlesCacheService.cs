@@ -9,7 +9,6 @@ using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using System.Threading.Tasks;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
 {
