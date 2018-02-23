@@ -90,48 +90,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        public async Task CacheAsync(ICandle candle)
-        {
-            // TODO: This is non concurrent-safe method
-
-            var key = GetKey(candle.AssetPairId, candle.PriceType, candle.TimeInterval);
-            var serializedValue = SerializeCandle(candle);
-
-            // Transaction is needed here, despite of this method is non concurrent-safe,
-            // without transaction at the moment candle can be missed or doubled
-            // depending on the order of the remove/add calls
-
-            var transaction = _database.CreateTransaction();
-
-            // Removes old candle
-
-            var currentCandleKey = candle.Timestamp.ToString(TimestampFormat);
-            var nextCandleKey = candle.Timestamp.AddIntervalTicks(1, candle.TimeInterval).ToString(TimestampFormat);
-
-            var candleRemovalTask = transaction.SortedSetRemoveRangeByValueAsync(key, currentCandleKey, nextCandleKey, Exclude.Stop);
-
-            // Adds new candle
-
-            var candleAdditionTask = transaction.SortedSetAddAsync(key, serializedValue, 0);
-
-            if (!await transaction.ExecuteAsync())
-            {
-                throw new InvalidOperationException("Redis transaction is rolled back");
-            }
-
-            // Operations in the transaction can't be awaited before transaction is executed, so
-            // saves tasks and waits they here, just to calm down the Resharper
-
-            await Task.WhenAll(candleRemovalTask, candleAdditionTask);
-
-            // Truncates candles set to the _amountOfCandlesToStore. 
-            // The older candles will be removed, since they goes first in the set
-
-            // TODO: Do it not on every candle
-
-            await _database.SortedSetRemoveRangeByRankAsync(key, 0, -_amountOfCandlesToStore - 1);
-        }
-
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);

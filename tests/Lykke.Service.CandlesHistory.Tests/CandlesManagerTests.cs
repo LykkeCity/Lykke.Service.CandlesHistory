@@ -36,15 +36,12 @@ namespace Lykke.Service.CandlesHistory.Tests
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
         private ICandlesManager _manager;
 
-        private Mock<ICandlesPersistenceQueue> _persistenceQueueMock;
-
         [TestInitialize]
         public void InitializeTest()
         {
             _cacheServiceMock = new Mock<ICandlesCacheService>();
             _historyRepositoryMock = new Mock<ICandlesHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
-            _persistenceQueueMock = new Mock<ICandlesPersistenceQueue>();
 
             _assetPairs = new List<IAssetPair>
             {
@@ -65,35 +62,8 @@ namespace Lykke.Service.CandlesHistory.Tests
 
             _manager = new CandlesManager(
                 _cacheServiceMock.Object,
-                _historyRepositoryMock.Object,
-                _persistenceQueueMock.Object);
+                _historyRepositoryMock.Object);
         }
-
-
-        #region Candle processing
-
-        [TestMethod]
-        public async Task Only_candle_for_asset_pairs_with_connection_string_are_processed()
-        {
-            // Arrange
-            var quote1 = new TestCandle { AssetPairId = "EURUSD", TimeInterval = StoredIntervals.First() };
-            var quote3 = new TestCandle { AssetPairId = "EURRUB", TimeInterval = StoredIntervals.First() };
-
-            // Act
-            await _manager.ProcessCandleAsync(quote1);
-            await _manager.ProcessCandleAsync(quote3);
-
-            // Assert
-            _cacheServiceMock.Verify(s => s.CacheAsync(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURUSD")), Times.Once);
-
-            _cacheServiceMock.Verify(s => s.CacheAsync(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-
-            _persistenceQueueMock.Verify(s => s.EnqueueCandle(It.Is<ICandle>(c => c.AssetPairId == "EURRUB")), Times.Never, "No connection string");
-        }
-
-        #endregion
-
 
         #region Candles getting
 

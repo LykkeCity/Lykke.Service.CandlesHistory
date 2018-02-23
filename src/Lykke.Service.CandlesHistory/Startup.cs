@@ -22,6 +22,7 @@ using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -65,7 +66,7 @@ namespace Lykke.Service.CandlesHistory
                     ? MarketType.Spot
                     : MarketType.Mt;
 
-                var candlesHistory = marketType == MarketType.Spot
+                var candlesHistory = settings.CurrentValue.CandlesHistory != null
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
                 var candleHistoryAssetConnection = marketType == MarketType.Spot

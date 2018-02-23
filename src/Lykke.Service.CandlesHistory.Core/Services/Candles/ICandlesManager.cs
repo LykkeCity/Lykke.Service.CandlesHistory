@@ -8,7 +8,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface ICandlesManager
     {
-        Task ProcessCandleAsync(ICandle candle);
         Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
     }
 }

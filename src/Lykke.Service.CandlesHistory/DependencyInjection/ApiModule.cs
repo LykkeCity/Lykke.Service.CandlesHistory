@@ -2,26 +2,16 @@
 using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AzureStorage.Blob;
-using AzureStorage.Tables;
 using Common.Log;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
-using Lykke.Service.CandleHistory.Repositories.HistoryMigration.HistoryProviders.MeFeedHistory;
-using Lykke.Service.CandleHistory.Repositories.Snapshots;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Domain.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration;
-using Lykke.Service.CandlesHistory.Core.Services.HistoryMigration.HistoryProviders;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
-using Lykke.Service.CandlesHistory.Services.HistoryMigration;
-using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders;
-using Lykke.Service.CandlesHistory.Services.HistoryMigration.HistoryProviders.MeFeedHistory;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
@@ -41,8 +31,16 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly IReloadingManager<DbSettings> _dbSettings;
         private readonly ILog _log;
 
-        public ApiModule(MarketType marketType, CandlesHistorySettings settings, AssetsSettings assetSettings, RedisSettings redisSettings, IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections, IReloadingManager<DbSettings> dbSettings, ILog log)
+        public ApiModule(
+            MarketType marketType,
+            CandlesHistorySettings settings,
+            AssetsSettings assetSettings,  
+            RedisSettings redisSettings,
+            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
+            IReloadingManager<DbSettings> dbSettings,
+            ILog log)
         {
+            _marketType = marketType;
             _services = new ServiceCollection();
             _marketType = marketType;
             _settings = settings;
@@ -142,84 +140,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
-            builder.RegisterType<CandlesPersistenceManager>()
-                .As<ICandlesPersistenceManager>()
-                .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.Persistence));
-
-            builder.RegisterType<CandlesPersistenceQueue>()
-                .As<ICandlesPersistenceQueue>()
-                .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.Persistence));
-
-            builder.RegisterType<QueueMonitor>()
-                .As<IStartable>()
-                .SingleInstance()
-                .WithParameter(TypedParameter.From(_settings.QueueMonitor))
-                .AutoActivate();
-
-            builder.RegisterType<CandlesCacheInitalizationService>()
-                .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
-                .As<ICandlesCacheInitalizationService>();
-
-            builder.RegisterType<CandlesCacheSnapshotRepository>()
-                .As<ICandlesCacheSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
-
-            builder.RegisterType<CandlesPersistenceQueueSnapshotRepository>()
-                .As<ICandlesPersistenceQueueSnapshotRepository>()
-                .WithParameter(TypedParameter.From(AzureBlobStorage.Create(_dbSettings.ConnectionString(x => x.SnapshotsConnectionString), TimeSpan.FromMinutes(10))));
-
             builder.RegisterType<CandlesHistorySizeValidator>()
                 .AsSelf()
                 .WithParameter(TypedParameter.From(_settings.MaxCandlesCountWhichCanBeRequested));
-
-            RegisterCandlesMigration(builder);
-        }
-
-        private void RegisterCandlesMigration(ContainerBuilder builder)
-        {
-            if (!string.IsNullOrWhiteSpace(_dbSettings.CurrentValue.FeedHistoryConnectionString))
-            {
-                builder.RegisterType<FeedHistoryRepository>()
-                    .As<IFeedHistoryRepository>()
-                    .WithParameter(TypedParameter.From(AzureTableStorage<FeedHistoryEntity>.Create(
-                        _dbSettings.ConnectionString(x => x.FeedHistoryConnectionString), 
-                        "FeedHistory", 
-                        _log, 
-                        maxExecutionTimeout: TimeSpan.FromMinutes(5))))
-                    .SingleInstance();
-            }
-
-            builder.RegisterType<CandlesMigrationManager>()
-                .AsSelf()
-                .WithParameter(TypedParameter.From(_settings.Migration))
-                .SingleInstance();
-
-            builder.RegisterType<CandlesesHistoryMigrationService>()
-                .As<ICandlesHistoryMigrationService>()
-                .SingleInstance();
-
-            builder.RegisterType<MigrationCandlesGenerator>()
-                .AsSelf()
-                .SingleInstance();
-
-            builder.RegisterType<EmptyMissedCandlesGenerator>()
-                .As<IMissedCandlesGenerator>()
-                .SingleInstance();
-
-            builder.RegisterType<HistoryProvidersManager>()
-                .As<IHistoryProvidersManager>()
-                .SingleInstance();
-                
-            RegisterHistoryProvider<MeFeedHistoryProvider>(builder);
-        }
-
-        private static void RegisterHistoryProvider<TProvider>(ContainerBuilder builder) 
-            where TProvider : IHistoryProvider
-        {
-            builder.RegisterType<TProvider>()
-                .Named<IHistoryProvider>(typeof(TProvider).Name);
         }
     }
 }
