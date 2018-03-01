@@ -235,7 +235,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 throw new ArgumentNullException(nameof(value));
             }
 
-            if (DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.AssumeUniversal, out var date))
+            if (DateTime.TryParseExact(value, "s", DateTimeFormatInfo.InvariantInfo, DateTimeStyles.AdjustToUniversal, out var date))
             {
                 return DateTime.SpecifyKind(date, DateTimeKind.Utc);
             }

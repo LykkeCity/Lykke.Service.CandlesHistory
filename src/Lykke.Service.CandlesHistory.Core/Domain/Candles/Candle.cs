@@ -74,53 +74,5 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
                 lastTradePrice,
                 lastUpdateTimestamp);
         }
-
-        public Candle Update(
-            double close, 
-            double low, 
-            double high, 
-            double tradingVolume, 
-            double tradingOppositeVolume,
-            double lastTradePrice, 
-            DateTime updateTimestamp)
-        {
-            if (updateTimestamp > LastUpdateTimestamp)
-            {
-                return new Candle(
-                    assetPair: AssetPairId,
-                    priceType: PriceType,
-                    timeInterval: TimeInterval,
-                    timestamp: Timestamp,
-                    open: Open,
-                    close: close,
-                    high: high,
-                    low: low,
-                    tradingVolume: tradingVolume, 
-                    tradingOppositeVolume: tradingOppositeVolume,
-                    lastTradePrice: lastTradePrice,
-                    lastUpdateTimestamp: updateTimestamp);
-            }
-
-            return this;
-        }
-
-        public static Candle Copy(ICandle candle)
-        {
-            return new Candle
-            (
-                assetPair: candle.AssetPairId,
-                priceType: candle.PriceType,
-                timeInterval: candle.TimeInterval,
-                timestamp: candle.Timestamp,
-                open: candle.Open,
-                close: candle.Close,
-                high: candle.High,
-                low: candle.Low,
-                tradingVolume: candle.TradingVolume,
-                tradingOppositeVolume: candle.TradingOppositeVolume,
-                lastTradePrice: candle.LastTradePrice,
-                lastUpdateTimestamp: candle.LastUpdateTimestamp
-            );
-        }
     }
 }

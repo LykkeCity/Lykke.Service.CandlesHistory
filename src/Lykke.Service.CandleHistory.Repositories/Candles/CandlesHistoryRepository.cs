@@ -8,7 +8,6 @@ using Common.Log;
 using JetBrains.Annotations;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.SettingsReader;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
@@ -16,15 +15,13 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public class CandlesHistoryRepository : ICandlesHistoryRepository
     {
-        private readonly IHealthService _healthService;
         private readonly ILog _log;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
         private readonly ConcurrentDictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
 
-        public CandlesHistoryRepository(IHealthService healthService, ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
+        public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
-            _healthService = healthService;
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
 
@@ -34,23 +31,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         public bool CanStoreAssetPair(string assetPairId)
         {
             return _assetConnectionStrings.CurrentValue.ContainsKey(assetPairId);
-        }
-
-        /// <summary>
-        /// Insert or merge candles. Assumed that all candles have the same AssetPairId, PriceType, Timeinterval
-        /// </summary>
-        public async Task InsertOrMergeAsync(IEnumerable<ICandle> candles, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
-        {
-            var repo = GetRepo(assetPairId, timeInterval);
-            try
-            {
-                await repo.InsertOrMergeAsync(candles, priceType);
-            }
-            catch
-            {
-                ResetRepo(assetPairId, timeInterval);
-                throw;
-            }
         }
 
         /// <summary>
@@ -100,9 +80,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             if (!_assetPairRepositories.TryGetValue(key, out AssetPairCandlesHistoryRepository repo) || repo == null)
             {
                 return _assetPairRepositories.AddOrUpdate(
-                    key: key,
-                    addValueFactory: k => new AssetPairCandlesHistoryRepository(_healthService, _log, assetPairId, timeInterval, CreateStorage(assetPairId, tableName)),
-                    updateValueFactory: (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(_healthService, _log, assetPairId, timeInterval, CreateStorage(assetPairId, tableName)));
+                    key,
+                    k => new AssetPairCandlesHistoryRepository(assetPairId, CreateStorage(assetPairId, tableName)),
+                    (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(assetPairId, CreateStorage(assetPairId, tableName)));
             }
 
             return repo;
@@ -117,10 +97,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             }
 
             var storage = AzureTableStorage<CandleHistoryEntity>.Create(
-                _assetConnectionStrings.ConnectionString(x => x[assetPairId]), 
-                tableName, 
+                _assetConnectionStrings.ConnectionString(x => x[assetPairId]),
+                tableName,
                 _log,
-                maxExecutionTimeout: TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(1),
                 onGettingRetryCount: 10,
                 onModificationRetryCount: 10,
                 retryDelay: TimeSpan.FromSeconds(1));
