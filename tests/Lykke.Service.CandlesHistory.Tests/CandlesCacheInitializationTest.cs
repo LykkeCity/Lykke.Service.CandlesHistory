@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
-using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -17,6 +12,7 @@ namespace Lykke.Service.CandlesHistory.Tests
 {
     public class CandlesCacheInitializationTest
     {
+        // ReSharper disable once UnusedMember.Local
         private static readonly ImmutableArray<CandleTimeInterval> StoredIntervals = ImmutableArray.Create
         (
             CandleTimeInterval.Sec,
@@ -28,6 +24,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             CandleTimeInterval.Month
         );
 
+        // ReSharper disable once UnusedMember.Local
         private static readonly ImmutableArray<CandlePriceType> StoredPriceTypes = ImmutableArray.Create
         (
             CandlePriceType.Ask,
@@ -35,22 +32,12 @@ namespace Lykke.Service.CandlesHistory.Tests
             CandlePriceType.Mid
         );
 
-        private const int AmountOfCandlesToStore = 5;
-
-        private Mock<IClock> _dateTimeProviderMock;
-        private Mock<ICandlesCacheService> _cacheServiceMock;
-        private Mock<ICandlesHistoryRepository> _historyRepositoryMock;
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
         private List<IAssetPair> _assetPairs;
 
         [TestInitialize]
         public void InitializeTest()
         {
-            var logMock = new Mock<ILog>();
-
-            _dateTimeProviderMock = new Mock<IClock>();
-            _cacheServiceMock = new Mock<ICandlesCacheService>();
-            _historyRepositoryMock = new Mock<ICandlesHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
 
             _assetPairs = new List<IAssetPair>

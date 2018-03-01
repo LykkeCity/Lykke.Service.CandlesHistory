@@ -83,7 +83,6 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.Assets,
                     settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
-                    candlesHistory.Nested(x => x.Db),
                     Log));
                 builder.Populate(services);
                 ApplicationContainer = builder.Build();

@@ -18,6 +18,7 @@ namespace Lykke.Service.CandlesHistory.Tests
     [TestClass]
     public class CandlesManagerTests
     {
+        // ReSharper disable once UnusedMember.Local
         private static readonly ImmutableArray<CandleTimeInterval> StoredIntervals = ImmutableArray.Create
         (
             CandleTimeInterval.Sec,
