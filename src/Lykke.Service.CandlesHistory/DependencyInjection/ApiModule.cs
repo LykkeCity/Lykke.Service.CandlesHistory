@@ -28,7 +28,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly AssetsSettings _assetSettings;
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
-        private readonly IReloadingManager<DbSettings> _dbSettings;
         private readonly ILog _log;
 
         public ApiModule(
@@ -37,17 +36,14 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             AssetsSettings assetSettings,  
             RedisSettings redisSettings,
             IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
-            IReloadingManager<DbSettings> dbSettings,
             ILog log)
         {
             _marketType = marketType;
             _services = new ServiceCollection();
-            _marketType = marketType;
             _settings = settings;
             _assetSettings = assetSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
-            _dbSettings = dbSettings;
             _log = log;
         }
 
@@ -116,7 +112,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<RedisCandlesCacheService>()
                 .As<ICandlesCacheService>()
                 .WithParameter(TypedParameter.From(_marketType))
-                .WithParameter(TypedParameter.From(_settings.HistoryTicksCacheSize))
                 .SingleInstance();
 
             builder.RegisterType<CandlesHistorySizeValidator>()

@@ -3,35 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AzureStorage;
-using Common;
-using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Microsoft.WindowsAzure.Storage.Table;
-using Polly;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     internal sealed class AssetPairCandlesHistoryRepository
     {
-        private readonly IHealthService _healthService;
-        private readonly ILog _log;
         private readonly string _assetPairId;
-        private readonly CandleTimeInterval _timeInterval;
         private readonly INoSQLTableStorage<CandleHistoryEntity> _tableStorage;
 
         public AssetPairCandlesHistoryRepository(
-            IHealthService healthService,
-            ILog log,
             string assetPairId,
-            CandleTimeInterval timeInterval,
             INoSQLTableStorage<CandleHistoryEntity> tableStorage)
         {
-            _healthService = healthService;
-            _log = log;
             _assetPairId = assetPairId;
-            _timeInterval = timeInterval;
             _tableStorage = tableStorage;
         }
         

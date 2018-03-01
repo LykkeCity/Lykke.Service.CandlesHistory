@@ -9,7 +9,6 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Logs.Slack;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
@@ -22,6 +21,7 @@ using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -68,7 +68,7 @@ namespace Lykke.Service.CandlesHistory
                 var candlesHistory = settings.CurrentValue.CandlesHistory != null
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
-                var candleHistoryAssetConnection = marketType == MarketType.Spot
+                var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
@@ -83,7 +83,6 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.Assets,
                     settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
-                    candlesHistory.Nested(x => x.Db),
                     Log));
                 builder.Populate(services);
                 ApplicationContainer = builder.Build();

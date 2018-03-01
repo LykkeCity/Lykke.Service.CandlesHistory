@@ -6,12 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Common;
 using JetBrains.Annotations;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
-using MoreLinq;
 using StackExchange.Redis;
 
 namespace Lykke.Service.CandlesHistory.Services.Candles
@@ -26,13 +24,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly IDatabase _database;
         private readonly MarketType _market;
-        private readonly int _amountOfCandlesToStore;
 
-        public RedisCandlesCacheService(IDatabase database, MarketType market, int amountOfCandlesToStore)
+        public RedisCandlesCacheService(IDatabase database, MarketType market)
         {
             _database = database;
             _market = market;
-            _amountOfCandlesToStore = amountOfCandlesToStore;
         }
 
         public IImmutableDictionary<string, IImmutableList<ICandle>> GetState()
@@ -49,47 +45,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             throw new NotSupportedException();
         }
-
-        public async Task InitializeAsync(
-            string assetPairId, 
-            CandlePriceType priceType,
-            CandleTimeInterval timeInterval,
-            IReadOnlyCollection<ICandle> candles)
-        {
-            foreach (var candle in candles)
-            {
-                if (candle.AssetPairId != assetPairId)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid AssetPriceId", nameof(candles));
-                }
-                if (candle.PriceType != priceType)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid PriceType", nameof(candles));
-                }
-                if (candle.TimeInterval != timeInterval)
-                {
-                    throw new ArgumentException($"Candle {candle.ToJson()} has invalid TimeInterval", nameof(candles));
-                }
-            }
-
-            // TODO: This is non concurrent-safe update
-
-            var key = GetKey(assetPairId, priceType, timeInterval);
-
-            // Cleans cache
-
-            await _database.SortedSetRemoveRangeByRankAsync(key, 0, -1);
-
-            foreach (var candlesBatch in candles.Batch(100))
-            {
-                var entites = candlesBatch
-                    .Select(candle => new SortedSetEntry(SerializeCandle(candle), 0))
-                    .ToArray();
-
-                await _database.SortedSetAddAsync(key, entites);
-            }
-        }
-
+        
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
@@ -127,39 +83,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     cachedCandle.TradingOppositVolume,
                     cachedCandle.LastTradePrice,
                     cachedCandle.LastUpdateTimestamp);
-            }
-        }
-
-        private static byte[] SerializeCandle(ICandle candle)
-        {
-            // result is: 
-            // 0 .. TimestampFormat.Length - 1 bytes: timestamp as yyyyMMddHHmmss in ASCII
-            // TimestampFormat.Length .. end bytes: serialized RedistCachedCandle
-
-            var timestampString = candle.Timestamp.ToString(TimestampFormat);
-            var timestampBytes = Encoding.ASCII.GetBytes(timestampString);
-
-            using (var stream = new MemoryStream())
-            {
-                stream.Write(timestampBytes, 0, timestampBytes.Length);
-
-                var cachedCandle = new RedisCachedCandle
-                {
-                    Open = candle.Open,
-                    Close = candle.Close,
-                    Low = candle.Low,
-                    High = candle.High,
-                    TradingVolume = candle.TradingVolume,
-                    TradingOppositVolume = candle.TradingOppositeVolume,
-                    LastTradePrice = candle.LastTradePrice,
-                    LastUpdateTimestamp = candle.LastUpdateTimestamp
-                };
-
-                MessagePack.MessagePackSerializer.Serialize(stream, cachedCandle);
-
-                stream.Flush();
-
-                return stream.ToArray();
             }
         }
 
