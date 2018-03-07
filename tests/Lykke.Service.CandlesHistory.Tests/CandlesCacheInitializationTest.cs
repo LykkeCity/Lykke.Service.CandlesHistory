@@ -29,7 +29,8 @@ namespace Lykke.Service.CandlesHistory.Tests
         (
             CandlePriceType.Ask,
             CandlePriceType.Bid,
-            CandlePriceType.Mid
+            CandlePriceType.Mid,
+            CandlePriceType.Trades
         );
 
         private Mock<IAssetPairsManager> _assetPairsManagerMock;

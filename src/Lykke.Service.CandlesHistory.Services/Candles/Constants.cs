@@ -19,7 +19,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         (
             CandlePriceType.Ask,
             CandlePriceType.Bid,
-            CandlePriceType.Mid
+            CandlePriceType.Mid,
+            CandlePriceType.Trades
         );
     }
 }
