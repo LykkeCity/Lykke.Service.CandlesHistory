@@ -15,7 +15,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
         public double Low { get; }
         public double TradingVolume { get; }
         public double TradingOppositeVolume { get; }
-        public double LastTradePrice { get; }
         public DateTime LastUpdateTimestamp { get; }
 
         private Candle(
@@ -29,7 +28,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             double low,
             double tradingVolume,
             double tradingOppositeVolume,
-            double lastTradePrice, 
             DateTime lastUpdateTimestamp)
         {
             AssetPairId = assetPair;
@@ -42,7 +40,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             Low = low;
             TradingVolume = tradingVolume;
             TradingOppositeVolume = tradingOppositeVolume;
-            LastTradePrice = lastTradePrice;
             LastUpdateTimestamp = lastUpdateTimestamp;
         }
 
@@ -57,7 +54,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             double low, 
             double tradingVolume,
             double tradingOppositeVolume,
-            double lastTradePrice, 
             DateTime lastUpdateTimestamp)
         {
             return new Candle(
@@ -71,7 +67,6 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
                 low,
                 tradingVolume,
                 tradingOppositeVolume,
-                lastTradePrice,
                 lastUpdateTimestamp);
         }
     }
