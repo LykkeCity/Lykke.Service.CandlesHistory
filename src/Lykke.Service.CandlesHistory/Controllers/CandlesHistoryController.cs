@@ -142,8 +142,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     High = c.High,
                     Low = c.Low,
                     TradingVolume = c.TradingVolume,
-                    TradingOppositeVolume = c.TradingOppositeVolume,
-                    LastTradePrice = c.LastTradePrice
+                    TradingOppositeVolume = c.TradingOppositeVolume
                 })
             }));
         }
@@ -217,8 +216,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     High = c.High,
                     Low = c.Low,
                     TradingVolume = c.TradingVolume,
-                    TradingOppositeVolume = c.TradingOppositeVolume,
-                    LastTradePrice = c.LastTradePrice
+                    TradingOppositeVolume = c.TradingOppositeVolume
                 })
             });
         }

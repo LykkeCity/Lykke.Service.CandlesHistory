@@ -30,9 +30,6 @@ namespace Lykke.Service.CandlesHistory.Models.CandlesHistory
 
             [Required]
             public double TradingOppositeVolume { get; set; }
-
-            [Required]
-            public double LastTradePrice { get; set; }
         }
     }
 }
