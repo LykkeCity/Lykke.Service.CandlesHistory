@@ -81,6 +81,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                     cachedCandle.Low,
                     cachedCandle.TradingVolume,
                     cachedCandle.TradingOppositVolume,
+                    cachedCandle.LastTradePrice,
                     cachedCandle.LastUpdateTimestamp);
             }
         }
