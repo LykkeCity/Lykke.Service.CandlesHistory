@@ -135,8 +135,6 @@ namespace Lykke.Service.CandlesHistory
         {
             try
             {
-                await ApplicationContainer.Resolve<IStartupManager>().StartAsync();
-
                 await Log.WriteMonitorAsync("", "", "Started");
             }
             catch (Exception ex)

@@ -19,6 +19,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         [Key(6)]
         public double TradingOppositVolume { get; set; }
         [Key(7)]
+        public double LastTradePrice { get; set; }	
+        [Key(8)]
         public DateTime LastUpdateTimestamp { get; set; }
     }
 }

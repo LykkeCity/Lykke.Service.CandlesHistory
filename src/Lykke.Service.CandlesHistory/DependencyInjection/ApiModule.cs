@@ -98,9 +98,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
                 .SingleInstance();
 
-            builder.RegisterType<StartupManager>()
-                .As<IStartupManager>();
-
             builder.RegisterType<ShutdownManager>()
                 .As<IShutdownManager>()
                 .SingleInstance();
