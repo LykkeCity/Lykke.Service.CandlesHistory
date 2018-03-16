@@ -28,8 +28,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         [JsonProperty("OV")]
         public  double TradingOppositeVolume { get; private set; }
 
-        [JsonProperty("LTP")]
-        public double LastTradePrice { get; private set; }
+        [JsonProperty("LTP")]	
+        public double LastTradePrice { get; private set; }	
 
         [JsonProperty("U")]
         public DateTime LastUpdateTimestamp { get; private set; }

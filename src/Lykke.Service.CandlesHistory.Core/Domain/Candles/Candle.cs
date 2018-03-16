@@ -29,7 +29,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             double low,
             double tradingVolume,
             double tradingOppositeVolume,
-            double lastTradePrice, 
+            double lastTradePrice,
             DateTime lastUpdateTimestamp)
         {
             AssetPairId = assetPair;
@@ -57,7 +57,7 @@ namespace Lykke.Service.CandlesHistory.Core.Domain.Candles
             double low, 
             double tradingVolume,
             double tradingOppositeVolume,
-            double lastTradePrice, 
+            double lastTradePrice,
             DateTime lastUpdateTimestamp)
         {
             return new Candle(
