@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
+using Lykke.Common;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -59,12 +60,37 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_candleHistoryAssetConnections.CurrentValue)
                 .AsSelf();
 
+            RegisterResourceMonitor(builder);
+
             RegisterRedis(builder);
 
             RegisterAssets(builder);
             RegisterCandles(builder);
 
             builder.Populate(_services);
+        }
+
+        private void RegisterResourceMonitor(ContainerBuilder builder)
+        {
+            var monitorSettings = _settings.ResourceMonitor;
+
+            switch (monitorSettings.MonitorMode)
+            {
+                case ResourceMonitorMode.Off:
+                    // Do not register any resource monitor.
+                    break;
+
+                case ResourceMonitorMode.AppInsightsOnly:
+                    builder.RegisterResourcesMonitoring(_log);
+                    break;
+
+                case ResourceMonitorMode.AppInsightsWithLog:
+                    builder.RegisterResourcesMonitoringWithLogging(
+                        _log,
+                        monitorSettings.CpuThreshold,
+                        monitorSettings.RamThreshold);
+                    break;
+            }
         }
 
         private void RegisterRedis(ContainerBuilder builder)
