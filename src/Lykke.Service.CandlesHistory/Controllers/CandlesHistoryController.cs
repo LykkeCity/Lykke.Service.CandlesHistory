@@ -78,7 +78,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
             }
 
-            request.AssetPairs = request.AssetPairs.Select(a => a.ToUpperInvariant()).ToArray();
             request.FromMoment = request.FromMoment.ToUniversalTime();
             request.ToMoment = request.ToMoment.ToUniversalTime();
 
@@ -174,7 +173,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
-            assetPairId = assetPairId.ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
