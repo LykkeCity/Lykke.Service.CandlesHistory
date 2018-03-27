@@ -67,7 +67,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         private void ResetRepo(string assetPairId, CandleTimeInterval interval)
         {
             var tableName = interval.ToString().ToLowerInvariant();
-            var key = assetPairId.ToLowerInvariant() + "_" + tableName;
+            var key = $"{assetPairId}_{tableName}";
 
             _assetPairRepositories[key] = null;
         }
@@ -75,7 +75,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         private AssetPairCandlesHistoryRepository GetRepo(string assetPairId, CandleTimeInterval timeInterval)
         {
             var tableName = timeInterval.ToString().ToLowerInvariant();
-            var key = $"{assetPairId.ToLowerInvariant()}_{tableName}";
+            var key = $"{assetPairId}_{tableName}";
 
             if (!_assetPairRepositories.TryGetValue(key, out AssetPairCandlesHistoryRepository repo) || repo == null)
             {

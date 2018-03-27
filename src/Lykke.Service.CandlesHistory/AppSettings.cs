@@ -15,24 +15,13 @@ namespace Lykke.Service.CandlesHistory
         public SlackNotificationsSettings SlackNotifications { get; set; }
 
         [Optional]
-        public Dictionary<string, string> CandleHistoryAssetConnections
-        {
-            get => _candleHistoryAssetConnections;
-            set => _candleHistoryAssetConnections = new Dictionary<string, string>(value, StringComparer.InvariantCultureIgnoreCase);
-        }
+        public Dictionary<string, string> CandleHistoryAssetConnections { get; set; }
 
         [Optional]
-        public Dictionary<string, string> MtCandleHistoryAssetConnections
-        {
-            get => _mtCandleHistoryAssetConnections;
-            set => _mtCandleHistoryAssetConnections = new Dictionary<string, string>(value, StringComparer.InvariantCultureIgnoreCase);
-        }
+        public Dictionary<string, string> MtCandleHistoryAssetConnections { get; set; }
 
         public AssetsSettings Assets { get; set; }
 
         public RedisSettings RedisSettings { get; set; }
-
-        private Dictionary<string, string> _candleHistoryAssetConnections;
-        private Dictionary<string, string> _mtCandleHistoryAssetConnections;
     }
 }
