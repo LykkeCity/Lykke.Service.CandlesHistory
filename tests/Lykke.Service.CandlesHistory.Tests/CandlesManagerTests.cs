@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
+using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -30,7 +31,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             CandleTimeInterval.Month
         );
 
-        private List<IAssetPair> _assetPairs;
+        private List<AssetPair> _assetPairs;
 
         private Mock<ICandlesCacheService> _cacheServiceMock;
         private Mock<ICandlesHistoryRepository> _historyRepositoryMock;
@@ -44,11 +45,11 @@ namespace Lykke.Service.CandlesHistory.Tests
             _historyRepositoryMock = new Mock<ICandlesHistoryRepository>();
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
 
-            _assetPairs = new List<IAssetPair>
+            _assetPairs = new List<AssetPair>
             {
-                new AssetPairResponseModel {Id = "EURUSD", Accuracy = 3},
-                new AssetPairResponseModel {Id = "USDCHF", Accuracy = 2},
-                new AssetPairResponseModel {Id = "EURRUB", Accuracy = 2}
+                new AssetPair("EURUSD", 3),
+                new AssetPair("USDCHF", 2),
+                new AssetPair("EURRUB", 2)
             };
 
             _assetPairsManagerMock
