@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
+using Lykke.ClientGenerator;
+using Lykke.ClientGenerator.Infrastructure;
 using Lykke.Common;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
@@ -16,6 +18,7 @@ using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
+using MarginTrading.Backend.Contracts.DataReaderClient;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
@@ -29,14 +32,15 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly AssetsSettings _assetSettings;
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
+        private readonly IReloadingManager<MtDataReaderClientSettings> _mtDataReaderClientSettings;
         private readonly ILog _log;
 
-        public ApiModule(
-            MarketType marketType,
+        public ApiModule(MarketType marketType,
             CandlesHistorySettings settings,
-            AssetsSettings assetSettings,  
+            AssetsSettings assetSettings,
             RedisSettings redisSettings,
-            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
+            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
+            IReloadingManager<MtDataReaderClientSettings> mtDataReaderClientSettings,
             ILog log)
         {
             _marketType = marketType;
@@ -45,6 +49,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             _assetSettings = assetSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
+            _mtDataReaderClientSettings = mtDataReaderClientSettings;
             _log = log;
         }
 
@@ -53,7 +58,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_log)
                 .As<ILog>()
                 .SingleInstance();
-                        
+
             builder.RegisterType<Clock>().As<IClock>();
 
             // For CandlesHistoryController
@@ -105,12 +110,25 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            _services.UseAssetsClient(AssetServiceSettings.Create(
-                new Uri(_assetSettings.ServiceUrl),
-                _settings.AssetsCache.ExpirationPeriod));
+            if (_marketType == MarketType.Mt)
+            {
+                var settings = _mtDataReaderClientSettings.CurrentValue;
+                if (settings == null)
+                    throw new InvalidOperationException(
+                        "MtDataReaderLiveServiceClient config section not found, but market is MT");
 
-            builder.RegisterType<AssetPairsManager>()
-                .As<IAssetPairsManager>();
+                _services.RegisterMtDataReaderClient(ClientProxyGenerator.CreateDefault(
+                    settings.ServiceUrl, settings.ApiKey, retryStrategy: null));
+                
+                builder.RegisterType<MtAssetPairsManager>().As<IAssetPairsManager>().SingleInstance();
+            }
+            else
+            {
+                _services.UseAssetsClient(AssetServiceSettings.Create(new Uri(_assetSettings.ServiceUrl),
+                    _settings.AssetsCache.ExpirationPeriod));
+
+                builder.RegisterType<AssetPairsManager>().As<IAssetPairsManager>();
+            }
         }
 
         private void RegisterCandles(ContainerBuilder builder)

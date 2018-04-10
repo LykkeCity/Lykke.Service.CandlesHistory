@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader.Attributes;
@@ -19,6 +18,9 @@ namespace Lykke.Service.CandlesHistory
 
         [Optional]
         public Dictionary<string, string> MtCandleHistoryAssetConnections { get; set; }
+
+        [Optional]
+        public MtDataReaderClientSettings MtDataReaderLiveServiceClient { get; set; }
 
         public AssetsSettings Assets { get; set; }
 
