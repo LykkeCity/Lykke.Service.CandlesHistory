@@ -34,9 +34,9 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         public ApiModule(
             MarketType marketType,
             CandlesHistorySettings settings,
-            AssetsSettings assetSettings,  
+            AssetsSettings assetSettings,
             RedisSettings redisSettings,
-            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,  
+            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
             ILog log)
         {
             _marketType = marketType;
@@ -53,7 +53,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterInstance(_log)
                 .As<ILog>()
                 .SingleInstance();
-                        
+
             builder.RegisterType<Clock>().As<IClock>();
 
             // For CandlesHistoryController
@@ -95,12 +95,16 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterRedis(ContainerBuilder builder)
         {
-            builder.Register(c => ConnectionMultiplexer.Connect(_redisSettings.Configuration))
+            builder.Register(c =>
+                {
+                    var cm = ConnectionMultiplexer.Connect(_redisSettings.Configuration);
+                    cm.PreserveAsyncOrder = false;
+                    return cm;
+                })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
 
-            builder.Register(c => c.Resolve<IConnectionMultiplexer>().GetDatabase())
-                .As<IDatabase>();
+
         }
 
         private void RegisterAssets(ContainerBuilder builder)

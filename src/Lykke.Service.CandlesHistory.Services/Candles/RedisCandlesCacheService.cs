@@ -22,12 +22,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     {
         private const string TimestampFormat = "yyyyMMddHHmmss";
 
-        private readonly IDatabase _database;
+        private readonly IConnectionMultiplexer _multiplexer;
         private readonly MarketType _market;
 
-        public RedisCandlesCacheService(IDatabase database, MarketType market)
+        public RedisCandlesCacheService(IConnectionMultiplexer multiplexer, MarketType market)
         {
-            _database = database;
+            _multiplexer = multiplexer;
             _market = market;
         }
 
@@ -51,7 +51,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var key = GetKey(assetPairId, priceType, timeInterval);
             var from = fromMoment.ToString(TimestampFormat);
             var to = toMoment.ToString(TimestampFormat);
-            var serializedValues = await _database.SortedSetRangeByValueAsync(key, from, to, Exclude.Stop);
+            var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to, Exclude.Stop);
             
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
         }
