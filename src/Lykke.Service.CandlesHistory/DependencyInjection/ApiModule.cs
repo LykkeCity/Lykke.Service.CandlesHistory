@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
-using Lykke.ClientGenerator;
-using Lykke.ClientGenerator.Infrastructure;
 using Lykke.Common;
 using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.CandleHistory.Repositories.Candles;
