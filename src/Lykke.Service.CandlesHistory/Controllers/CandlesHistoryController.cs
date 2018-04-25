@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -18,7 +18,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 namespace Lykke.Service.CandlesHistory.Controllers
 {
     /// <summary>
-    /// Controller for candles history
+    /// A controller for candles history
     /// </summary>
     [Route("api/[controller]")]
     public class CandlesHistoryController : Controller
@@ -62,8 +62,18 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [SwaggerOperation("GetCandlesHistoryBatchOrError")]
         [ProducesResponseType(typeof(Dictionary<string, CandlesHistoryResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> GetCandlesHistoryBatch([FromBody] GetCandlesHistoryBatchRequest request)
+        public async Task<IActionResult> GetCandlesHistoryBatch([FromBody] GetCandlesHistoryBatchRequest request, CancellationToken cancellationToken)
         {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
+            }
+
+            if (cancellationToken.IsCancellationRequested || request.AssetPairs == null || !request.AssetPairs.Any())
+            {
+                return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
+            }
+
             if (_shutdownManager.IsShuttingDown)
             {
                 return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
@@ -73,10 +83,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
             }
 
-            if (request.AssetPairs == null || !request.AssetPairs.Any())
-            {
-                return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
-            }
 
             request.FromMoment = request.FromMoment.ToUniversalTime();
             request.ToMoment = request.ToMoment.ToUniversalTime();
@@ -105,46 +111,56 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (notConfiguerdAssetPairs.Any())
             {
                 return BadRequest(
-                    ErrorResponse.Create(nameof(request.AssetPairs), 
+                    ErrorResponse.Create(nameof(request.AssetPairs),
                     $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not configured"));
             }
 
-            var disabledAssetPairs = request.AssetPairs
-                .Where(p => _assetPairsManager.TryGetEnabledPairAsync(p).GetAwaiter().GetResult() == null)
-                .ToArray();
+            var enabledPairsTask = request.AssetPairs.Select(p => _assetPairsManager.TryGetEnabledPairAsync(p)).ToArray();
+            await Task.WhenAll(enabledPairsTask);
 
-            if (disabledAssetPairs.Any())
+            if (enabledPairsTask.Any(t => t.Result == null))
             {
+                var disabled = request.AssetPairs.Except(enabledPairsTask.Select(p => p.Result?.Id).Where(p => p != null));
                 return BadRequest(
                     ErrorResponse.Create(nameof(request.AssetPairs),
-                        $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not found or disabled"));
+                        $"Asset pairs [{string.Join(", ", disabled)}] are not found or disabled"));
             }
 
-            var allHistory = new ConcurrentDictionary<string, ICandle[]>();
-            var tasks = request.AssetPairs.Select(assetPair => Task.Run(async () =>
+            var allHistory = new Dictionary<string, CandlesHistoryResponseModel>();
+            var tasks = new List<Task<IEnumerable<ICandle>>>();
+            foreach (var assetPair in request.AssetPairs)
             {
-                var assetPairCandles = await _candlesManager.GetCandlesAsync(assetPair, request.PriceType,
-                    request.TimeInterval, request.FromMoment, request.ToMoment);
-
-                allHistory.TryAdd(assetPair, assetPairCandles.ToArray());
-            }));
+                allHistory[assetPair] = new CandlesHistoryResponseModel { History = Array.Empty<CandlesHistoryResponseModel.Candle>() };
+                tasks.Add(_candlesManager.GetCandlesAsync(assetPair, request.PriceType, request.TimeInterval, request.FromMoment, request.ToMoment));
+            }
 
             await Task.WhenAll(tasks);
 
-            return Ok(allHistory.ToDictionary(x => x.Key, x => new CandlesHistoryResponseModel
+            foreach (var task in tasks)
             {
-                History = x.Value.Select(c => new CandlesHistoryResponseModel.Candle
+                var candles = task.Result.Select(c => new
                 {
-                    DateTime = c.Timestamp,
-                    Open = c.Open,
-                    Close = c.Close,
-                    High = c.High,
-                    Low = c.Low,
-                    TradingVolume = c.TradingVolume,
-                    TradingOppositeVolume = c.TradingOppositeVolume,
-                    LastTradePrice = c.LastTradePrice
-                })
-            }));
+                    pair = c.AssetPairId,
+                    model = new CandlesHistoryResponseModel.Candle
+                    {
+                        DateTime = c.Timestamp,
+                        Open = c.Open,
+                        Close = c.Close,
+                        High = c.High,
+                        Low = c.Low,
+                        TradingVolume = c.TradingVolume,
+                        TradingOppositeVolume = c.TradingOppositeVolume,
+                        LastTradePrice = c.LastTradePrice
+                    }
+                }).ToArray();
+
+                if (candles.Any())
+                {
+                    var p = candles[0].pair;
+                    allHistory[p] = new CandlesHistoryResponseModel { History = candles.Select(c => c.model) };
+                }
+            }
+            return Ok(allHistory);
         }
 
         /// <summary>
@@ -163,14 +179,14 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             if (_shutdownManager.IsShuttingDown)
             {
-                return StatusCode((int) HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
+                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
             }
 
             if (_shutdownManager.IsShuttedDown)
             {
-                return StatusCode((int) HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
+                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
             }
-            
+
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
 
@@ -202,7 +218,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
             }
-            
+
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
             return Ok(new CandlesHistoryResponseModel

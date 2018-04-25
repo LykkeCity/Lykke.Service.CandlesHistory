@@ -1,16 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Lykke.Service.CandlesHistory
 {
-    internal class Program
+    internal static class Program
     {
         public static string EnvInfo => Environment.GetEnvironmentVariable("ENV_INFO");
 
         // ReSharper disable once UnusedParameter.Local
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             Console.WriteLine($"Lykke.Service.CandlesHistory version {Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion}");
 #if DEBUG
@@ -32,6 +33,9 @@ namespace Lykke.Service.CandlesHistory
 
             try
             {
+#if DEBUG
+                TelemetryConfiguration.Active.DisableTelemetry = true;
+#endif
                 var host = new WebHostBuilder()
                     .UseKestrel()
                     .UseUrls("http://*:5000")
@@ -40,7 +44,7 @@ namespace Lykke.Service.CandlesHistory
                     .UseApplicationInsights()
                     .Build();
 
-                host.Run();
+                await host.RunAsync();
             }
             catch (Exception ex)
             {
@@ -53,14 +57,9 @@ namespace Lykke.Service.CandlesHistory
                 Console.WriteLine();
                 Console.WriteLine($"Process will be terminated in {delay}. Press any key to terminate immediately.");
 
-                Task.WhenAny(
-                        Task.Delay(delay),
-                        Task.Run(() =>
-                        {
-                            Console.ReadKey(true);
-                        }))
-                    .GetAwaiter()
-                    .GetResult();
+                await Task.WhenAny(
+                    Task.Delay(delay),
+                    Task.Run(() => { Console.ReadKey(true); }));
             }
 
             Console.WriteLine("Terminated");

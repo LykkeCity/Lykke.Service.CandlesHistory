@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
@@ -13,19 +13,20 @@ using Lykke.SettingsReader;
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
-    public class CandlesHistoryRepository : ICandlesHistoryRepository
+    public sealed class CandlesHistoryRepository : ICandlesHistoryRepository, IDisposable
     {
         private readonly ILog _log;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
-        private readonly ConcurrentDictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
+        private readonly Dictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
 
-            _assetPairRepositories = new ConcurrentDictionary<string, AssetPairCandlesHistoryRepository>();
+            _assetPairRepositories = new Dictionary<string, AssetPairCandlesHistoryRepository>();
         }
 
         public bool CanStoreAssetPair(string assetPairId)
@@ -38,54 +39,67 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         /// </summary>
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType, DateTime from, DateTime to)
         {
-            var repo = GetRepo(assetPairId, interval);
+            var repo = await GetRepo(assetPairId, interval);
             try
             {
-                return await repo.GetCandlesAsync(priceType, interval, from, to);
+                var result = await repo.GetCandlesAsync(priceType, interval, from, to);
+                return result;
             }
             catch
             {
-                ResetRepo(assetPairId, interval);
+                await ResetRepo(assetPairId, interval);
                 throw;
             }
         }
 
         public async Task<ICandle> TryGetFirstCandleAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType)
         {
-            var repo = GetRepo(assetPairId, interval);
+            var repo = await GetRepo(assetPairId, interval);
             try
             {
                 return await repo.TryGetFirstCandleAsync(priceType, interval);
             }
             catch
             {
-                ResetRepo(assetPairId, interval);
+                await ResetRepo(assetPairId, interval);
                 throw;
             }
         }
 
-        private void ResetRepo(string assetPairId, CandleTimeInterval interval)
+        private async Task ResetRepo(string assetPairId, CandleTimeInterval interval)
         {
             var tableName = interval.ToString().ToLowerInvariant();
             var key = $"{assetPairId}_{tableName}";
+            try
+            {
+                await _semaphore.WaitAsync();
+                _assetPairRepositories.Remove(key, out _);
 
-            _assetPairRepositories[key] = null;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
-        private AssetPairCandlesHistoryRepository GetRepo(string assetPairId, CandleTimeInterval timeInterval)
+        private async Task<AssetPairCandlesHistoryRepository> GetRepo(string assetPairId, CandleTimeInterval timeInterval)
         {
             var tableName = timeInterval.ToString().ToLowerInvariant();
             var key = $"{assetPairId}_{tableName}";
-
-            if (!_assetPairRepositories.TryGetValue(key, out AssetPairCandlesHistoryRepository repo) || repo == null)
+            try
             {
-                return _assetPairRepositories.AddOrUpdate(
-                    key,
-                    k => new AssetPairCandlesHistoryRepository(assetPairId, CreateStorage(assetPairId, tableName)),
-                    (k, oldRepo) => oldRepo ?? new AssetPairCandlesHistoryRepository(assetPairId, CreateStorage(assetPairId, tableName)));
-            }
+                await _semaphore.WaitAsync();
 
-            return repo;
+                if (!_assetPairRepositories.TryGetValue(key, out var repo))
+                {
+                    repo = _assetPairRepositories[key] = new AssetPairCandlesHistoryRepository(assetPairId, CreateStorage(assetPairId, tableName));
+                }
+                return repo;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private INoSQLTableStorage<CandleHistoryEntity> CreateStorage(string assetPairId, string tableName)
@@ -106,9 +120,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 retryDelay: TimeSpan.FromSeconds(1));
 
             // Create and preload table info
-            storage.GetDataAsync(assetPairId, "1900-01-01").Wait();
+            storage.GetDataAsync(assetPairId, "1900-01-01").GetAwaiter().GetResult();
 
             return storage;
+        }
+
+        public void Dispose()
+        {
+            _semaphore?.Dispose();
         }
     }
 }

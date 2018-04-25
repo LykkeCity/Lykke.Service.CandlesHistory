@@ -98,12 +98,16 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterRedis(ContainerBuilder builder)
         {
-            builder.Register(c => ConnectionMultiplexer.Connect(_redisSettings.Configuration))
+            builder.Register(c =>
+                {
+                    var cm = ConnectionMultiplexer.Connect(_redisSettings.Configuration);
+                    cm.PreserveAsyncOrder = false;
+                    return cm;
+                })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
 
-            builder.Register(c => c.Resolve<IConnectionMultiplexer>().GetDatabase())
-                .As<IDatabase>();
+
         }
 
         private void RegisterAssets(ContainerBuilder builder)
