@@ -117,9 +117,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                     throw new InvalidOperationException(
                         "MtDataReaderLiveServiceClient config section not found, but market is MT");
 
-                _services.RegisterMtDataReaderClient(ClientProxyGenerator.CreateDefault(
-                    settings.ServiceUrl, settings.ApiKey, retryStrategy: null));
-                
+                var httpClientGenerator = HttpClientGenerator.HttpClientGenerator
+                    .BuildForUrl(settings.ServiceUrl).WithApiKey(settings.ApiKey)
+                    .WithoutRetries().Create();
+                _services.RegisterMtDataReaderClient(httpClientGenerator);
+
                 builder.RegisterType<MtAssetPairsManager>().As<IAssetPairsManager>().SingleInstance();
             }
             else
