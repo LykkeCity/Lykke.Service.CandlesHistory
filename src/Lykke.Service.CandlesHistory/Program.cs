@@ -33,9 +33,7 @@ namespace Lykke.Service.CandlesHistory
 
             try
             {
-#if DEBUG
-                TelemetryConfiguration.Active.DisableTelemetry = true;
-#endif
+
                 var host = new WebHostBuilder()
                     .UseKestrel()
                     .UseUrls("http://*:5000")
