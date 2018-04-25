@@ -17,10 +17,7 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
-  <PropertyGroup> 
-    <ServerGarbageCollection>false</ServerGarbageCollection>
-  </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.2.2" />
     <PackageReference Include="Lykke.AzureStorage" Version="8.3.0" />
