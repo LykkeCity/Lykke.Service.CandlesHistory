@@ -6,11 +6,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <NoWarn>1701;1702;1705;1591</NoWarn>
-    <DocumentationFile>bin\Release\netcoreapp1.1\Lykke.Service.CandlesHistory.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netcoreapp2.0\Lykke.Service.CandlesHistory.xml</DocumentationFile>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;1591</NoWarn>
-    <DocumentationFile>bin\Debug\netcoreapp1.1\Lykke.Service.CandlesHistory.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
