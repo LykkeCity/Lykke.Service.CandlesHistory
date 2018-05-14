@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -57,6 +59,13 @@ namespace Lykke.Service.CandlesHistory
                 services.AddSwaggerGen(options =>
                 {
                     options.DefaultLykkeConfiguration("v1", "Candles history service");
+
+                    //Determine base path for the application.
+                    var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+
+                    //Set the comments path for the swagger json and ui.
+                    var xmlPath = Path.Combine(basePath, "Lykke.Service.CandlesHistory.xml");
+                    options.IncludeXmlComments(xmlPath);
                 });
 
                 var builder = new ContainerBuilder();
