@@ -5,7 +5,6 @@ using System.Net;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
@@ -86,7 +85,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// </summary>
         [HttpGet("24h-trading-volumes/all-pairs")]
         [SwaggerOperation("GetAll24HVolumes")]
-        [ProducesResponseType(typeof(TradingVolumeResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(Dictionary<string, TradingVolumeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAll24HVolumesAsync()
@@ -157,7 +156,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// </summary>
         [HttpGet("today-trading-volumes/all-pairs")]
         [SwaggerOperation("GetAllTodayVolumes")]
-        [ProducesResponseType(typeof(TradingVolumeResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(Dictionary<string, TradingVolumeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAllTodayVolumesAsync()
@@ -232,7 +231,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// </summary>
         [HttpGet("last-trade-price/all-pairs")]
         [SwaggerOperation("GetAllLastTradePrices")]
-        [ProducesResponseType(typeof(LastTradePriceResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(Dictionary<string, LastTradePriceResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAllLastTradePricesAsync()
@@ -303,7 +302,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// </summary>
         [HttpGet("today-trade-price-change/all-pairs")]
         [SwaggerOperation("GeAlltTradePriceTodayChange")]
-        [ProducesResponseType(typeof(TradePriceChangeResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(Dictionary<string, TradePriceChangeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAllTradePriceTodayChangeAsync()
