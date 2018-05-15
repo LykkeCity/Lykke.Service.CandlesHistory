@@ -62,6 +62,62 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return CandlesMerger.MergeIntoBiggerIntervals(sourceHistory, timeInterval);
         }
 
+        /// <inheritdoc cref="ICandlesManager"/>
+        public async Task<(decimal TradingVolume, decimal OppositeTradingVolume)> GetSummaryTradingVolumesAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast)
+        {
+            var (fromMomentInclusive, toMomentExclusive) = GetQueryTimeRange(interval, ticksToPast);
+
+            var candles = await GetCandlesAsync(assetPairId, CandlePriceType.Trades, interval, fromMomentInclusive, toMomentExclusive);
+
+            var volume = 0.0M;
+            var oppositeVolume = 0.0M;
+
+            foreach (var candle in candles)
+            {
+                volume += (decimal)candle.TradingVolume;
+                oppositeVolume += (decimal)candle.TradingOppositeVolume;
+            }
+
+            return (TradingVolume: volume, OppositeTradingVolume: oppositeVolume);
+        }
+
+        /// <inheritdoc cref="ICandlesManager"/>
+        public async Task<decimal> GetLastTradePriceAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast)
+        {
+            var (fromMomentInclusive, toMomentExclusive) = GetQueryTimeRange(interval, ticksToPast);
+
+            var candle = (await GetCandlesAsync(assetPairId, CandlePriceType.Trades, interval, fromMomentInclusive, toMomentExclusive))
+                .LastOrDefault();
+
+            return candle != null
+                ? (decimal)candle.Close
+                : 0.0M;
+        }
+
+        /// <inheritdoc cref="ICandlesManager"/>
+        public async Task<decimal> GetTradePriceChangeAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast)
+        {
+            var (fromMomentInclusive, toMomentExclusive) = GetQueryTimeRange(interval, ticksToPast);
+
+            var candles = (await GetCandlesAsync(assetPairId, CandlePriceType.Trades, interval, fromMomentInclusive, toMomentExclusive))
+                .ToArray();
+
+            if (!candles.Any())
+                return 0.0M;
+
+            var firstCandle = candles.First();
+            var lastCandle = candles.Last();
+
+            try
+            {
+                return (decimal)((lastCandle.Close - firstCandle.Open) / firstCandle.Open);
+            }
+            catch // Division by zero.
+            {
+                return 0.0M;
+            }
+        }
+
         /// <summary>
         /// Obtains candles history from cache only in stored time intervals, reading persistent history if needed
         /// </summary>
@@ -94,6 +150,18 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             // Cache not empty and it contains fromMoment candle, so we don't need to read persistent history
             return cachedHistory;
+        }
+
+        private (DateTime fromMomentInclusive, DateTime toMomentExclusive) GetQueryTimeRange(
+            CandleTimeInterval interval, int ticksToPast)
+        {
+            var to = DateTime.UtcNow
+                .TruncateTo(interval)
+                .AddIntervalTicks(1, interval);
+            var from = to
+                .AddIntervalTicks(-ticksToPast - 1, interval);
+
+            return (fromMomentInclusive: from, toMomentExclusive: to);
         }
     }
 }

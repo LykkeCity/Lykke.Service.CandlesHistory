@@ -26,7 +26,10 @@ namespace Lykke.Service.CandlesHistory.Tests
             {
                 Parallel.For(0, 1000, (l, state) =>
                 {
+                    // ReSharper disable once UnusedVariable
+#pragma warning disable 612
                     var candles = _client.GetCandlesHistoryBatchAsync(pairs, CandlePriceType.Trades, CandleTimeInterval.Month, new DateTime(2017, 1, 1), new DateTime(2018, 1, 1));
+#pragma warning restore 612
                     //Assert.AreEqual(candles.Keys.Count(), 18);
                 });
             }
