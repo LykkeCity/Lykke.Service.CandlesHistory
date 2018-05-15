@@ -152,7 +152,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         }
 
         /// <summary>
-        /// Gets summary trading volumes for all the supported asset pairs for the last 24 hours.
+        /// Gets summary trading volumes for all the supported asset pairs for the time period since 00:00:00 today (UTC).
         /// </summary>
         [HttpGet("today-trading-volumes/all-pairs")]
         [SwaggerOperation("GetAllTodayVolumes")]

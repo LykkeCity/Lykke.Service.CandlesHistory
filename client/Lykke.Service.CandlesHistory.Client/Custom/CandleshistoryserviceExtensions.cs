@@ -197,7 +197,7 @@ namespace Lykke.Service.CandlesHistory.Client
         }
 
         /// <summary>
-        /// Tries to get summary trading volumes for all the supported asset pairs for the last 24 hours. Returns -null- if failed.
+        /// Tries to get summary trading volumes for all the supported asset pairs for the time period since 00:00:00 today (UTC). Returns -null- if failed.
         /// </summary>
         public static async Task<IReadOnlyDictionary<string, TradingVolumeResponseModel>> TryGetAllTodayVolumesAsync(
             this ICandleshistoryservice service)
@@ -208,7 +208,7 @@ namespace Lykke.Service.CandlesHistory.Client
         }
 
         /// <summary>
-        /// Gets summary trading volumes for all the supported asset pairs for the last 24 hours.
+        /// Gets summary trading volumes for all the supported asset pairs for the time period since 00:00:00 today (UTC).
         /// </summary>
         public static async Task<IReadOnlyDictionary<string, TradingVolumeResponseModel>> GetAllTodayVolumesAsync(
             this ICandleshistoryservice service)
