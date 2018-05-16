@@ -229,7 +229,7 @@ namespace Lykke.Service.CandlesHistory.Client
         // *** Last Trade Price ***
 
         /// <summary>
-        /// Tries to get the last trade price for the specified asset pair. The depth of search - 5 months since the current date (UTC). Returns -null- if failed.
+        /// Tries to get the last trade price for the specified asset pair. The depth of search - 12 months since the current date (UTC). Returns -null- if failed.
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
         public static async Task<LastTradePriceResponseModel> TryGetLastTradePriceAsync(
@@ -242,7 +242,7 @@ namespace Lykke.Service.CandlesHistory.Client
         }
 
         /// <summary>
-        /// Gets the last trade price for the specified asset pair. The depth of search - 5 months since the current date (UTC).
+        /// Gets the last trade price for the specified asset pair. The depth of search - 12 months since the current date (UTC).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
         public static async Task<LastTradePriceResponseModel> GetLastTradePriceAsync(
@@ -263,7 +263,7 @@ namespace Lykke.Service.CandlesHistory.Client
         }
 
         /// <summary>
-        /// Tries to get the last trade price for all the supported asset pairs. The depth of search - 5 months since the current date (UTC). Returns -null- if failed.
+        /// Tries to get the last trade price for all the supported asset pairs. The depth of search - 12 months since the current date (UTC). Returns -null- if failed.
         /// </summary>
         public static async Task<IReadOnlyDictionary<string, LastTradePriceResponseModel>>
             TryGetAllLastTradePricesAsync(this ICandleshistoryservice service)
@@ -274,7 +274,7 @@ namespace Lykke.Service.CandlesHistory.Client
         }
 
         /// <summary>
-        /// Gets the last trade price for all the supported asset pairs. The depth of search - 5 months since the current date (UTC).
+        /// Gets the last trade price for all the supported asset pairs. The depth of search - 12 months since the current date (UTC).
         /// </summary>
         public static async Task<IReadOnlyDictionary<string, LastTradePriceResponseModel>> GetAllLastTradePriceAsync(
             this ICandleshistoryservice service)

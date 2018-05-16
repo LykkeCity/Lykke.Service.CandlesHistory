@@ -195,7 +195,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         #region LastPrice
 
         /// <summary>
-        /// Gets the last trade price for the specified asset pair. The depth of search - 5 months since the current date (UTC).
+        /// Gets the last trade price for the specified asset pair. The depth of search - 12 months since the current date (UTC).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
         [HttpGet("last-trade-price/{assetPairId}")]
@@ -216,7 +216,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             try
             {
-                var lastPrice = await _candlesManager.GetLastTradePriceAsync(assetPairId, CandleTimeInterval.Month, 5);
+                var lastPrice = await _candlesManager.GetLastTradePriceAsync(assetPairId, CandleTimeInterval.Month, 12);
 
                 return Ok(new LastTradePriceResponseModel(lastPrice));
             }
@@ -227,7 +227,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         }
 
         /// <summary>
-        /// Gets the last trade price for all the supported asset pairs. The depth of search - 5 months since the current date (UTC).
+        /// Gets the last trade price for all the supported asset pairs. The depth of search - 12 months since the current date (UTC).
         /// </summary>
         [HttpGet("last-trade-price/all-pairs")]
         [SwaggerOperation("GetAllLastTradePrices")]
@@ -249,7 +249,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 var candleQueryTasks = assetPairs
                     .Where(assetPair => CheckupAssetPair(assetPair.Id))
                     .ToDictionary(assetPair => assetPair.Id,
-                        assetPair => _candlesManager.GetLastTradePriceAsync(assetPair.Id, CandleTimeInterval.Month, 5));
+                        assetPair => _candlesManager.GetLastTradePriceAsync(assetPair.Id, CandleTimeInterval.Month, 12));
 
                 await Task.WhenAll(candleQueryTasks.Values);
 

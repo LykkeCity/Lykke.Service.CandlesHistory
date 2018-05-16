@@ -152,7 +152,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return cachedHistory;
         }
 
-        private (DateTime fromMomentInclusive, DateTime toMomentExclusive) GetQueryTimeRange(
+        private static (DateTime fromMomentInclusive, DateTime toMomentExclusive) GetQueryTimeRange(
             CandleTimeInterval interval, int ticksToPast)
         {
             var to = DateTime.UtcNow
