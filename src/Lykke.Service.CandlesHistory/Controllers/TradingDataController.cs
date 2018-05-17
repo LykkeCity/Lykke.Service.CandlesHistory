@@ -52,7 +52,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Gets summary trading volumes for the specified asset pair for the last 24 hours.
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
-        [HttpGet("volumes/24h/{assetPairId}")]
+        [HttpGet("Volumes/24h/{assetPairId}")]
         [SwaggerOperation("Get24HVolumes")]
         [ProducesResponseType(typeof(TradingVolumeResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -83,7 +83,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <summary>
         /// Gets summary trading volumes for all the supported asset pairs for the last 24 hours.
         /// </summary>
-        [HttpGet("volumes/24h/allPairs")]
+        [HttpGet("Volumes/24h/allPairs")]
         [SwaggerOperation("GetAll24HVolumes")]
         [ProducesResponseType(typeof(Dictionary<string, TradingVolumeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -123,7 +123,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Gets summary trading volumes for the specified asset pair for the time period since 00:00:00 today (UTC).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
-        [HttpGet("volumes/day/{assetPairId}")]
+        [HttpGet("Volumes/Day/{assetPairId}")]
         [SwaggerOperation("GetTodayVolumes")]
         [ProducesResponseType(typeof(TradingVolumeResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -154,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <summary>
         /// Gets summary trading volumes for all the supported asset pairs for the time period since 00:00:00 today (UTC).
         /// </summary>
-        [HttpGet("volumes/day/allPairs")]
+        [HttpGet("Volumes/Day/allPairs")]
         [SwaggerOperation("GetAllTodayVolumes")]
         [ProducesResponseType(typeof(Dictionary<string, TradingVolumeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -198,7 +198,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Gets the last trade price for the specified asset pair. The depth of search - 12 months since the current date (UTC).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
-        [HttpGet("lastPrice/{assetPairId}")]
+        [HttpGet("LastPrice/{assetPairId}")]
         [SwaggerOperation("GetLastTradePrice")]
         [ProducesResponseType(typeof(LastTradePriceResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -229,7 +229,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <summary>
         /// Gets the last trade price for all the supported asset pairs. The depth of search - 12 months since the current date (UTC).
         /// </summary>
-        [HttpGet("lastPrice/allPairs")]
+        [HttpGet("LastPrice/allPairs")]
         [SwaggerOperation("GetAllLastTradePrices")]
         [ProducesResponseType(typeof(Dictionary<string, LastTradePriceResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -269,7 +269,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Gets the relative change for trade price for the specified asset pair and the time period since 00:00:00 today (UTC).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID.</param>
-        [HttpGet("priceChange/day/{assetPairId}")]
+        [HttpGet("PriceChange/Day/{assetPairId}")]
         [SwaggerOperation("GetTradePriceTodayChange")]
         [ProducesResponseType(typeof(TradePriceChangeResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -300,7 +300,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <summary>
         /// Gets the relative change for trade price for all supported asset pairs and the time period since 00:00:00 today (UTC).
         /// </summary>
-        [HttpGet("priceChange/day/allPairs")]
+        [HttpGet("PriceChange/Day/allPairs")]
         [SwaggerOperation("GeAlltTradePriceTodayChange")]
         [ProducesResponseType(typeof(Dictionary<string, TradePriceChangeResponseModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
