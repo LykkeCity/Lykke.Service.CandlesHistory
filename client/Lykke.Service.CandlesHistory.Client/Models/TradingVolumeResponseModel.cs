@@ -9,23 +9,23 @@ namespace Lykke.Service.CandlesHistory.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class Throughput
+    public partial class TradingVolumeResponseModel
     {
         /// <summary>
-        /// Initializes a new instance of the Throughput class.
+        /// Initializes a new instance of the TradingVolumeResponseModel class.
         /// </summary>
-        public Throughput()
+        public TradingVolumeResponseModel()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the Throughput class.
+        /// Initializes a new instance of the TradingVolumeResponseModel class.
         /// </summary>
-        public Throughput(int averageCandlesPersistedPerSecond, int averageCandleRowsPersistedPerSecond)
+        public TradingVolumeResponseModel(double volume, double oppositeVolume)
         {
-            AverageCandlesPersistedPerSecond = averageCandlesPersistedPerSecond;
-            AverageCandleRowsPersistedPerSecond = averageCandleRowsPersistedPerSecond;
+            Volume = volume;
+            OppositeVolume = oppositeVolume;
             CustomInit();
         }
 
@@ -36,13 +36,13 @@ namespace Lykke.Service.CandlesHistory.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "AverageCandlesPersistedPerSecond")]
-        public int AverageCandlesPersistedPerSecond { get; set; }
+        [JsonProperty(PropertyName = "Volume")]
+        public double Volume { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "AverageCandleRowsPersistedPerSecond")]
-        public int AverageCandleRowsPersistedPerSecond { get; set; }
+        [JsonProperty(PropertyName = "OppositeVolume")]
+        public double OppositeVolume { get; set; }
 
         /// <summary>
         /// Validate the object.

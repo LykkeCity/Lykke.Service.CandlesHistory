@@ -58,6 +58,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 .Select(p => p.Id));
         }
 
+        [Obsolete]
         [HttpPost("batch")]
         [SwaggerOperation("GetCandlesHistoryBatchOrError")]
         [ProducesResponseType(typeof(Dictionary<string, CandlesHistoryResponseModel>), (int)HttpStatusCode.OK)]

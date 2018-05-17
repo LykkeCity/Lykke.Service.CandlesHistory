@@ -9,23 +9,24 @@ namespace Lykke.Service.CandlesHistory.Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    public partial class Throughput
+    public partial class TradePriceChangeResponseModel
     {
         /// <summary>
-        /// Initializes a new instance of the Throughput class.
+        /// Initializes a new instance of the TradePriceChangeResponseModel
+        /// class.
         /// </summary>
-        public Throughput()
+        public TradePriceChangeResponseModel()
         {
             CustomInit();
         }
 
         /// <summary>
-        /// Initializes a new instance of the Throughput class.
+        /// Initializes a new instance of the TradePriceChangeResponseModel
+        /// class.
         /// </summary>
-        public Throughput(int averageCandlesPersistedPerSecond, int averageCandleRowsPersistedPerSecond)
+        public TradePriceChangeResponseModel(double tradePriceChange)
         {
-            AverageCandlesPersistedPerSecond = averageCandlesPersistedPerSecond;
-            AverageCandleRowsPersistedPerSecond = averageCandleRowsPersistedPerSecond;
+            TradePriceChange = tradePriceChange;
             CustomInit();
         }
 
@@ -36,13 +37,8 @@ namespace Lykke.Service.CandlesHistory.Client.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "AverageCandlesPersistedPerSecond")]
-        public int AverageCandlesPersistedPerSecond { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "AverageCandleRowsPersistedPerSecond")]
-        public int AverageCandleRowsPersistedPerSecond { get; set; }
+        [JsonProperty(PropertyName = "TradePriceChange")]
+        public double TradePriceChange { get; set; }
 
         /// <summary>
         /// Validate the object.
