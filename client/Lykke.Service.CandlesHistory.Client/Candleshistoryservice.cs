@@ -753,7 +753,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/volumes/24h/{assetPairId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/Volumes/24h/{assetPairId}").ToString();
             _url = _url.Replace("{assetPairId}", System.Uri.EscapeDataString(assetPairId));
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
@@ -929,7 +929,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/volumes/24h/allPairs").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/Volumes/24h/allPairs").ToString();
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
@@ -1100,7 +1100,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/volumes/day/{assetPairId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/Volumes/Day/{assetPairId}").ToString();
             _url = _url.Replace("{assetPairId}", System.Uri.EscapeDataString(assetPairId));
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
@@ -1276,7 +1276,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/volumes/day/allPairs").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/Volumes/Day/allPairs").ToString();
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
@@ -1447,7 +1447,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/lastPrice/{assetPairId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/LastPrice/{assetPairId}").ToString();
             _url = _url.Replace("{assetPairId}", System.Uri.EscapeDataString(assetPairId));
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
@@ -1623,7 +1623,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/lastPrice/allPairs").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/LastPrice/allPairs").ToString();
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
@@ -1794,7 +1794,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/priceChange/day/{assetPairId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/PriceChange/Day/{assetPairId}").ToString();
             _url = _url.Replace("{assetPairId}", System.Uri.EscapeDataString(assetPairId));
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
@@ -1970,7 +1970,7 @@ namespace Lykke.Service.CandlesHistory.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/priceChange/day/allPairs").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/TradingData/PriceChange/Day/allPairs").ToString();
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
