@@ -8,20 +8,23 @@ using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
+using Lykke.Logs.Loggers.LykkeAzureTable;
+using Lykke.Logs.Loggers.LykkeConsole;
+using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Logs.Slack;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
-using Lykke.SlackNotification.AzureQueue;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
-using Lykke.Service.CandlesHistory.Services.Settings;
-using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
+using Lykke.SlackNotification.AzureQueue;
+using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -76,6 +79,25 @@ namespace Lykke.Service.CandlesHistory
                     services,
                     settings.CurrentValue.SlackNotifications,
                     candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
+                
+                services.AddLykkeHealthNotifications(
+                    settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
+                    settings.CurrentValue.SlackNotifications.AzureQueue.QueueName);
+
+                services.AddLykkeLogging(logging =>
+                {
+                    logging.AddLykkeConsole();
+                    logging.AddLykkeAzureTable(candlesHistory.ConnectionString(x => x.Db.LogsConnectionString), "CandlesHistoryServiceLogs");
+                    logging.AddLykkeEssentialSlackChannels(
+                        settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
+                        settings.CurrentValue.SlackNotifications.AzureQueue.QueueName);
+                    logging.AddLykkeAdditionalSlackChannel(
+                        settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
+                        settings.CurrentValue.SlackNotifications.AzureQueue.QueueName,
+                        "Prices");
+                });
+
+                builder.Populate(services);
 
                 builder.RegisterModule(new ApiModule(
                     marketType,
@@ -84,7 +106,7 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
                     Log));
-                builder.Populate(services);
+                
                 ApplicationContainer = builder.Build();
 
                 return new AutofacServiceProvider(ApplicationContainer);
@@ -180,7 +202,7 @@ namespace Lykke.Service.CandlesHistory
                 throw;
             }
         }
-
+        
         private static ILog CreateLogWithSlack(IServiceCollection services, SlackNotificationsSettings slackSettings, IReloadingManager<string> dbLogConnectionStringManager)
         {
             var consoleLogger = new LogToConsole();

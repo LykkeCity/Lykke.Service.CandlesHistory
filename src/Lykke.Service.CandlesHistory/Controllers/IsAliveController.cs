@@ -1,7 +1,9 @@
-﻿using Lykke.Service.CandlesHistory.Core.Services;
+﻿using System;
+using Common.Log;
+using Lykke.Common;
+using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -28,9 +30,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             return new IsAliveResponse
             {
-                Name = PlatformServices.Default.Application.ApplicationName,
-                Version = PlatformServices.Default.Application.ApplicationVersion,
-                Env = Program.EnvInfo,
+                Name = AppEnvironment.Name,
+                Version = AppEnvironment.Version,
+                Env = AppEnvironment.EnvInfo,
                 IsShuttingDown = _shutdownManager.IsShuttingDown,
                 IsShuttedDown = _shutdownManager.IsShuttedDown
             };

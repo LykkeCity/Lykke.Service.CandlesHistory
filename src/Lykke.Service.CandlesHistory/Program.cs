@@ -1,25 +1,23 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights.Extensibility;
+using Lykke.Common;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Lykke.Service.CandlesHistory
 {
     internal static class Program
     {
-        public static string EnvInfo => Environment.GetEnvironmentVariable("ENV_INFO");
-
         // ReSharper disable once UnusedParameter.Local
         private static async Task Main(string[] args)
         {
-            Console.WriteLine($"Lykke.Service.CandlesHistory version {Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion}");
+            Console.WriteLine($"Lykke.Service.CandlesHistory version {AppEnvironment.Version}");
 #if DEBUG
             Console.WriteLine("Is DEBUG");
 #else
             Console.WriteLine("Is RELEASE");
 #endif
-            Console.WriteLine($"ENV_INFO: {EnvInfo}");
+            Console.WriteLine($"ENV_INFO: {AppEnvironment.EnvInfo}");
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
