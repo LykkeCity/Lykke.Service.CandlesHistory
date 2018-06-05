@@ -74,6 +74,10 @@ namespace Lykke.Service.CandlesHistory
                     ? MarketType.Spot
                     : MarketType.Mt;
 
+                var assetsSettings = settings.CurrentValue.CandlesHistory != null
+                    ? settings.CurrentValue.CandlesHistory.Assets
+                    : settings.CurrentValue.MtCandlesHistory.Assets;
+
                 var candlesHistory = settings.CurrentValue.CandlesHistory != null
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
@@ -89,7 +93,7 @@ namespace Lykke.Service.CandlesHistory
                 builder.RegisterModule(new ApiModule(
                     marketType,
                     candlesHistory.CurrentValue,
-                    settings.CurrentValue.CandlesHistory.Assets,
+                    assetsSettings,
                     settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
                     Log));
