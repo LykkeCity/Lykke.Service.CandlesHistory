@@ -4,8 +4,8 @@ using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using System.Collections.Generic;
 using System.Linq;
 using Common.Log;
-using Lykke.Service.Assets.Client.Custom;
-using Lykke.Service.CandlesHistory.Core.Domain;
+using Lykke.Service.Assets.Client;
+using Lykke.Service.Assets.Client.Models;
 using Polly;
 
 namespace Lykke.Service.CandlesHistory.Services.Assets
@@ -13,15 +13,15 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
     public class AssetPairsManager : IAssetPairsManager
     {
         private readonly ILog _log;
-        private readonly ICachedAssetsService _apiService;
+        private readonly IAssetsServiceWithCache _apiService;
 
-        public AssetPairsManager(ILog log, ICachedAssetsService apiService)
+        public AssetPairsManager(ILog log, IAssetsServiceWithCache apiService)
         {
             _log = log;
             _apiService = apiService;
         }
 
-        public async Task<AssetPair> TryGetAssetPairAsync(string assetPairId)
+        public Task<AssetPair> TryGetAssetPairAsync(string assetPairId)
         {
             return Convert(await TryGetAssetPairCoreAsync(assetPairId));
         }
@@ -45,7 +45,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
                     .Select(Convert));
         }
 
-        private Task<IAssetPair> TryGetAssetPairCoreAsync(string assetPairId)
+        public Task<IEnumerable<AssetPair>> GetAllEnabledAsync()
         {
             return Policy
                 .Handle<Exception>()
