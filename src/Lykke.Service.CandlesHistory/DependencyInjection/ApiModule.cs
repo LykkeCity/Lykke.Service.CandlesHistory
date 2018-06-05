@@ -16,7 +16,6 @@ using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
-using MarginTrading.Backend.Contracts.DataReaderClient;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
@@ -30,7 +29,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly AssetsSettings _assetSettings;
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
-        private readonly IReloadingManager<MtDataReaderClientSettings> _mtDataReaderClientSettings;
         private readonly ILog _log;
 
         public ApiModule(MarketType marketType,
@@ -38,7 +36,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             AssetsSettings assetSettings,
             RedisSettings redisSettings,
             IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
-            IReloadingManager<MtDataReaderClientSettings> mtDataReaderClientSettings,
             ILog log)
         {
             _marketType = marketType;
@@ -47,7 +44,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             _assetSettings = assetSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
-            _mtDataReaderClientSettings = mtDataReaderClientSettings;
             _log = log;
         }
 
@@ -106,8 +102,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
-
-
         }
 
         private void RegisterAssets(ContainerBuilder builder)
@@ -118,7 +112,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 _log);
 
                 builder.RegisterType<AssetPairsManager>().As<IAssetPairsManager>();
-            }
         }
 
         private void RegisterCandles(ContainerBuilder builder)

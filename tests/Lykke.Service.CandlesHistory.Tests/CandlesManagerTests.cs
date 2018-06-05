@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Models;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;

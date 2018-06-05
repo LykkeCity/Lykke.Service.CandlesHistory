@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.Assets.Client.Models;
-using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;

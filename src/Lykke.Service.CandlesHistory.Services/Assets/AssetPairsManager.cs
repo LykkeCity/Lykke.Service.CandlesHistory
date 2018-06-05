@@ -23,41 +23,28 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
 
         public Task<AssetPair> TryGetAssetPairAsync(string assetPairId)
         {
-            return Convert(await TryGetAssetPairCoreAsync(assetPairId));
-        }
-
-        public async Task<AssetPair> TryGetEnabledPairAsync(string assetPairId)
-        {
-            var pair = await TryGetAssetPairCoreAsync(assetPairId);
-            return pair == null || pair.IsDisabled ? null : Convert(pair);
-        }
-
-        public Task<IEnumerable<AssetPair>> GetAllEnabledAsync()
-        {
             return Policy
                 .Handle<Exception>()
                 .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Min(60, Math.Pow(2, retryAttempt))),
-                    (exception, timespan) =>
-                        _log.WriteErrorAsync("Get all asset pairs with retry", string.Empty, exception))
-                .ExecuteAsync(async () =>
-                    (await _apiService.GetAllAssetPairsAsync()).Where(a => !a.IsDisabled)
-                    .Select(Convert));
-        }
-
-        public Task<IEnumerable<AssetPair>> GetAllEnabledAsync()
-        {
-            return Policy
-                .Handle<Exception>()
-                .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Min(60, Math.Pow(2, retryAttempt))),
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timespan) => _log.WriteErrorAsync("Get asset pair with retry", assetPairId, exception))
                 .ExecuteAsync(() => _apiService.TryGetAssetPairAsync(assetPairId));
         }
 
-        private static AssetPair Convert(IAssetPair p)
+        public async Task<AssetPair> TryGetEnabledPairAsync(string assetPairId)
         {
-            return new AssetPair(p.Id, p.Accuracy);
+            var pair = await TryGetAssetPairAsync(assetPairId);
+            return pair == null || pair.IsDisabled ? null : pair;
+        }
+
+        public Task<IEnumerable<AssetPair>> GetAllEnabledAsync()
+        {
+            return Policy
+                .Handle<Exception>()
+                .WaitAndRetryForeverAsync(
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timespan) => _log.WriteErrorAsync("Get all asset pairs with retry", string.Empty, exception))
+                .ExecuteAsync(async () => (await _apiService.GetAllAssetPairsAsync()).Where(a => !a.IsDisabled));
         }
     }
 }
