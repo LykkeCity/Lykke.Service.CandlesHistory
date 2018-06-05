@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
@@ -26,7 +25,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
-        private readonly IShutdownManager _shutdownManager;
         private readonly CandlesHistorySizeValidator _candlesHistorySizeValidator;
 
         #region Initialization
@@ -35,13 +33,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
             Dictionary<string, string> candleHistoryAssetConnections,
-            IShutdownManager shutdownManager,
             CandlesHistorySizeValidator candlesHistorySizeValidator)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
-            _shutdownManager = shutdownManager;
             _candlesHistorySizeValidator = candlesHistorySizeValidator;
         }
 
@@ -171,16 +167,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
             }
-
-            if (_shutdownManager.IsShuttingDown)
-            {
-                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
-            }
-            if (_shutdownManager.IsShuttedDown)
-            {
-                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
-            }
-
 
             request.FromMoment = request.FromMoment.ToUniversalTime();
             request.ToMoment = request.ToMoment.ToUniversalTime();

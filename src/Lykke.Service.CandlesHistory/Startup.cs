@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Threading.Tasks;
+using AsyncFriendlyStackTrace;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AzureStorage.Tables;
 using Common.Log;
 using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
+using Lykke.Common.Log;
 using Lykke.Logs;
 using Lykke.Logs.Loggers.LykkeAzureTable;
 using Lykke.Logs.Loggers.LykkeConsole;
 using Lykke.Logs.Loggers.LykkeSlack;
-using Lykke.Logs.Slack;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
 using Microsoft.AspNetCore.Builder;
@@ -22,9 +20,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
-using Lykke.Service.CandlesHistory.Services.Settings;
-using Lykke.SlackNotification.AzureQueue;
-using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -34,6 +29,7 @@ namespace Lykke.Service.CandlesHistory
         private IContainer ApplicationContainer { get; set; }
         private IConfigurationRoot Configuration { get; }
         private ILog Log { get; set; }
+        private IHealthNotifier HealthNotifier { get; set; }
 
         public Startup(IHostingEnvironment env)
         {
@@ -74,12 +70,7 @@ namespace Lykke.Service.CandlesHistory
                 var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
-
-                Log = CreateLogWithSlack(
-                    services,
-                    settings.CurrentValue.SlackNotifications,
-                    candlesHistory.ConnectionString(x => x.Db.LogsConnectionString));
-                
+               
                 services.AddLykkeHealthNotifications(
                     settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
                     settings.CurrentValue.SlackNotifications.AzureQueue.QueueName);
@@ -104,16 +95,18 @@ namespace Lykke.Service.CandlesHistory
                     candlesHistory.CurrentValue,
                     settings.CurrentValue.Assets,
                     settings.CurrentValue.RedisSettings,
-                    candleHistoryAssetConnection,
-                    Log));
+                    candleHistoryAssetConnection));
                 
                 ApplicationContainer = builder.Build();
+
+                Log = ApplicationContainer.Resolve<ILogFactory>().CreateLog(this);
+                HealthNotifier = ApplicationContainer.Resolve<IHealthNotifier>();
 
                 return new AutofacServiceProvider(ApplicationContainer);
             }
             catch (Exception ex)
             {
-                Log?.WriteFatalErrorAsync(nameof(Startup), nameof(ConfigureServices), "", ex).Wait();
+                Console.WriteLine(ex.ToAsyncString());
                 throw;
             }
         }
@@ -128,7 +121,7 @@ namespace Lykke.Service.CandlesHistory
                     app.UseDeveloperExceptionPage();
                 }
 
-                app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
+                app.UseLykkeMiddleware(ex => ErrorResponse.Create("Technical problem"));
 
                 app.UseMvc();
                 app.UseSwagger(c =>
@@ -142,107 +135,54 @@ namespace Lykke.Service.CandlesHistory
                 });
                 app.UseStaticFiles();
 
-                appLifetime.ApplicationStarted.Register(() => StartApplication().GetAwaiter().GetResult());
-                appLifetime.ApplicationStopping.Register(() => StopApplication().GetAwaiter().GetResult());
-                appLifetime.ApplicationStopped.Register(() => CleanUp().GetAwaiter().GetResult());
+                appLifetime.ApplicationStarted.Register(StartApplication);
+                appLifetime.ApplicationStopping.Register(StopApplication);
+                appLifetime.ApplicationStopped.Register(CleanUp);
             }
             catch (Exception ex)
             {
-                Log?.WriteFatalErrorAsync(nameof(Startup), nameof(Configure), "", ex).Wait();
+                Log.Critical(ex);
                 throw;
             }
         }
 
-        private async Task StartApplication()
+        private void StartApplication()
         {
             try
             {
-                await Log.WriteMonitorAsync("", "", "Started");
+                HealthNotifier.Notify("Started");
             }
             catch (Exception ex)
             {
-                await Log.WriteFatalErrorAsync(nameof(Startup), nameof(StartApplication), "", ex);
+                Log.Critical(ex);
                 throw;
             }
         }
 
-        private async Task StopApplication()
+        private void StopApplication()
         {
             try
             {
-                await ApplicationContainer.Resolve<IShutdownManager>().ShutdownAsync();
             }
             catch (Exception ex)
             {
-                if (Log != null)
-                {
-                    await Log.WriteFatalErrorAsync(nameof(Startup), nameof(StopApplication), "", ex);
-                }
+                Log?.Critical(ex);
                 throw;
             }
         }
 
-        private async Task CleanUp()
+        private void CleanUp()
         {
             try
             {
-                if (Log != null)
-                {
-                    await Log.WriteMonitorAsync("", "", "Terminating");
-                }
-
-                ApplicationContainer.Dispose();
+                HealthNotifier?.Notify("Terminating");
+                ApplicationContainer?.Dispose();
             }
             catch (Exception ex)
             {
-                if (Log != null)
-                {
-                    await Log.WriteFatalErrorAsync(nameof(Startup), nameof(CleanUp), "", ex);
-                }
+                Log?.Critical(ex);
                 throw;
             }
-        }
-        
-        private static ILog CreateLogWithSlack(IServiceCollection services, SlackNotificationsSettings slackSettings, IReloadingManager<string> dbLogConnectionStringManager)
-        {
-            var consoleLogger = new LogToConsole();
-            var aggregateLogger = new AggregateLogger();
-
-            aggregateLogger.AddLog(consoleLogger);
-
-            // Creating slack notification service, which logs own azure queue processing messages to aggregate log
-            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
-            {
-                ConnectionString = slackSettings.AzureQueue.ConnectionString,
-                QueueName = slackSettings.AzureQueue.QueueName
-            }, aggregateLogger);
-
-            var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
-
-            // Creating azure storage logger, which logs own messages to concole log
-            if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") && dbLogConnectionString.EndsWith("}")))
-            {
-                var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
-                    AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "CandlesHistoryServiceLogs", consoleLogger),
-                    consoleLogger);
-
-                var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
-
-                var azureStorageLogger = new LykkeLogToAzureStorage(
-                    persistenceManager,
-                    slackNotificationsManager,
-                    consoleLogger);
-
-                azureStorageLogger.Start();
-
-                aggregateLogger.AddLog(azureStorageLogger);
-            }
-
-            var logToSlack = LykkeLogToSlack.Create(slackService, "Prices");
-
-            aggregateLogger.AddLog(logToSlack);
-
-            return aggregateLogger;
         }
     }
 }

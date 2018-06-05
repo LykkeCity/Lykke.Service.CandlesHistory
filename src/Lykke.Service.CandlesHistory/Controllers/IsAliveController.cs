@@ -1,7 +1,4 @@
-﻿using System;
-using Common.Log;
-using Lykke.Common;
-using Lykke.Common.Log;
+﻿using Lykke.Common;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Models.IsAlive;
 using Microsoft.AspNetCore.Mvc;

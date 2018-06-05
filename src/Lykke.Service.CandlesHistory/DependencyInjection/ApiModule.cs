@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Common.Log;
 using Lykke.Common;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
@@ -29,15 +28,13 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly AssetsSettings _assetSettings;
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
-        private readonly ILog _log;
 
         public ApiModule(
             MarketType marketType,
             CandlesHistorySettings settings,
             AssetsSettings assetsSettings,
             RedisSettings redisSettings,
-            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
-            ILog log)
+            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections)
         {
             _marketType = marketType;
             _services = new ServiceCollection();
@@ -45,15 +42,10 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             _assetSettings = assetsSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
-            _log = log;
         }
 
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterInstance(_log)
-                .As<ILog>()
-                .SingleInstance();
-
             builder.RegisterType<Clock>().As<IClock>();
 
             // For CandlesHistoryController
@@ -81,12 +73,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                     break;
 
                 case ResourceMonitorMode.AppInsightsOnly:
-                    builder.RegisterResourcesMonitoring(_log);
+                    builder.RegisterResourcesMonitoring();
                     break;
 
                 case ResourceMonitorMode.AppInsightsWithLog:
                     builder.RegisterResourcesMonitoringWithLogging(
-                        _log,
                         monitorSettings.CpuThreshold,
                         monitorSettings.RamThreshold);
                     break;
@@ -121,10 +112,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             builder.RegisterType<CandlesHistoryRepository>()
                 .As<ICandlesHistoryRepository>()
                 .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
-                .SingleInstance();
-
-            builder.RegisterType<ShutdownManager>()
-                .As<IShutdownManager>()
                 .SingleInstance();
 
             builder.RegisterType<CandlesManager>()

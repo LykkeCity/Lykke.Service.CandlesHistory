@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AzureStorage;
 using AzureStorage.Tables;
-using Common.Log;
 using JetBrains.Annotations;
+using Lykke.Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.SettingsReader;
@@ -15,15 +15,15 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
     public sealed class CandlesHistoryRepository : ICandlesHistoryRepository, IDisposable
     {
-        private readonly ILog _log;
+        private readonly ILogFactory _logFactory;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
 
         private readonly Dictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
+        public CandlesHistoryRepository(ILogFactory logFactory, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
-            _log = log;
+            _logFactory = logFactory;
             _assetConnectionStrings = assetConnectionStrings;
 
             _assetPairRepositories = new Dictionary<string, AssetPairCandlesHistoryRepository>();
@@ -113,7 +113,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             var storage = AzureTableStorage<CandleHistoryEntity>.Create(
                 _assetConnectionStrings.ConnectionString(x => x[assetPairId]),
                 tableName,
-                _log,
+                _logFactory,
                 TimeSpan.FromMinutes(1),
                 onGettingRetryCount: 10,
                 onModificationRetryCount: 10,

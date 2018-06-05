@@ -15,9 +15,9 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
         private readonly ILog _log;
         private readonly IAssetsServiceWithCache _apiService;
 
-        public AssetPairsManager(ILog log, IAssetsServiceWithCache apiService)
+        public AssetPairsManager(ILogFactory logFactory, ICachedAssetsService apiService)
         {
-            _log = log;
+            _log = logFactory.CreateLog(this);
             _apiService = apiService;
         }
 
@@ -27,7 +27,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
                 .Handle<Exception>()
                 .WaitAndRetryForeverAsync(
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timespan) => _log.WriteErrorAsync("Get asset pair with retry", assetPairId, exception))
+                    (exception, timespan) => _log.Error(exception, context: new { assetPairId = assetPairId }))
                 .ExecuteAsync(() => _apiService.TryGetAssetPairAsync(assetPairId));
         }
 
@@ -44,7 +44,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
                 .Handle<Exception>()
                 .WaitAndRetryForeverAsync(
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timespan) => _log.WriteErrorAsync("Get all asset pairs with retry", string.Empty, exception))
+                    (exception, timespan) => _log.Error(exception))
                 .ExecuteAsync(async () => (await _apiService.GetAllAssetPairsAsync()).Where(a => !a.IsDisabled));
         }
     }
