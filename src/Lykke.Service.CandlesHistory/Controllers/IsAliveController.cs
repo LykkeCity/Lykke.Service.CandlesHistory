@@ -12,12 +12,10 @@ namespace Lykke.Service.CandlesHistory.Controllers
     [Route("api/[controller]")]
     public class IsAliveController : Controller
     {
-        private readonly IHealthService _healthService;
         private readonly IShutdownManager _shutdownManager;
 
-        public IsAliveController(IHealthService healthService, IShutdownManager shutdownManager)
+        public IsAliveController(IShutdownManager shutdownManager)
         {
-            _healthService = healthService;
             _shutdownManager = shutdownManager;
         }
 
@@ -34,25 +32,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 Version = PlatformServices.Default.Application.ApplicationVersion,
                 Env = Program.EnvInfo,
                 IsShuttingDown = _shutdownManager.IsShuttingDown,
-                IsShuttedDown = _shutdownManager.IsShuttedDown,
-                Persistence = new IsAliveResponse.PersistenceInfo
-                {
-                    Times = new IsAliveResponse.Times
-                    {
-                        AveragePersistTime = _healthService.AveragePersistTime,
-                        LastPersistTime = _healthService.LastPersistTime,
-                        TotalPersistTime = _healthService.TotalPersistTime,
-                    },
-                    Throughput = new IsAliveResponse.Throughput
-                    {
-                        AverageCandlesPersistedPerSecond = _healthService.AverageCandlesPersistedPerSecond,
-                        AverageCandleRowsPersistedPerSecond = _healthService.AverageCandleRowsPersistedPerSecond
-                    },
-                    BatchesToPersistQueueLength = _healthService.BatchesToPersistQueueLength,
-                    CandlesToDispatchQueueLength = _healthService.CandlesToDispatchQueueLength,
-                    TotalCandlesPersistedCount = _healthService.TotalCandlesPersistedCount,
-                    TotalCandleRowsPersistedCount = _healthService.TotalCandleRowsPersistedCount,
-                }
+                IsShuttedDown = _shutdownManager.IsShuttedDown
             };
         }
     }

@@ -18,29 +18,5 @@ namespace Lykke.Service.CandlesHistory.Models.IsAlive
         public string Env { get; set; }
         public bool IsShuttingDown { get; set; }
         public bool IsShuttedDown { get; set; }
-        public PersistenceInfo Persistence { get; set; }
-        
-        public class PersistenceInfo
-        {
-            public Times Times { get; set; }
-            public Throughput Throughput { get; set; }
-            public long TotalCandlesPersistedCount { get; set; }
-            public long TotalCandleRowsPersistedCount { get; set; }
-            public int BatchesToPersistQueueLength { get; set; }
-            public int CandlesToDispatchQueueLength { get; set; }
-        }
-
-        public class Times
-        {
-            public TimeSpan TotalPersistTime { get; set; }
-            public TimeSpan AveragePersistTime { get; set; }
-            public TimeSpan LastPersistTime { get; set; }
-        }
-
-        public class Throughput
-        {
-            public int AverageCandlesPersistedPerSecond { get; set; }
-            public int AverageCandleRowsPersistedPerSecond { get; set; }
-        }
     }
 }

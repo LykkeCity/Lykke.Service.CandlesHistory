@@ -4,7 +4,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
 using Lykke.Common;
-using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -109,9 +109,10 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            _services.UseAssetsClient(AssetServiceSettings.Create(
-                new Uri(_assetSettings.ServiceUrl),
-                _settings.AssetsCache.ExpirationPeriod));
+            _services.RegisterAssetsClient(AssetServiceSettings.Create(
+                    new Uri(_assetSettings.ServiceUrl), 
+                    _settings.Assets.AssetsCacheExpirationPeriod),
+                _log);
 
             builder.RegisterType<AssetPairsManager>()
                 .As<IAssetPairsManager>();
@@ -119,10 +120,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterCandles(ContainerBuilder builder)
         {
-            builder.RegisterType<HealthService>()
-                .As<IHealthService>()
-                .SingleInstance();
-
             builder.RegisterType<CandlesHistoryRepository>()
                 .As<ICandlesHistoryRepository>()
                 .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))

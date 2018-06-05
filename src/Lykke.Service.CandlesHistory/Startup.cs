@@ -80,7 +80,7 @@ namespace Lykke.Service.CandlesHistory
                 builder.RegisterModule(new ApiModule(
                     marketType,
                     candlesHistory.CurrentValue,
-                    settings.CurrentValue.Assets,
+                    settings.CurrentValue.CandlesHistory.Assets,
                     settings.CurrentValue.RedisSettings,
                     candleHistoryAssetConnection,
                     Log));
