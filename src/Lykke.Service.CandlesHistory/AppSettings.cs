@@ -19,6 +19,8 @@ namespace Lykke.Service.CandlesHistory
         [Optional]
         public Dictionary<string, string> MtCandleHistoryAssetConnections { get; set; }
 
+        public AssetsSettings Assets { get; set; }
+
         public RedisSettings RedisSettings { get; set; }
     }
 }
