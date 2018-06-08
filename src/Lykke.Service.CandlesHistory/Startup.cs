@@ -8,9 +8,6 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Common.Log;
 using Lykke.Logs;
-using Lykke.Logs.Loggers.LykkeAzureTable;
-using Lykke.Logs.Loggers.LykkeConsole;
-using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
 using Microsoft.AspNetCore.Builder;
@@ -71,22 +68,33 @@ namespace Lykke.Service.CandlesHistory
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
                
-                services.AddLykkeHealthNotifications(
+                services.AddLykkeLogging(
+                    candlesHistory.ConnectionString(x => x.Db.LogsConnectionString),
+                    "CandlesHistoryServiceLogs",
                     settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                    settings.CurrentValue.SlackNotifications.AzureQueue.QueueName);
+                    settings.CurrentValue.SlackNotifications.AzureQueue.QueueName,
+                    logging =>
+                    {
+                        logging.AddAdditionalSlackChannel("Prices");
 
-                services.AddLykkeLogging(logging =>
-                {
-                    logging.AddLykkeConsole();
-                    logging.AddLykkeAzureTable(candlesHistory.ConnectionString(x => x.Db.LogsConnectionString), "CandlesHistoryServiceLogs");
-                    logging.AddLykkeEssentialSlackChannels(
-                        settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                        settings.CurrentValue.SlackNotifications.AzureQueue.QueueName);
-                    logging.AddLykkeAdditionalSlackChannel(
-                        settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                        settings.CurrentValue.SlackNotifications.AzureQueue.QueueName,
-                        "Prices");
-                });
+                        // Just for example:
+
+                        logging.ConfigureAzureTable = options =>
+                        {
+                            options.BatchSizeThreshold = 1000;
+                            options.MaxBatchLifetime = TimeSpan.FromSeconds(10);
+                        };
+
+                        logging.ConfigureConsole = options =>
+                        {
+                            options.IncludeScopes = true;
+                        };
+
+                        logging.ConfigureEssentialSlackChannels = options =>
+                        {
+                            options.SpamGuard.DisableGuarding();
+                        };
+                    });
 
                 builder.Populate(services);
 
@@ -100,6 +108,7 @@ namespace Lykke.Service.CandlesHistory
                 ApplicationContainer = builder.Build();
 
                 Log = ApplicationContainer.Resolve<ILogFactory>().CreateLog(this);
+
                 HealthNotifier = ApplicationContainer.Resolve<IHealthNotifier>();
 
                 return new AutofacServiceProvider(ApplicationContainer);

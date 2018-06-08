@@ -22,7 +22,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         {
             _assetsServiceMock = new Mock<IAssetsServiceWithCache>();
 
-            _manager = new AssetPairsManager(new EmptyLogFactory(), _assetsServiceMock.Object);
+            _manager = new AssetPairsManager(DirectConsoleLogFactory.Instance, _assetsServiceMock.Object);
         }
 
         #region Getting enabled pair
