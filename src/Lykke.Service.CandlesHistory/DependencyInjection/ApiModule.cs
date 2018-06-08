@@ -4,7 +4,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
 using Lykke.Common;
-using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -34,7 +34,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         public ApiModule(
             MarketType marketType,
             CandlesHistorySettings settings,
-            AssetsSettings assetSettings,
+            AssetsSettings assetsSettings,
             RedisSettings redisSettings,
             IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
             ILog log)
@@ -42,7 +42,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             _marketType = marketType;
             _services = new ServiceCollection();
             _settings = settings;
-            _assetSettings = assetSettings;
+            _assetSettings = assetsSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
             _log = log;
@@ -103,15 +103,14 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
-
-
         }
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            _services.UseAssetsClient(AssetServiceSettings.Create(
-                new Uri(_assetSettings.ServiceUrl),
-                _settings.AssetsCache.ExpirationPeriod));
+            _services.RegisterAssetsClient(AssetServiceSettings.Create(
+                    new Uri(_assetSettings.ServiceUrl), 
+                    _settings.AssetsCache.ExpirationPeriod),
+                _log);
 
             builder.RegisterType<AssetPairsManager>()
                 .As<IAssetPairsManager>();
@@ -119,10 +118,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterCandles(ContainerBuilder builder)
         {
-            builder.RegisterType<HealthService>()
-                .As<IHealthService>()
-                .SingleInstance();
-
             builder.RegisterType<CandlesHistoryRepository>()
                 .As<ICandlesHistoryRepository>()
                 .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))

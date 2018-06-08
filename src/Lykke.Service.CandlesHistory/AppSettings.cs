@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Lykke.Service.Assets.Client.Custom;
+using Lykke.Service.Assets.Client;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader.Attributes;
 

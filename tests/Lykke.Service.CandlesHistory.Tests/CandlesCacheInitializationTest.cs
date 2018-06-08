@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.Assets.Client.Custom;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -34,18 +33,18 @@ namespace Lykke.Service.CandlesHistory.Tests
         );
 
         private Mock<IAssetPairsManager> _assetPairsManagerMock;
-        private List<IAssetPair> _assetPairs;
+        private List<AssetPair> _assetPairs;
 
         [TestInitialize]
         public void InitializeTest()
         {
             _assetPairsManagerMock = new Mock<IAssetPairsManager>();
 
-            _assetPairs = new List<IAssetPair>
+            _assetPairs = new List<AssetPair>
             {
-                new AssetPairResponseModel {Id = "EURUSD", Accuracy = 3},
-                new AssetPairResponseModel {Id = "USDCHF", Accuracy = 2},
-                new AssetPairResponseModel {Id = "EURRUB", Accuracy = 2}
+                new AssetPair {Id = "EURUSD", Accuracy = 3},
+                new AssetPair {Id = "USDCHF", Accuracy = 2},
+                new AssetPair {Id = "EURRUB", Accuracy = 2}
             };
 
             _assetPairsManagerMock
