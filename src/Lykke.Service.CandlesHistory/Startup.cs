@@ -8,6 +8,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Common.Log;
 using Lykke.Logs;
+using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Service.CandlesHistory.DependencyInjection;
 using Lykke.SettingsReader;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +18,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Services.Settings;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -67,7 +70,10 @@ namespace Lykke.Service.CandlesHistory
                 var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
-               
+
+                services.AddSingleton<IReloadingManager<AppSettings>>(settings);
+                services.AddSingleton<IReloadingManager<CandlesHistorySettings>>(candlesHistory);
+
                 services.AddLykkeLogging(
                     candlesHistory.ConnectionString(x => x.Db.LogsConnectionString),
                     "CandlesHistoryServiceLogs",
@@ -75,7 +81,11 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.SlackNotifications.AzureQueue.QueueName,
                     logging =>
                     {
-                        logging.AddAdditionalSlackChannel("Prices");
+                        logging.AddAdditionalSlackChannel("Prices", options =>
+                        {
+                            options.MinLogLevel = LogLevel.Debug;
+                            options.SpamGuard.DisableGuarding();
+                        });
 
                         // Just for example:
 
