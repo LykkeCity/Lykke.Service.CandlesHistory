@@ -43,7 +43,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
         /// Close is the last trade price.</remarks>
         Task<decimal> GetTradePriceChangeAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast);
 
-        Task<DateTime?> TryGetOldestCandleTimestampAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
         Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
     }
 }
