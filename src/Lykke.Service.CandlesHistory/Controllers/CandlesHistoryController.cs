@@ -29,6 +29,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly IShutdownManager _shutdownManager;
         private readonly CandlesHistorySizeValidator _candlesHistorySizeValidator;
 
+        #region Initialization
+
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
@@ -43,19 +45,115 @@ namespace Lykke.Service.CandlesHistory.Controllers
             _candlesHistorySizeValidator = candlesHistorySizeValidator;
         }
 
+        #endregion
+
+        #region Public
+
         /// <summary>
-        /// Pairs for which hisotry can be requested
+        /// Pairs for which history can be requested
         /// </summary>
         [HttpGet("availableAssetPairs")]
         [SwaggerOperation("GetAvailableAssetPairs")]
         [ProducesResponseType(typeof(string[]), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetAvailableAssetPairs()
         {
+            (var isOutOfService, var whatToSay) = CheckSelfState();
+            if (isOutOfService)
+                return whatToSay;
+
             var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
             return Ok(assetPairs
                 .Where(p => _candleHistoryAssetConnections.ContainsKey(p.Id))
                 .Select(p => p.Id));
+        }
+
+        /// <summary>
+        /// Shows history depth limits for all supported asset pairs.
+        /// </summary>
+        [HttpGet("availableAssetPairs/Depth")]
+        [SwaggerOperation("GetAvailableAssetPairsHistoryDepth")]
+        [ProducesResponseType(typeof(CandlesHistoryDepthResponseModel[]), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAvailableAssetPairsHistoryDepth()
+        {
+            (var isOutOfService, var whatToSay) = CheckSelfState();
+            if (isOutOfService)
+                return whatToSay;
+
+            try
+            {
+                var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
+
+                // Now we do select new history depth items in paralles  style for each asset pair,
+                // but the depth item constructor itself executes 4 awaitable queries non-parallel.
+                // I.e., if we have 10 asset pairs, we get here 10 parallel tasks with 4 sequential
+                // data queries in each, but not 10 * 4 parallel tasks.
+                var result = await Task.WhenAll(
+                assetPairs
+                    .Where(p => _candleHistoryAssetConnections.ContainsKey(p.Id))
+                    .Select(async p => new CandlesHistoryDepthResponseModel
+                    {
+                        AssetPairId = p.Id,
+                        OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
+
+                    })
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, ErrorResponse.Create("Internal", ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Shows history depth limits for the specified asset pair if it is supported.
+        /// </summary>
+        [HttpGet("availableAssetPairs/Depth/{assetPairId}")]
+        [SwaggerOperation("GetAssetPairHistoryDepth")]
+        [ProducesResponseType(typeof(CandlesHistoryDepthResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> GetAssetPairHistoryDepth(string assetPairId)
+        {
+            (var isOutOfService, var whatToSay) = CheckSelfState();
+            if (isOutOfService)
+                return whatToSay;
+
+            var resultTasks = Services.Candles.Constants.StoredPriceTypes
+                .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
+                .ToList();
+
+            try
+            {
+                var results = await Task.WhenAll(resultTasks);
+
+                // Actually, the tasks have been already awaited before. But we need to peek up their resulting values anyhow.
+                return Ok(new CandlesHistoryDepthResponseModel
+                {
+                    AssetPairId = assetPairId,
+                    OldestAskTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Ask)?.Timestamp,
+                    OldestBidTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Bid)?.Timestamp,
+                    OldestMidTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Mid)?.Timestamp,
+                    OldestTradesTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Trades)?.Timestamp
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ErrorResponse.Create("AssetPair", ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, ErrorResponse.Create("Internal", ex.Message));
+            }
         }
 
         [HttpPost("batch")]
@@ -162,7 +260,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             return Ok(allHistory);
         }
-
+        
         /// <summary>
         /// Asset's candles history
         /// </summary>
@@ -175,17 +273,12 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [SwaggerOperation("GetCandlesHistoryOrError")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            if (_shutdownManager.IsShuttingDown)
-            {
-                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down"));
-            }
-
-            if (_shutdownManager.IsShuttedDown)
-            {
-                return StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down"));
-            }
+            (var isOutOfService, var whatToSay) = CheckSelfState();
+            if (isOutOfService)
+                return whatToSay;
 
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
@@ -236,5 +329,30 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 })
             });
         }
+        
+        #endregion
+
+        #region Private
+
+        private (bool isOutOfService, IActionResult whatToSay) CheckSelfState()
+        {
+            if (_shutdownManager.IsShuttingDown)
+            {
+                return 
+                    (isOutOfService : true, 
+                    whatToSay : StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down")));
+            }
+
+            if (_shutdownManager.IsShuttedDown)
+            {
+                return 
+                    (isOutOfService : true, 
+                    whatToSay : StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down")));
+            }
+
+            return (isOutOfService : false, whatToSay: null);
+        }
+
+        #endregion
     }
 }
