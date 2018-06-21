@@ -97,10 +97,10 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     .Select(async p => new CandlesHistoryDepthResponseModel
                     {
                         AssetPairId = p.Id,
-                        OldestAskTimestamp = await _candlesManager.TryGetOldestCandleTimestampAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec),
-                        OldestBidTimestamp = await _candlesManager.TryGetOldestCandleTimestampAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec),
-                        OldestMidTimestamp = await _candlesManager.TryGetOldestCandleTimestampAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec),
-                        OldestTradesTimestamp = await _candlesManager.TryGetOldestCandleTimestampAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec)
+                        OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
+                        OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
 
                     })
                 );
@@ -129,21 +129,21 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return whatToSay;
 
             var resultTasks = Services.Candles.Constants.StoredPriceTypes
-                .Select(pt => _candlesManager.TryGetOldestCandleTimestampAsync(assetPairId, pt, CandleTimeInterval.Sec))
+                .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
                 .ToList();
 
             try
             {
-                await Task.WhenAll(resultTasks);
+                var results = await Task.WhenAll(resultTasks);
 
                 // Actually, the tasks have been already awaited before. But we need to peek up their resulting values anyhow.
                 return Ok(new CandlesHistoryDepthResponseModel
                 {
                     AssetPairId = assetPairId,
-                    OldestAskTimestamp = resultTasks[0].GetAwaiter().GetResult(),
-                    OldestBidTimestamp = resultTasks[1].GetAwaiter().GetResult(),
-                    OldestMidTimestamp = resultTasks[2].GetAwaiter().GetResult(),
-                    OldestTradesTimestamp = resultTasks[3].GetAwaiter().GetResult()
+                    OldestAskTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Ask)?.Timestamp,
+                    OldestBidTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Bid)?.Timestamp,
+                    OldestMidTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Mid)?.Timestamp,
+                    OldestTradesTimestamp = results.FirstOrDefault(c => c.PriceType == CandlePriceType.Trades)?.Timestamp
                 });
             }
             catch (InvalidOperationException ex)
