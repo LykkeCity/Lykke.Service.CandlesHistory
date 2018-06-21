@@ -42,5 +42,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
         /// <remarks>The rule for calculating the price change is: (Close - Open) / Open, where Open is the first trade price for the period and
         /// Close is the last trade price.</remarks>
         Task<decimal> GetTradePriceChangeAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast);
+
+        Task<DateTime?> TryGetOldestCandleTimestampAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
     }
 }
