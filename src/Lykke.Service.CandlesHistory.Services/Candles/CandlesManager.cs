@@ -71,16 +71,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <param name="assetPairId"></param>
         /// <param name="priceType"></param>
         /// <param name="interval"></param>
-        /// <returns>The oldest candle's timestamp or nulled value./></returns>
+        /// <returns>The oldest candle or null./></returns>
         /// <exception cref="InvalidOperationException">If the specified asset pair is not currently supported by storage.</exception>
-        public async Task<DateTime?> TryGetOldestCandleTimestampAsync(string assetPairId, CandlePriceType priceType,
+        public async Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType,
             CandleTimeInterval interval)
         {
             CheckupAssetPairOrFail(assetPairId);
 
             var firstCandle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPairId, interval, priceType);
             
-            return firstCandle?.Timestamp; // The risk of the null is minimal but not excluded.
+            return firstCandle; // The risk of the null is minimal but not excluded.
         }
 
         #endregion
