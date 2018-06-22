@@ -11,7 +11,6 @@ using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
-using Lykke.Service.CandlesHistory.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -27,7 +26,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
         private readonly IShutdownManager _shutdownManager;
-        private readonly CandlesHistorySizeValidator _candlesHistorySizeValidator;
 
         #region Initialization
 
@@ -35,14 +33,12 @@ namespace Lykke.Service.CandlesHistory.Controllers
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
             Dictionary<string, string> candleHistoryAssetConnections,
-            IShutdownManager shutdownManager,
-            CandlesHistorySizeValidator candlesHistorySizeValidator)
+            IShutdownManager shutdownManager)
         {
-            _candlesManager = candlesManager;
-            _assetPairsManager = assetPairsManager;
-            _candleHistoryAssetConnections = candleHistoryAssetConnections;
-            _shutdownManager = shutdownManager;
-            _candlesHistorySizeValidator = candlesHistorySizeValidator;
+            _candlesManager = candlesManager ?? throw new ArgumentNullException(nameof(candlesManager));
+            _assetPairsManager = assetPairsManager ?? throw new ArgumentNullException(nameof(assetPairsManager));
+            _candleHistoryAssetConnections = candleHistoryAssetConnections ?? throw new ArgumentNullException(nameof(candleHistoryAssetConnections));
+            _shutdownManager = shutdownManager ?? throw new ArgumentNullException(nameof(shutdownManager));
         }
 
         #endregion
@@ -87,7 +83,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
-                // Now we do select new history depth items in paralles  style for each asset pair,
+                // Now we do select new history depth items in parallel  style for each asset pair,
                 // but the depth item constructor itself executes 4 awaitable queries non-parallel.
                 // I.e., if we have 10 asset pairs, we get here 10 parallel tasks with 4 sequential
                 // data queries in each, but not 10 * 4 parallel tasks.
@@ -136,7 +132,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 var results = await Task.WhenAll(resultTasks);
 
-                // Actually, the tasks have been already awaited before. But we need to peek up their resulting values anyhow.
                 return Ok(new CandlesHistoryDepthResponseModel
                 {
                     AssetPairId = assetPairId,
@@ -197,10 +192,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (request.FromMoment > request.ToMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
-            }
-            if (!_candlesHistorySizeValidator.CanBeRequested(request.FromMoment, request.ToMoment, request.TimeInterval, request.AssetPairs.Length))
-            {
-                return BadRequest(ErrorResponse.Create($"Too many candles requested at once. Amount of returned candles should not exceed {_candlesHistorySizeValidator.MaxCandlesCountWhichCanBeRequested}"));
             }
 
             var notConfiguerdAssetPairs = request.AssetPairs
@@ -300,10 +291,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
             }
-            if (!_candlesHistorySizeValidator.CanBeRequested(fromMoment, toMoment, timeInterval))
-            {
-                return BadRequest(ErrorResponse.Create($"Too many candles requested at once. Amount of returned candles should not exceed {_candlesHistorySizeValidator.MaxCandlesCountWhichCanBeRequested}"));
-            }
             if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is not configured"));
@@ -315,6 +302,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
+            // May return much less candles than it was requested or even an empty set of data for now the service looks
+            // only through the cache (no persistent data is used).
             return Ok(new CandlesHistoryResponseModel
             {
                 History = candles.Select(c => new CandlesHistoryResponseModel.Candle

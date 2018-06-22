@@ -154,7 +154,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         }
 
         /// <summary>
-        /// Obtains candles history from cache only in stored time intervals, reading persistent history if needed
+        /// Obtains candles history from cache only in stored time intervals
         /// </summary>
         /// <param name="assetPairId"></param>
         /// <param name="priceType"></param>
@@ -167,23 +167,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var cachedHistory = (await _candlesCacheService
                 .GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment))
                 .ToArray();
-            var oldestCachedCandle = cachedHistory.FirstOrDefault();
 
-            // If cache is empty or even oldest cached candle DateTime is after fromMoment and assetPairs has connection string, 
-            // then try to read persistent history
-            if (oldestCachedCandle == null || oldestCachedCandle.Timestamp > fromMoment)
-            {
-                var newToMoment = oldestCachedCandle?.Timestamp ?? toMoment;
-                var persistentHistory = await _candlesHistoryRepository.GetCandlesAsync(assetPairId, timeInterval, priceType, fromMoment, newToMoment);
-
-                // Concatenating persistent and cached history
-                return persistentHistory
-                    // If at least one candle is cached, persistent history used only up to the oldest of cached candle
-                    .TakeWhile(c => oldestCachedCandle == null || c.Timestamp < oldestCachedCandle.Timestamp)
-                    .Concat(cachedHistory);
-            }
-
-            // Cache not empty and it contains fromMoment candle, so we don't need to read persistent history
             return cachedHistory;
         }
 
