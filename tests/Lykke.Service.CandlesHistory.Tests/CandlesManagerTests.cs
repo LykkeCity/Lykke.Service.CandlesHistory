@@ -93,7 +93,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
                     It.Is<CandlePriceType>(p => p == CandlePriceType.Mid),
                     It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -113,7 +113,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.IsAny<string>(), It.IsAny<CandleTimeInterval>(), It.IsAny<CandlePriceType>(),
                     It.Is<DateTime>(d => d == new DateTime(2017, 06, 23)),
                     It.Is<DateTime>(d => d == new DateTime(2017, 07, 23))),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -139,7 +139,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.IsAny<string>(),
                     It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
                     It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Once);
+                Times.Never);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(),
@@ -180,13 +180,13 @@ namespace Lykke.Service.CandlesHistory.Tests
                     It.IsAny<string>(),
                     It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
                     It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Exactly(2));
+                Times.Exactly(0));
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(),
                     It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Hour),
                     It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Exactly(3));
+                Times.Exactly(0));
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(),
@@ -268,7 +268,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Times.Once);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandleTimeInterval>(), It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -282,7 +282,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 Times.Once);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandleTimeInterval>(), It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -295,7 +295,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(), It.IsAny<CandleTimeInterval>(), It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(),
                     It.Is<DateTime>(d => d == new DateTime(2017, 07, 23, 17, 18, 23))),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -320,7 +320,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(), It.IsAny<CandleTimeInterval>(), It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(),
                     It.Is<DateTime>(d => d == new DateTime(2017, 06, 23, 17, 13, 00))),
-                Times.Once);
+                Times.Never);
         }
 
         [TestMethod]
@@ -342,12 +342,7 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candles = (await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 17, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23))).ToArray();
 
             // Assert
-            Assert.AreEqual(5, candles.Length);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 13, 00), candles[0].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 14, 00), candles[1].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 15, 00), candles[2].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 16, 00), candles[3].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 17, 00), candles[4].Timestamp);
+            Assert.AreEqual(0, candles.Length);
         }
 
         [TestMethod]
@@ -381,24 +376,18 @@ namespace Lykke.Service.CandlesHistory.Tests
             var candles = (await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23))).ToArray();
 
             // Assert
-            Assert.AreEqual(8, candles.Length);
+            Assert.AreEqual(5, candles.Length);
 
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 10, 00), candles[0].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 11, 00), candles[1].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 12, 00), candles[2].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 13, 00), candles[3].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 14, 00), candles[4].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 15, 00), candles[5].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 16, 00), candles[6].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 17, 00), candles[7].Timestamp);
+            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 13, 00), candles[0].Timestamp);
+            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 14, 00), candles[1].Timestamp);
+            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 15, 00), candles[2].Timestamp);
+            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 16, 00), candles[3].Timestamp);
+            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 17, 00), candles[4].Timestamp);
 
-            Assert.AreEqual(1, candles[0].Open);
-            Assert.AreEqual(1, candles[1].Open);
-            Assert.AreEqual(1, candles[2].Open);
+            Assert.AreEqual(2, candles[0].Open);
+            Assert.AreEqual(2, candles[1].Open);
+            Assert.AreEqual(2, candles[2].Open);
             Assert.AreEqual(2, candles[3].Open);
-            Assert.AreEqual(2, candles[4].Open);
-            Assert.AreEqual(2, candles[4].Open);
-            Assert.AreEqual(2, candles[4].Open);
             Assert.AreEqual(2, candles[4].Open);
         }
 
