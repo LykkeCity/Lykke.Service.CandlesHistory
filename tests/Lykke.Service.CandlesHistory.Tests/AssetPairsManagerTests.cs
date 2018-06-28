@@ -17,7 +17,7 @@ namespace Lykke.Service.CandlesHistory.Tests
     public class AssetPairsManagerTests
     {
         private IAssetPairsManager _manager;
-        private Mock<ICachedAssetsService> _assetsServiceMock;
+        private Mock<IAssetsServiceWithCache> _assetsServiceMock;
         private ILogFactory _logFactory;
 
         [TestInitialize]
@@ -27,7 +27,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 .Create()
                 .AddUnbufferedConsole();
 
-            _assetsServiceMock = new Mock<ICachedAssetsService>();
+            _assetsServiceMock = new Mock<IAssetsServiceWithCache>();
 
             _manager = new AssetPairsManager(_logFactory, _assetsServiceMock.Object);
         }

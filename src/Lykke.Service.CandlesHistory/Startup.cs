@@ -105,19 +105,23 @@ namespace Lykke.Service.CandlesHistory
                             options.SpamGuard.DisableGuarding();
                         };
                     });
-
+                
                 builder.Populate(services);
+
+                var serviceProvider = services.BuildServiceProvider();
+                Log = serviceProvider.GetRequiredService<ILogFactory>().CreateLog(this);
 
                 builder.RegisterModule(new ApiModule(
                     marketType,
                     candlesHistory.CurrentValue,
                     settings.CurrentValue.Assets,
                     settings.CurrentValue.RedisSettings,
-                    candleHistoryAssetConnection));
+                    candleHistoryAssetConnection,
+                    Log));
                 
                 ApplicationContainer = builder.Build();
 
-                Log = ApplicationContainer.Resolve<ILogFactory>().CreateLog(this);
+                //Log = ApplicationContainer.Resolve<ILogFactory>().CreateLog(this);
 
                 HealthNotifier = ApplicationContainer.Resolve<IHealthNotifier>();
 

@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Common.Log;
 using Lykke.Common;
+using Lykke.Common.Log;
+using Lykke.Logs;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
@@ -28,13 +31,15 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly AssetsSettings _assetSettings;
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
+        private readonly ILog _log;
 
         public ApiModule(
             MarketType marketType,
             CandlesHistorySettings settings,
             AssetsSettings assetsSettings,
             RedisSettings redisSettings,
-            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections)
+            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections,
+            ILog log)
         {
             _marketType = marketType;
             _services = new ServiceCollection();
@@ -42,6 +47,7 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             _assetSettings = assetsSettings;
             _redisSettings = redisSettings;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
+            _log = log;
         }
 
         protected override void Load(ContainerBuilder builder)
@@ -98,7 +104,8 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            _services.RegisterAssetsClient(AssetServiceSettings.Create(
+            _services.RegisterAssetsClient(
+                AssetServiceSettings.Create(
                     new Uri(_assetSettings.ServiceUrl), 
                     _settings.AssetsCache.ExpirationPeriod),
                 _log);

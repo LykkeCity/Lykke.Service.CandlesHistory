@@ -21,23 +21,23 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.2.2" />
-    <PackageReference Include="Lykke.Common" Version="6.8.4" />
-    <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.5.0" />
-    <PackageReference Include="Lykke.Logs" Version="4.4.0-beta.5" />
-    <PackageReference Include="Lykke.RabbitMq.Azure" Version="5.0.1" />
+    <PackageReference Include="Lykke.Common" Version="7.0.1" />
+    <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.9.0" />
+    <PackageReference Include="Lykke.Logs" Version="5.1.0" />
+    <PackageReference Include="Lykke.RabbitMq.Azure" Version="5.1.0" />
     <PackageReference Include="Lykke.Service.Assets.Client" Version="4.0.1" />
     <PackageReference Include="Lykke.SettingsReader" Version="2.4.0" />
-    <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.4" />
+    <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.5" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.3.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.Web" Version="2.6.4">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.0">
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.1">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
     <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
   </ItemGroup>
   <ItemGroup>

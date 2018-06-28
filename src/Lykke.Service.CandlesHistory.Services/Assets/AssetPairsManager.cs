@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using System.Collections.Generic;
 using System.Linq;
-using Common.Log;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.Assets.Client.Models;
 using Polly;
+using Lykke.Common.Log;
+using Common.Log;
 
 namespace Lykke.Service.CandlesHistory.Services.Assets
 {
@@ -15,7 +16,7 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
         private readonly ILog _log;
         private readonly IAssetsServiceWithCache _apiService;
 
-        public AssetPairsManager(ILogFactory logFactory, ICachedAssetsService apiService)
+        public AssetPairsManager(ILogFactory logFactory, IAssetsServiceWithCache apiService)
         {
             _log = logFactory.CreateLog(this);
             _apiService = apiService;

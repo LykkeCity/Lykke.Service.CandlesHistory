@@ -26,7 +26,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
         private readonly CandlesHistorySizeValidator _candlesHistorySizeValidator;
-
+        
         #region Initialization
 
         public CandlesHistoryController(
@@ -54,10 +54,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetAvailableAssetPairs()
         {
-            (var isOutOfService, var whatToSay) = CheckSelfState();
-            if (isOutOfService)
-                return whatToSay;
-
             var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
             return Ok(assetPairs
@@ -75,10 +71,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAvailableAssetPairsHistoryDepth()
         {
-            (var isOutOfService, var whatToSay) = CheckSelfState();
-            if (isOutOfService)
-                return whatToSay;
-
             try
             {
                 var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
@@ -120,10 +112,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAssetPairHistoryDepth(string assetPairId)
         {
-            (var isOutOfService, var whatToSay) = CheckSelfState();
-            if (isOutOfService)
-                return whatToSay;
-
             var resultTasks = Services.Candles.Constants.StoredPriceTypes
                 .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
                 .ToList();
@@ -262,10 +250,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            (var isOutOfService, var whatToSay) = CheckSelfState();
-            if (isOutOfService)
-                return whatToSay;
-
             fromMoment = fromMoment.ToUniversalTime();
             toMoment = toMoment.ToUniversalTime();
 
@@ -316,29 +300,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             });
         }
         
-        #endregion
-
-        #region Private
-
-        private (bool isOutOfService, IActionResult whatToSay) CheckSelfState()
-        {
-            if (_shutdownManager.IsShuttingDown)
-            {
-                return 
-                    (isOutOfService : true, 
-                    whatToSay : StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutting down")));
-            }
-
-            if (_shutdownManager.IsShuttedDown)
-            {
-                return 
-                    (isOutOfService : true, 
-                    whatToSay : StatusCode((int)HttpStatusCode.ServiceUnavailable, ErrorResponse.Create("Service is shutted down")));
-            }
-
-            return (isOutOfService : false, whatToSay: null);
-        }
-
         #endregion
     }
 }
