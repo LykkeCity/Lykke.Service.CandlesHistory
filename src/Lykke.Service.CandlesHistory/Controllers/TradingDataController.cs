@@ -24,7 +24,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
-        private readonly IShutdownManager _shutdownManager;
         private readonly ILog _log;
 
         #region Initialization
@@ -33,14 +32,12 @@ namespace Lykke.Service.CandlesHistory.Controllers
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
             Dictionary<string, string> candleHistoryAssetConnections,
-            IShutdownManager shutdownManager,
             ILog log)
         {
             _candlesManager = candlesManager ?? throw new ArgumentNullException(nameof(assetPairsManager));
             _assetPairsManager = assetPairsManager ?? throw new ArgumentNullException(nameof(assetPairsManager));
             _candleHistoryAssetConnections = candleHistoryAssetConnections ?? throw new ArgumentNullException(nameof(candleHistoryAssetConnections));
-            _shutdownManager = shutdownManager ?? throw new ArgumentNullException(nameof(shutdownManager));
-
+            
             _log = log?.CreateComponentScope(nameof(TradingDataController)) ?? throw new ArgumentNullException(nameof(log));
         }
 
@@ -342,20 +339,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
         private bool CheckupServiceState(out IActionResult failedCheckupResponse)
         {
-            if (_shutdownManager.IsShuttingDown)
-            {
-                failedCheckupResponse = StatusCode((int) HttpStatusCode.ServiceUnavailable,
-                    ErrorResponse.Create("Service availability", "Service is shutting down"));
-                return false;
-            }
-
-            if (_shutdownManager.IsShuttedDown)
-            {
-                failedCheckupResponse = StatusCode((int) HttpStatusCode.ServiceUnavailable,
-                    ErrorResponse.Create("Service availability", "Service is shutted down"));
-                return false;
-            }
-
             failedCheckupResponse = default;
             return true;
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using AsyncFriendlyStackTrace;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ using Newtonsoft.Json.Converters;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
+using Microsoft.Extensions.PlatformAbstractions;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lykke.Service.CandlesHistory

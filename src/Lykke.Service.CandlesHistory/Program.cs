@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Lykke.Common;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Lykke.Service.CandlesHistory
