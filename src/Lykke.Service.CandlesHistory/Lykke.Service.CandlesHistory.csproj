@@ -46,11 +46,6 @@
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Core\Lykke.Service.CandlesHistory.Core.csproj" />
     <ProjectReference Include="..\Lykke.Service.CandlesHistory.Services\Lykke.Service.CandlesHistory.Services.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Lykke.Service.Assets.Client">
-      <HintPath>..\..\..\Lykke.Service.Assets\client\Lykke.Service.Assets.Client\bin\Debug\netstandard2.0\Lykke.Service.Assets.Client.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 
   <ItemGroup>
     <None Update="appsettings.Development.json">
