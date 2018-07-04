@@ -1,7 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Common.Log;
+using Lykke.Common.Log;
+using Lykke.Logs;
+using Lykke.Logs.Loggers.LykkeConsole;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
@@ -16,13 +18,24 @@ namespace Lykke.Service.CandlesHistory.Tests
     {
         private IAssetPairsManager _manager;
         private Mock<IAssetsServiceWithCache> _assetsServiceMock;
-        
+        private ILogFactory _logFactory;
+
         [TestInitialize]
         public void InitializeTest()
         {
+            _logFactory = LogFactory
+                .Create()
+                .AddUnbufferedConsole();
+
             _assetsServiceMock = new Mock<IAssetsServiceWithCache>();
 
-            _manager = new AssetPairsManager(new LogToMemory(), _assetsServiceMock.Object);
+            _manager = new AssetPairsManager(_logFactory, _assetsServiceMock.Object);
+        }
+
+        [TestCleanup]
+        public void CleanupTest()
+        {
+            _logFactory?.Dispose();
         }
 
         #region Getting enabled pair
