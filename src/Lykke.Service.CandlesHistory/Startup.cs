@@ -188,12 +188,22 @@ namespace Lykke.Service.CandlesHistory
 
             aggregateLogger.AddLog(consoleLogger);
 
-            // Creating slack notification service, which logs own azure queue processing messages to aggregate log
-            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
+            LykkeLogToAzureSlackNotificationsManager slackNotificationsManager = null;
+            if (slackSettings != null)
             {
-                ConnectionString = slackSettings.AzureQueue.ConnectionString,
-                QueueName = slackSettings.AzureQueue.QueueName
-            }, aggregateLogger);
+                // Creating slack notification service, which logs own azure queue processing messages to aggregate log
+                var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
+                {
+                    ConnectionString = slackSettings.AzureQueue.ConnectionString,
+                    QueueName = slackSettings.AzureQueue.QueueName
+                }, aggregateLogger);
+
+                slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
+
+                var logToSlack = LykkeLogToSlack.Create(slackService, "Prices");
+
+                aggregateLogger.AddLog(logToSlack);
+            }
 
             var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
@@ -204,8 +214,6 @@ namespace Lykke.Service.CandlesHistory
                     AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "CandlesHistoryServiceLogs", consoleLogger),
                     consoleLogger);
 
-                var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
-
                 var azureStorageLogger = new LykkeLogToAzureStorage(
                     persistenceManager,
                     slackNotificationsManager,
@@ -215,11 +223,7 @@ namespace Lykke.Service.CandlesHistory
 
                 aggregateLogger.AddLog(azureStorageLogger);
             }
-
-            var logToSlack = LykkeLogToSlack.Create(slackService, "Prices");
-
-            aggregateLogger.AddLog(logToSlack);
-
+            
             return aggregateLogger;
         }
     }
