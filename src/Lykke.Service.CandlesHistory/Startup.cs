@@ -86,24 +86,6 @@ namespace Lykke.Service.CandlesHistory
                             options.MinLogLevel = LogLevel.Debug;
                             options.SpamGuard.DisableGuarding();
                         });
-
-                        // Just for example:
-
-                        logging.ConfigureAzureTable = options =>
-                        {
-                            options.BatchSizeThreshold = 1000;
-                            options.MaxBatchLifetime = TimeSpan.FromSeconds(10);
-                        };
-
-                        logging.ConfigureConsole = options =>
-                        {
-                            options.IncludeScopes = true;
-                        };
-
-                        logging.ConfigureEssentialSlackChannels = options =>
-                        {
-                            options.SpamGuard.DisableGuarding();
-                        };
                     });
                 
                 builder.Populate(services);
