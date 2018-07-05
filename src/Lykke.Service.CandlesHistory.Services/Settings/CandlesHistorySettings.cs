@@ -9,6 +9,5 @@ namespace Lykke.Service.CandlesHistory.Services.Settings
         public DbSettings Db { get; set; }
         public int MaxCandlesCountWhichCanBeRequested { get; set; }
         public ResourceMonitorSettings ResourceMonitor { get; set; }
-        public string MtAssetServiceUrl { get; set; }
     }
 }
