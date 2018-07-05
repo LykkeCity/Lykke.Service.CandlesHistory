@@ -82,7 +82,7 @@ namespace Lykke.Service.CandlesHistory
                     candlesHistory.CurrentValue,
                     settings.CurrentValue.Assets,
                     settings.CurrentValue.RedisSettings,
-                    candleHistoryAssetConnection,
+                    candleHistoryAssetConnection, 
                     Log));
                 builder.Populate(services);
                 ApplicationContainer = builder.Build();
