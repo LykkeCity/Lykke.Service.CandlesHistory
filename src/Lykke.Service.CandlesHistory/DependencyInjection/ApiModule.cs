@@ -115,15 +115,20 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                    new Uri(_assetSettings.ServiceUrl),
                    _settings.AssetsCache.ExpirationPeriod),
                _log);
+
+                builder.RegisterType<AssetPairsManager>()
+                .As<IAssetPairsManager>()
+                .SingleInstance();
             }
             else
             {
                 builder.RegisterClient<IAssetPairsApi>(_assetSettings.ServiceUrl);
+
+                builder.RegisterType<AssetPairsManager>()
+                .As<IAssetPairsManager>()
+                .SingleInstance();
             } 
 
-            builder.RegisterType<AssetPairsManager>()
-                    .As<IAssetPairsManager>()
-                    .SingleInstance();
         }
 
         private void RegisterCandles(ContainerBuilder builder)
