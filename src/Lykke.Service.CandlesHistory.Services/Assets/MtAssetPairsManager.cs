@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Lykke.Job.CandlesHistory.Services.Assets;
 using System.Collections.Generic;
 using System.Linq;
 using Common.Log;
@@ -10,7 +9,7 @@ using Polly;
 using System;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 
-namespace Lykke.Job.CandlesHistory.Services.Assets
+namespace Lykke.Service.CandlesHistory.Services.Assets
 {
     public class MtAssetPairsManager : IAssetPairsManager
     {
