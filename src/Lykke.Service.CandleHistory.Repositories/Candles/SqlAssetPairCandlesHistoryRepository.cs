@@ -19,7 +19,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         private const string CreateTableScript = "CREATE TABLE [{0}](" +
                                                  "[Id] [bigint] NOT NULL IDENTITY(1,1) PRIMARY KEY," +
                                                  "[AssetPairId] [nvarchar] (64) NOT NULL, " +
-                                                 "[PriceType] [nvarchar] (64) NOT NULL ," +
+                                                 "[PriceType] [int] NOT NULL ," +
                                                  "[Open] [float] NOT NULL, " +
                                                  "[Close] [float] NOT NULL, " +
                                                  "[High] [float] NOT NULL, " +
@@ -68,11 +68,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                var objects = await conn.QueryAsync<object>($"SELECT * FROM {TableName} {whereClause}",
+                var objects = await conn.QueryAsync<Candle>($"SELECT * FROM {TableName} {whereClause}",
                     new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to });
 
-                IEnumerable<ICandle> result = (objects.ToList()).Cast<ICandle>();
-                return result;
+                return objects;
             }
 
         }
