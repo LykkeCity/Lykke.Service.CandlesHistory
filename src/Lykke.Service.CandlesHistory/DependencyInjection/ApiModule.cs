@@ -4,6 +4,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
 using Lykke.Common;
+using Lykke.HttpClientGenerator;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
 using Lykke.Service.CandlesHistory.Core.Domain;
@@ -20,6 +21,7 @@ using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Lykke.Logs.MsSql;
+using MarginTrading.SettingsService.Contracts;
 
 namespace Lykke.Service.CandlesHistory.DependencyInjection
 {
@@ -109,13 +111,25 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
 
         private void RegisterAssets(ContainerBuilder builder)
         {
-            _services.RegisterAssetsClient(AssetServiceSettings.Create(
-                    new Uri(_assetSettings.ServiceUrl),
-                    _settings.AssetsCache.ExpirationPeriod),
-                _log);
+            if (_marketType == MarketType.Spot)
+            {
+                _services.RegisterAssetsClient(AssetServiceSettings.Create(
+                        new Uri(_assetSettings.ServiceUrl),
+                        _settings.AssetsCache.ExpirationPeriod),
+                    _log);
 
-            builder.RegisterType<AssetPairsManager>()
-                .As<IAssetPairsManager>();
+                builder.RegisterType<AssetPairsManager>()
+                    .As<IAssetPairsManager>()
+                    .SingleInstance();
+            }
+            else
+            {
+                builder.RegisterClient<IAssetPairsApi>(_assetSettings.ServiceUrl);
+
+                builder.RegisterType<MtAssetPairsManager>()
+                    .As<IAssetPairsManager>()
+                    .SingleInstance();
+            }
         }
 
         private void RegisterCandles(ContainerBuilder builder)
