@@ -16,7 +16,6 @@ using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
-using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
@@ -173,9 +172,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_marketType))
                 .SingleInstance();
 
-            builder.RegisterType<CandlesHistorySizeValidator>()
-                .AsSelf()
-                .WithParameter(TypedParameter.From(_settings.MaxCandlesCountWhichCanBeRequested));
         }
     }
 }
