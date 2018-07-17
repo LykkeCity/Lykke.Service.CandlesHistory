@@ -64,14 +64,23 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
 
             var whereClause =
-                "WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar AND CAST(Timestamp as time) > CAST(@fromVar as time) AND CAST(Timestamp as time) < CAST(@toVar as time)";
+                "WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar AND Timestamp >= @fromVar  AND Timestamp <= @toVar";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                var objects = await conn.QueryAsync<Candle>($"SELECT TOP 1000 * FROM {TableName} {whereClause}",
-                    new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to });
+                try
+                {
+                    var objects = await conn.QueryAsync<Candle>($"SELECT TOP 1000 * FROM {TableName} {whereClause}",
+                        new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to });
 
-                return objects;
+                    return objects;
+                }
+                catch (Exception ex)
+                {
+                    _log?.WriteErrorAsync(nameof(SqlAssetPairCandlesHistoryRepository), "GetCandlesAsync", null, ex);
+                    throw;
+                }
+               
             }
 
         }
