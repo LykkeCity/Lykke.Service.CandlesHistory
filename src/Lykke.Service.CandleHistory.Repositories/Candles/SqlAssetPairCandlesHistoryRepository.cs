@@ -68,7 +68,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                var objects = await conn.QueryAsync<Candle>($"SELECT * FROM {TableName} {whereClause}",
+                var objects = await conn.QueryAsync<Candle>($"SELECT TOP 1000 * FROM {TableName} {whereClause}",
                     new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to });
 
                 return objects;
