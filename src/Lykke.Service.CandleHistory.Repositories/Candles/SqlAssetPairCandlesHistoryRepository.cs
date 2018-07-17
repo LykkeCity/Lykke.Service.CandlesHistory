@@ -71,7 +71,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 try
                 {
                     var objects = await conn.QueryAsync<Candle>($"SELECT TOP 1000 * FROM {TableName} {whereClause}",
-                        new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to });
+                        new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to }, null, commandTimeout: 150);
 
                     return objects;
                 }
