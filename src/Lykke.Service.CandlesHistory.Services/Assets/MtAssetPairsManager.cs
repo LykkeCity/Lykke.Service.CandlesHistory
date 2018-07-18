@@ -26,15 +26,9 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
         {
             var pair = await _apiService.Get(assetPairId);
 
-            return pair == null ? null : new AssetPair
-            {
-                Id = pair.Id,
-                Name = pair.Name,
-                BaseAssetId = pair.BaseAssetId,
-                QuotingAssetId = pair.QuoteAssetId,
-                Accuracy = pair.Accuracy,
-                InvertedAccuracy = pair.Accuracy
-            };
+            return pair == null ? null : MapAssetPair(pair);
+
+
         }
 
         public Task<AssetPair> TryGetAssetPairAsync(string assetPairId)
@@ -56,15 +50,20 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
                 .WaitAndRetryForeverAsync(
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timespan) => _log.WriteErrorAsync("Get all asset pairs with retry", string.Empty, exception))
-                .ExecuteAsync(async () => (await _apiService.List()).Select(pair => new AssetPair
-                {
-                    Id = pair.Id,
-                    Name = pair.Name,
-                    BaseAssetId = pair.BaseAssetId,
-                    QuotingAssetId = pair.QuoteAssetId,
-                    Accuracy = pair.Accuracy,
-                    InvertedAccuracy = pair.Accuracy
-                }));
+                .ExecuteAsync(async () => (await _apiService.List()).Select(pair => MapAssetPair(pair)));
+        }
+
+        public AssetPair MapAssetPair(MarginTrading.SettingsService.Contracts.AssetPair.AssetPairContract pair)
+        {
+            return new AssetPair
+            {
+                Id = pair.Id,
+                Name = pair.Name,
+                BaseAssetId = pair.BaseAssetId,
+                QuotingAssetId = pair.QuoteAssetId,
+                Accuracy = pair.Accuracy,
+                InvertedAccuracy = pair.Accuracy
+            };
         }
 
     }
