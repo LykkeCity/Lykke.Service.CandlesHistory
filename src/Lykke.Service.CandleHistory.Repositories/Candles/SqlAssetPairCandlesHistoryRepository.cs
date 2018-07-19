@@ -9,13 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.CandleHistory.Repositories.Extensions;
+using Lykke.Logs.MsSql.Extensions;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class SqlAssetPairCandlesHistoryRepository
     {
         private const int commandTimeout = 150;
+
         private const string CreateTableScript = "CREATE TABLE [{0}](" +
                                                  "[Id] [bigint] NOT NULL IDENTITY(1,1) PRIMARY KEY," +
                                                  "[AssetPairId] [nvarchar] (64) NOT NULL, " +
@@ -30,8 +31,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                                                  "[LastTradePrice] [float] NOT NULL, " +
                                                  "[Timestamp] [datetime] NULL, " +
                                                  "[LastUpdateTimestamp] [datetime] NULL" +
-                                                 ", INDEX IX_{0} NONCLUSTERED (Timestamp, PriceType, TimeInterval)" +
-                                                 ", CONSTRAINT UC_Person UNIQUE (PriceType, TimeInterval, Timestamp));";
+                                                 ", INDEX IX_{0} UNIQUE NONCLUSTERED (Timestamp, PriceType, TimeInterval));"; 
 
         private static Type DataType => typeof(ICandle);
         private static readonly string GetColumns = "[" + string.Join("],[", DataType.GetProperties().Select(x => x.Name)) + "]";
