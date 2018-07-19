@@ -15,7 +15,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
     public class SqlAssetPairCandlesHistoryRepository
     {
-
+        private const int commandTimeout = 150;
         private const string CreateTableScript = "CREATE TABLE [{0}](" +
                                                  "[Id] [bigint] NOT NULL IDENTITY(1,1) PRIMARY KEY," +
                                                  "[AssetPairId] [nvarchar] (64) NOT NULL, " +
@@ -30,7 +30,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                                                  "[LastTradePrice] [float] NOT NULL, " +
                                                  "[Timestamp] [datetime] NULL, " +
                                                  "[LastUpdateTimestamp] [datetime] NULL" +
-                                                 ", INDEX IX_{0} NONCLUSTERED (Timestamp, PriceType, TimeInterval));";
+                                                 ", INDEX IX_{0} NONCLUSTERED (Timestamp, PriceType, TimeInterval)" +
+                                                 ", CONSTRAINT UC_Person UNIQUE (PriceType, TimeInterval, Timestamp));";
 
         private static Type DataType => typeof(ICandle);
         private static readonly string GetColumns = "[" + string.Join("],[", DataType.GetProperties().Select(x => x.Name)) + "]";
@@ -68,18 +69,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try
-                {
-                    var objects = await conn.QueryAsync<Candle>($"SELECT TOP 1000 * FROM {TableName} {whereClause}",
-                        new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to }, null, commandTimeout: 150);
+
+                    var objects = await conn.QueryAsync<Candle>($"SELECT * FROM {TableName} {whereClause}",
+                        new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to }, null, commandTimeout: commandTimeout);
 
                     return objects;
-                }
-                catch (Exception ex)
-                {
-                    _log?.WriteErrorAsync(nameof(SqlAssetPairCandlesHistoryRepository), "GetCandlesAsync", null, ex);
-                    throw;
-                }
                
             }
 
@@ -90,7 +84,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             using (var conn = new SqlConnection(_connectionString))
             {
                 var candle = await conn.QueryAsync<ICandle>(
-                    $"SELECT TOP(1) * FROM {TableName} WHERE PriceType=@priceTypeVar ANDTimeInterval=@intervalVar ",
+                    $"SELECT TOP(1) * FROM {TableName} WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar ",
                                                                     new { priceTypeVar = priceType, intervalVar = timeInterval });
 
                 return candle.FirstOrDefault();
