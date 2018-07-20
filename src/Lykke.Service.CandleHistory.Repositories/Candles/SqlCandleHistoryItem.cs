@@ -6,7 +6,7 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {
-    class SqlCandleHistoryItem : ICandle
+    public class SqlCandleHistoryItem : ICandle
     {
         public string AssetPairId { get; }
         public CandlePriceType PriceType { get; }
