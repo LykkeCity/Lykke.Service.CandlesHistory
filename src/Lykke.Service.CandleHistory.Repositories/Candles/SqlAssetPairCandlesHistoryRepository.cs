@@ -65,12 +65,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
 
             var whereClause =
-                "WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar AND Timestamp >= @fromVar  AND Timestamp <= @toVar";
+                "WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar AND Timestamp >= @fromVar  AND Timestamp < @toVar";
 
             using (var conn = new SqlConnection(_connectionString))
             {
 
-                    var objects = await conn.QueryAsync<Candle>($"SELECT * FROM {TableName} {whereClause}",
+                    var objects = await conn.QueryAsync<SqlCandleHistoryItem>($"SELECT * FROM {TableName} {whereClause}",
                         new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to }, null, commandTimeout: commandTimeout);
 
                     return objects;
