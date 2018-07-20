@@ -135,14 +135,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         {
             if (_settings.Db.StorageMode == StorageMode.SqlServer)
             {
-                var connstrParameter = new NamedParameter("connectionString",
-                    _settings.Db.SqlConnectionString);
-
-                builder.RegisterType<LogMsSql>()
-                    .As<ILogMsSql>()
-                    .WithParameter(connstrParameter)
-                    .SingleInstance();
-
                 builder.RegisterType<SqlCandlesHistoryRepository>()
                     .As<ICandlesHistoryRepository>()
                     .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
