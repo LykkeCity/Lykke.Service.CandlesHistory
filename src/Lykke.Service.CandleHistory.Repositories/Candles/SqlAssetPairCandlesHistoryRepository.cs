@@ -48,7 +48,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
             _log = log;
             _connectionString = connectionString;
-            TableName = assetName + "_candleshistory";
+            TableName = "candleshistory_" + assetName;
 
             using (var conn = new SqlConnection(_connectionString))
             {
