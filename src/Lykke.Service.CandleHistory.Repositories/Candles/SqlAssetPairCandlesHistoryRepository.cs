@@ -17,7 +17,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     {
         private const int commandTimeout = 150;
 
-        private const string CreateTableScript = "CREATE Candles.TABLE [{0}](" +
+        private const string CreateTableScript = "CREATE TABLE Candles.[{0}](" +
                                                  "[Id] [bigint] NOT NULL IDENTITY(1,1) PRIMARY KEY," +
                                                  "[AssetPairId] [nvarchar] (64) NOT NULL, " +
                                                  "[PriceType] [int] NOT NULL ," +
