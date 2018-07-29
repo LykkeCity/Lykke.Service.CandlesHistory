@@ -4,10 +4,10 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
 using Lykke.Common;
-using Lykke.Service.Assets.Client;
-using MarginTrading.SettingsService.Contracts;
 using Lykke.HttpClientGenerator;
+using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
+using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
@@ -16,10 +16,11 @@ using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Lykke.Service.CandlesHistory.Services.Candles;
 using Lykke.Service.CandlesHistory.Services.Settings;
-using Lykke.Service.CandlesHistory.Validation;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
+using Lykke.Logs.MsSql;
+using MarginTrading.SettingsService.Contracts;
 
 namespace Lykke.Service.CandlesHistory.DependencyInjection
 {
@@ -98,11 +99,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private void RegisterRedis(ContainerBuilder builder)
         {
             builder.Register(c =>
-                {
-                    var cm = ConnectionMultiplexer.Connect(_redisSettings.Configuration);
-                    cm.PreserveAsyncOrder = false;
-                    return cm;
-                })
+            {
+                var cm = ConnectionMultiplexer.Connect(_redisSettings.Configuration);
+                cm.PreserveAsyncOrder = false;
+                return cm;
+            })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
         }
@@ -112,31 +113,43 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
             if (_marketType == MarketType.Spot)
             {
                 _services.RegisterAssetsClient(AssetServiceSettings.Create(
-                   new Uri(_assetSettings.ServiceUrl),
-                   _settings.AssetsCache.ExpirationPeriod),
-               _log);
+                        new Uri(_assetSettings.ServiceUrl),
+                        _settings.AssetsCache.ExpirationPeriod),
+                    _log);
 
                 builder.RegisterType<AssetPairsManager>()
-                .As<IAssetPairsManager>()
-                .SingleInstance();
+                    .As<IAssetPairsManager>()
+                    .SingleInstance();
             }
             else
             {
                 builder.RegisterClient<IAssetPairsApi>(_assetSettings.ServiceUrl);
 
                 builder.RegisterType<MtAssetPairsManager>()
-                .As<IAssetPairsManager>()
-                .SingleInstance();
-            } 
-
+                    .As<IAssetPairsManager>()
+                    .SingleInstance();
+            }
         }
 
         private void RegisterCandles(ContainerBuilder builder)
         {
-            builder.RegisterType<CandlesHistoryRepository>()
-                .As<ICandlesHistoryRepository>()
-                .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
-                .SingleInstance();
+            if (_settings.Db.StorageMode == StorageMode.SqlServer)
+            {
+                builder.RegisterType<SqlCandlesHistoryRepository>()
+                    .As<ICandlesHistoryRepository>()
+                    .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
+                    .WithParameter(TypedParameter.From(_settings.Db.SqlConnectionString))
+                    .SingleInstance();
+            }
+            else if (_settings.Db.StorageMode == StorageMode.Azure)
+            {
+                builder.RegisterType<CandlesHistoryRepository>()
+                    .As<ICandlesHistoryRepository>()
+                    .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
+                    .SingleInstance();
+            }
+
+
 
             builder.RegisterType<ShutdownManager>()
                 .As<IShutdownManager>()
@@ -151,9 +164,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 .WithParameter(TypedParameter.From(_marketType))
                 .SingleInstance();
 
-            builder.RegisterType<CandlesHistorySizeValidator>()
-                .AsSelf()
-                .WithParameter(TypedParameter.From(_settings.MaxCandlesCountWhichCanBeRequested));
         }
     }
 }
