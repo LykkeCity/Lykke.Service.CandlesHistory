@@ -17,15 +17,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     {
         private readonly ILog _log;
         private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
-        private readonly string _sqlConnectionString;
+
 
         private readonly ConcurrentDictionary<string, SqlAssetPairCandlesHistoryRepository> _sqlAssetPairRepositories;
 
-        public SqlCandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings, string sqlServerConnectionString)
+        public SqlCandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
         {
             _log = log;
             _assetConnectionStrings = assetConnectionStrings;
-            _sqlConnectionString = sqlServerConnectionString;
 
             _sqlAssetPairRepositories = new ConcurrentDictionary<string, SqlAssetPairCandlesHistoryRepository>();
         }
@@ -70,7 +69,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
             if (!_sqlAssetPairRepositories.TryGetValue(key, out SqlAssetPairCandlesHistoryRepository repo) || repo == null)
             {
-                repo = new SqlAssetPairCandlesHistoryRepository(assetPairId, _sqlConnectionString, _log);
+                repo = new SqlAssetPairCandlesHistoryRepository(assetPairId, _assetConnectionStrings.ConnectionString(x => x[assetPairId]).CurrentValue, _log);
                 _sqlAssetPairRepositories.TryAdd(key, repo);
             }
 
