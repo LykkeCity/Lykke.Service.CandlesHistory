@@ -77,23 +77,24 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         {
             var monitorSettings = _settings.ResourceMonitor;
 
-            switch (monitorSettings.MonitorMode)
-            {
-                case ResourceMonitorMode.Off:
-                    // Do not register any resource monitor.
-                    break;
+            if (monitorSettings != null)
+                switch (monitorSettings.MonitorMode)
+                {
+                    case ResourceMonitorMode.Off:
+                        // Do not register any resource monitor.
+                        break;
 
-                case ResourceMonitorMode.AppInsightsOnly:
-                    builder.RegisterResourcesMonitoring(_log);
-                    break;
+                    case ResourceMonitorMode.AppInsightsOnly:
+                        builder.RegisterResourcesMonitoring(_log);
+                        break;
 
-                case ResourceMonitorMode.AppInsightsWithLog:
-                    builder.RegisterResourcesMonitoringWithLogging(
-                        _log,
-                        monitorSettings.CpuThreshold,
-                        monitorSettings.RamThreshold);
-                    break;
-            }
+                    case ResourceMonitorMode.AppInsightsWithLog:
+                        builder.RegisterResourcesMonitoringWithLogging(
+                            _log,
+                            monitorSettings.CpuThreshold,
+                            monitorSettings.RamThreshold);
+                        break;
+                }
         }
 
         private void RegisterRedis(ContainerBuilder builder)
@@ -138,7 +139,6 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 builder.RegisterType<SqlCandlesHistoryRepository>()
                     .As<ICandlesHistoryRepository>()
                     .WithParameter(TypedParameter.From(_candleHistoryAssetConnections))
-                    .WithParameter(TypedParameter.From(_settings.Db.SqlConnectionString))
                     .SingleInstance();
             }
             else if (_settings.Db.StorageMode == StorageMode.Azure)
