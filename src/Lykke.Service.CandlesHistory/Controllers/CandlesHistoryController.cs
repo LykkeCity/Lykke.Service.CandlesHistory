@@ -50,7 +50,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetAvailableAssetPairs()
         {
-            var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
+            var assetPairs = await _assetPairsManager.GetAllAsync();
 
             return Ok(assetPairs
                 .Where(p => _candleHistoryAssetConnections.ContainsKey(p.Id))
@@ -69,7 +69,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             try
             {
-                var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
+                var assetPairs = await _assetPairsManager.GetAllAsync();
 
                 // Now we do select new history depth items in parallel  style for each asset pair,
                 // but the depth item constructor itself executes 4 awaitable queries non-parallel.
@@ -179,15 +179,15 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not configured"));
             }
 
-            var enabledPairsTask = request.AssetPairs.Select(p => _assetPairsManager.TryGetEnabledPairAsync(p)).ToArray();
-            await Task.WhenAll(enabledPairsTask);
+            var assetPairsTask = request.AssetPairs.Select(p => _assetPairsManager.TryGetAssetPairAsync(p)).ToArray();
+            await Task.WhenAll(assetPairsTask);
 
-            if (enabledPairsTask.Any(t => t.Result == null))
+            if (assetPairsTask.Any(t => t.Result == null))
             {
-                var disabled = request.AssetPairs.Except(enabledPairsTask.Select(p => p.Result?.Id).Where(p => p != null));
+                var notFound = request.AssetPairs.Except(assetPairsTask.Select(p => p.Result?.Id).Where(p => p != null));
                 return BadRequest(
                     ErrorResponse.Create(nameof(request.AssetPairs),
-                        $"Asset pairs [{string.Join(", ", disabled)}] are not found or disabled"));
+                        $"Asset pairs [{string.Join(", ", notFound)}] are not found"));
             }
 
             var allHistory = new Dictionary<string, CandlesHistoryResponseModel>();
@@ -265,9 +265,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is not configured"));
             }
-            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            if (await _assetPairsManager.TryGetAssetPairAsync(assetPairId) == null)
             {
-                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found"));
             }
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
