@@ -9,6 +9,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
 using Lykke.Logs.MsSql;
+using Lykke.Logs.MsSql.Repositories;
 using Lykke.Logs.Slack;
 using Lykke.Service.CandlesHistory.Core.Domain;
 using Lykke.Service.CandlesHistory.Core.Services;
@@ -74,23 +75,12 @@ namespace Lykke.Service.CandlesHistory
                     ? settings.Nested(x => x.CandleHistoryAssetConnections)
                     : settings.Nested(x => x.MtCandleHistoryAssetConnections);
 
-                if (candlesHistory.CurrentValue.Db.StorageMode == StorageMode.Azure)
-                {
-                    Log = CreateLogWithSlack(
-                        services,
-                        settings.CurrentValue.SlackNotifications,
-                        candlesHistory.ConnectionString(x => x.Db.LogsConnectionString),
-                        candlesHistory.CurrentValue.Db.StorageMode);
-                }
-                else if (candlesHistory.CurrentValue.Db.StorageMode == StorageMode.SqlServer)
-                {
-                    Log = CreateLogWithSlack(
-                        services,
-                        settings.CurrentValue.SlackNotifications,
-                        candlesHistory.ConnectionString(x => x.Db.LogsConnectionString),
-                        candlesHistory.CurrentValue.Db.StorageMode);
-                }
-
+                Log = CreateLogWithSlack(
+                    services,
+                    settings.CurrentValue.SlackNotifications,
+                    candlesHistory.ConnectionString(x => x.Db.LogsConnectionString),
+                    candlesHistory.CurrentValue.Db.StorageMode);
+                
                 builder.RegisterModule(new ApiModule(
                     marketType,
                     candlesHistory.CurrentValue,
@@ -197,6 +187,7 @@ namespace Lykke.Service.CandlesHistory
 
         private static ILog CreateLogWithSlack(IServiceCollection services, SlackNotificationsSettings slackSettings, IReloadingManager<string> dbLogConnectionStringManager, StorageMode smode)
         {
+            var tableName = "CandlesHistoryServiceLog";
             var consoleLogger = new LogToConsole();
             var aggregateLogger = new AggregateLogger();
 
@@ -222,20 +213,19 @@ namespace Lykke.Service.CandlesHistory
 
             if (smode == StorageMode.SqlServer)
             {
-                var sqlLogger = new LogToSql(new LogMsSql("CandlesHistoryServiceLog",
-                    dbLogConnectionStringManager.CurrentValue));
-
-                aggregateLogger.AddLog(sqlLogger);
+                aggregateLogger.AddLog(
+                    new LogToSql(new SqlLogRepository(tableName, dbLogConnectionStringManager.CurrentValue)));
             }
             else if (smode == StorageMode.Azure)
             {
                 var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
                 // Creating azure storage logger, which logs own messages to concole log
-                if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") && dbLogConnectionString.EndsWith("}")))
+                if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") 
+                                                                      && dbLogConnectionString.EndsWith("}")))
                 {
                     var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
-                        AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "CandlesHistoryServiceLogs", consoleLogger),
+                        AzureTableStorage<Logs.LogEntity>.Create(dbLogConnectionStringManager, tableName, consoleLogger),
                         consoleLogger);
 
                     var azureStorageLogger = new LykkeLogToAzureStorage(
