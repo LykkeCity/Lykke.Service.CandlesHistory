@@ -71,9 +71,8 @@ namespace Lykke.Service.CandlesHistory
                 var candlesHistory = settings.CurrentValue.CandlesHistory != null
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
-                var candleHistoryAssetConnection = settings.CurrentValue.CandleHistoryAssetConnections != null
-                    ? settings.Nested(x => x.CandleHistoryAssetConnections)
-                    : settings.Nested(x => x.MtCandleHistoryAssetConnections);
+                var candleHistoryAssetConnection = settings
+                    .Nested(x => x.CandlesHistory.Db.SnapshotsConnectionString);
 
                 Log = CreateLogWithSlack(
                     services,

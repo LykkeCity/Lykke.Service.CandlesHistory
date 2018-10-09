@@ -16,15 +16,14 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     public class SqlCandlesHistoryRepository : ICandlesHistoryRepository
     {
         private readonly ILog _log;
-        private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
-
+        private readonly IReloadingManager<string> _assetConnectionString;
 
         private readonly ConcurrentDictionary<string, SqlAssetPairCandlesHistoryRepository> _sqlAssetPairRepositories;
 
-        public SqlCandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
+        public SqlCandlesHistoryRepository(ILog log, IReloadingManager<string> assetConnectionString)
         {
             _log = log;
-            _assetConnectionStrings = assetConnectionStrings;
+            _assetConnectionString = assetConnectionString;
 
             _sqlAssetPairRepositories = new ConcurrentDictionary<string, SqlAssetPairCandlesHistoryRepository>();
         }
@@ -42,11 +41,6 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                 await _log.WriteErrorAsync("get candle rows with retries failed", assetPairId, ex);
                 throw;
             }
-        }
-
-        public bool CanStoreAssetPair(string assetPairId)
-        {
-            return _assetConnectionStrings.CurrentValue.ContainsKey(assetPairId);
         }
 
         public async Task<ICandle> TryGetFirstCandleAsync(string assetPairId, CandleTimeInterval interval, CandlePriceType priceType)
@@ -67,9 +61,9 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
             var key = assetPairId;
 
-            if (!_sqlAssetPairRepositories.TryGetValue(key, out SqlAssetPairCandlesHistoryRepository repo) || repo == null)
+            if (!_sqlAssetPairRepositories.TryGetValue(key, out var repo) || repo == null)
             {
-                repo = new SqlAssetPairCandlesHistoryRepository(assetPairId, _assetConnectionStrings.ConnectionString(x => x[assetPairId]).CurrentValue, _log);
+                repo = new SqlAssetPairCandlesHistoryRepository(assetPairId, _assetConnectionString.CurrentValue, _log);
                 _sqlAssetPairRepositories.TryAdd(key, repo);
             }
 

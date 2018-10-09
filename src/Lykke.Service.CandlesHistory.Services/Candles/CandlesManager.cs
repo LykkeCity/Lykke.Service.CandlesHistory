@@ -43,8 +43,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// </summary>
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            CheckupAssetPairOrFail(assetPairId);
-
             var alignedFromMoment = fromMoment.TruncateTo(timeInterval);
             var alignedToMoment = toMoment.TruncateTo(timeInterval);
 
@@ -76,8 +74,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public async Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType,
             CandleTimeInterval interval)
         {
-            CheckupAssetPairOrFail(assetPairId);
-
             var firstCandle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPairId, interval, priceType);
 
             return firstCandle; // The risk of the null is minimal but not excluded.
@@ -86,16 +82,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         #endregion
 
         #region Private
-
-        /// <summary>
-        /// Throws an <see cref="InvalidOperationException"/> if the specified asset pair is not supported.
-        /// </summary>
-        /// <param name="assetPairId">Asset pair ID.</param>
-        private void CheckupAssetPairOrFail(string assetPairId)
-        {
-            if (!_candlesHistoryRepository.CanStoreAssetPair(assetPairId))
-                throw new InvalidOperationException($"Connection string for asset pair {assetPairId} not configured");
-        }
 
         /// <summary>
         /// Obtains candles history from cache only in stored time intervals

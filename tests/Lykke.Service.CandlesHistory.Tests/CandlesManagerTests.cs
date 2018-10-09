@@ -56,9 +56,6 @@ namespace Lykke.Service.CandlesHistory.Tests
             _assetPairsManagerMock
                 .Setup(m => m.TryGetEnabledPairAsync(It.IsAny<string>()))
                 .ReturnsAsync((string assetPairId) => _assetPairs.SingleOrDefault(a => a.Id == assetPairId));
-            _historyRepositoryMock
-                .Setup(m => m.CanStoreAssetPair(It.IsAny<string>()))
-                .Returns((string assetPairId) => new[] { "EURUSD", "USDCHF", "USDRUB" }.Contains(assetPairId));
 
             _manager = new CandlesManager(
                 _cacheServiceMock.Object,
