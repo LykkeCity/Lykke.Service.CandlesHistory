@@ -24,11 +24,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
         private readonly IConnectionMultiplexer _multiplexer;
         private readonly MarketType _market;
+        private readonly string _activeSlotKey;
 
         public RedisCandlesCacheService(IConnectionMultiplexer multiplexer, MarketType market)
         {
             _multiplexer = multiplexer;
             _market = market;
+            _activeSlotKey = GetActiveSlotKey(_market);
         }
 
         public IImmutableDictionary<string, IImmutableList<ICandle>> GetState()
@@ -48,9 +50,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            var key = GetKey(assetPairId, priceType, timeInterval);
+            SlotType activeSlot = GetActiveSlot();
+            var key = GetKey(assetPairId, priceType, timeInterval, activeSlot);
             var from = fromMoment.ToString(TimestampFormat);
             var to = toMoment.ToString(TimestampFormat);
+
             var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to, Exclude.Stop);
             
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
@@ -86,9 +90,23 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        private string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
+        private SlotType GetActiveSlot()
         {
-            return $"CandlesHistory:{_market}:{assetPairId}:{priceType}:{timeInterval}";
+            var database = _multiplexer.GetDatabase();
+
+            return database.KeyExists(_activeSlotKey) 
+                ? Enum.Parse<SlotType>(database.StringGet(_activeSlotKey)) 
+                : SlotType.Slot0;
+        }
+
+        private string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, SlotType slotType)
+        {
+            return $"CandlesHistory:{_market}:{slotType.ToString()}:{assetPairId}:{priceType}:{timeInterval}";
+        }
+        
+        private string GetActiveSlotKey(MarketType marketType)
+        {
+            return $"CandlesHistory:{_market}:ActiveSlot";
         }
     }
 }
