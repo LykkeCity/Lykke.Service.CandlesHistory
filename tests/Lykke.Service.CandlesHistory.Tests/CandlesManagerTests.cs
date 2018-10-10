@@ -65,13 +65,6 @@ namespace Lykke.Service.CandlesHistory.Tests
         #region Candles getting
 
         [TestMethod]
-        public async Task Getting_candles_of_asset_pair_that_hasnt_connection_string_throws()
-        {
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
-                _manager.GetCandlesAsync("EURRUB", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23)));
-        }
-
-        [TestMethod]
         public async Task Getting_candles_passes_asset_price_type_and_time_interval_to_cached_candles_service_and_repository()
         {
             // Act
