@@ -12,6 +12,7 @@ using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using Microsoft.AspNetCore.Mvc;
+using MoreLinq;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -70,24 +71,28 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
+                var result = new List<CandlesHistoryDepthResponseModel>();
+
                 // Now we do select new history depth items in parallel  style for each asset pair,
                 // but the depth item constructor itself executes 4 awaitable queries non-parallel.
                 // I.e., if we have 10 asset pairs, we get here 10 parallel tasks with 4 sequential
                 // data queries in each, but not 10 * 4 parallel tasks.
-                var result = await Task.WhenAll(
-                assetPairs
-                    .Select(async p => new CandlesHistoryDepthResponseModel
-                    {
-                        AssetPairId = p.Id,
-                        OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
+                // UPD: the batch introduced to not to die with 1500 asset pairs.
+                foreach(var batchedAssetPairs in assetPairs.Batch(10))
+                {
+                    var batchResults = await Task.WhenAll(
+                        batchedAssetPairs.Select(async p => new CandlesHistoryDepthResponseModel
+                        {
+                            AssetPairId = p.Id,
+                            OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
+                        }));
+                    result.AddRange(batchResults);
+                }
 
-                    })
-                );
-
-                return Ok(result);
+                return Ok(result.ToArray());
             }
             catch (Exception ex)
             {
