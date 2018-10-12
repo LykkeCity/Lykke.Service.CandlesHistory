@@ -83,11 +83,11 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
             using (var conn = new SqlConnection(_connectionString))
             {
-                var candle = await conn.QueryAsync<ICandle>(
+                var candle = await conn.QueryFirstOrDefaultAsync<SqlCandleHistoryItem>(
                     $"SELECT TOP(1) * FROM {TableName} WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar ",
                                                                     new { priceTypeVar = priceType, intervalVar = timeInterval });
 
-                return candle.FirstOrDefault();
+                return candle;
             }
         }
 
