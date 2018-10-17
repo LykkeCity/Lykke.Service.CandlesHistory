@@ -17,7 +17,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     {
         private const int commandTimeout = 150;
 
-        private const string CreateTableScript = "CREATE TABLE [{0}](" +
+        private const string CreateTableScript = "CREATE TABLE {0}(" +
                                                  "[Id] [bigint] NOT NULL IDENTITY(1,1) PRIMARY KEY," +
                                                  "[AssetPairId] [nvarchar] (64) NOT NULL, " +
                                                  "[PriceType] [int] NOT NULL ," +
@@ -33,29 +33,20 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                                                  "[LastUpdateTimestamp] [datetime] NULL" +
                                                  ", INDEX IX_{0} UNIQUE NONCLUSTERED (Timestamp, PriceType, TimeInterval));"; 
 
-        private static Type DataType => typeof(ICandle);
-        private static readonly string GetColumns = "[" + string.Join("],[", DataType.GetProperties().Select(x => x.Name)) + "]";
-        private static readonly string GetFields = string.Join(",", DataType.GetProperties().Select(x => "@" + x.Name));
-        private static readonly string GetUpdateClause = string.Join(",",
-            DataType.GetProperties().Select(x => "[" + x.Name + "]=@" + x.Name));
-
-        private readonly string assetName;
-        private readonly string TableName;
+        private readonly string _tableName;
         private readonly string _connectionString;
-        private readonly ILog _log;
 
         public SqlAssetPairCandlesHistoryRepository(string assetName, string connectionString, ILog log)
         {
-            _log = log;
             _connectionString = connectionString;
-            TableName = "Candles.candleshistory_" + assetName;
+            _tableName = $"[Candles].[CandlesHistory_{assetName}]";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try { conn.CreateTableIfDoesntExists(CreateTableScript, TableName); }
+                try { conn.CreateTableIfDoesntExists(CreateTableScript, _tableName); }
                 catch (Exception ex)
                 {
-                    _log?.WriteErrorAsync(nameof(SqlAssetPairCandlesHistoryRepository), "CreateTableIfDoesntExists", null, ex);
+                    log?.WriteErrorAsync(nameof(SqlAssetPairCandlesHistoryRepository), "CreateTableIfDoesntExists", null, ex);
                     throw;
                 }
             }
@@ -70,7 +61,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             using (var conn = new SqlConnection(_connectionString))
             {
 
-                    var objects = await conn.QueryAsync<SqlCandleHistoryItem>($"SELECT * FROM {TableName} {whereClause}",
+                    var objects = await conn.QueryAsync<SqlCandleHistoryItem>($"SELECT * FROM {_tableName} {whereClause}",
                         new { priceTypeVar = priceType, intervalVar = interval, fromVar = from, toVar = to }, null, commandTimeout: commandTimeout);
 
                     return objects;
@@ -84,7 +75,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             using (var conn = new SqlConnection(_connectionString))
             {
                 var candle = await conn.QueryFirstOrDefaultAsync<SqlCandleHistoryItem>(
-                    $"SELECT TOP(1) * FROM {TableName} WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar ",
+                    $"SELECT TOP(1) * FROM {_tableName} WHERE PriceType=@priceTypeVar AND TimeInterval=@intervalVar ",
                                                                     new { priceTypeVar = priceType, intervalVar = timeInterval });
 
                 return candle;
