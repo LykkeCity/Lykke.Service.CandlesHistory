@@ -117,7 +117,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             try
             {
-                var results = await Task.WhenAll(resultTasks);
+                var results = (await Task.WhenAll(resultTasks)).Where(c => c != null).ToArray();
 
                 return Ok(new CandlesHistoryDepthResponseModel
                 {
