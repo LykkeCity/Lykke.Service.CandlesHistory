@@ -16,22 +16,17 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
     public sealed class CandlesHistoryRepository : ICandlesHistoryRepository, IDisposable
     {
         private readonly ILog _log;
-        private readonly IReloadingManager<Dictionary<string, string>> _assetConnectionStrings;
+        private readonly IReloadingManager<string> _assetConnectionString;
 
         private readonly Dictionary<string, AssetPairCandlesHistoryRepository> _assetPairRepositories;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        public CandlesHistoryRepository(ILog log, IReloadingManager<Dictionary<string, string>> assetConnectionStrings)
+        public CandlesHistoryRepository(ILog log, IReloadingManager<string> assetConnectionString)
         {
             _log = log;
-            _assetConnectionStrings = assetConnectionStrings;
+            _assetConnectionString = assetConnectionString;
 
             _assetPairRepositories = new Dictionary<string, AssetPairCandlesHistoryRepository>();
-        }
-
-        public bool CanStoreAssetPair(string assetPairId)
-        {
-            return _assetConnectionStrings.CurrentValue.ContainsKey(assetPairId);
         }
 
         /// <summary>
@@ -104,14 +99,8 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
 
         private INoSQLTableStorage<CandleHistoryEntity> CreateStorage(string assetPairId, string tableName)
         {
-            if (!_assetConnectionStrings.CurrentValue.TryGetValue(assetPairId, out var assetConnectionString) ||
-                string.IsNullOrEmpty(assetConnectionString))
-            {
-                throw new ConfigurationException($"Connection string for asset pair '{assetPairId}' is not specified.");
-            }
-
             var storage = AzureTableStorage<CandleHistoryEntity>.Create(
-                _assetConnectionStrings.ConnectionString(x => x[assetPairId]),
+                _assetConnectionString,
                 tableName,
                 _log,
                 TimeSpan.FromMinutes(1),

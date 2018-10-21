@@ -10,7 +10,9 @@ using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
+using Lykke.Service.CandlesHistory.Services.Settings;
 using Microsoft.AspNetCore.Mvc;
+using MoreLinq;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.CandlesHistory.Controllers
@@ -23,18 +25,18 @@ namespace Lykke.Service.CandlesHistory.Controllers
     {
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
-        private readonly Dictionary<string, string> _candleHistoryAssetConnections;
+        private readonly DbSettings _dbSettings;
 
         #region Initialization
 
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
-            Dictionary<string, string> candleHistoryAssetConnections)
+            DbSettings dbSettings)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
-            _candleHistoryAssetConnections = candleHistoryAssetConnections;
+            _dbSettings = dbSettings;
         }
 
         #endregion
@@ -52,9 +54,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         {
             var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
-            return Ok(assetPairs
-                .Where(p => _candleHistoryAssetConnections.ContainsKey(p.Id))
-                .Select(p => p.Id));
+            return Ok(assetPairs.Select(p => p.Id));
         }
 
         /// <summary>
@@ -71,25 +71,28 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 var assetPairs = await _assetPairsManager.GetAllEnabledAsync();
 
+                var result = new List<CandlesHistoryDepthResponseModel>();
+
                 // Now we do select new history depth items in parallel  style for each asset pair,
                 // but the depth item constructor itself executes 4 awaitable queries non-parallel.
                 // I.e., if we have 10 asset pairs, we get here 10 parallel tasks with 4 sequential
                 // data queries in each, but not 10 * 4 parallel tasks.
-                var result = await Task.WhenAll(
-                assetPairs
-                    .Where(p => _candleHistoryAssetConnections.ContainsKey(p.Id))
-                    .Select(async p => new CandlesHistoryDepthResponseModel
-                    {
-                        AssetPairId = p.Id,
-                        OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
-                        OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
+                // UPD: the batch introduced to not to die with 1500 asset pairs.
+                foreach(var batchedAssetPairs in assetPairs.Batch(10))
+                {
+                    var batchResults = await Task.WhenAll(
+                        batchedAssetPairs.Select(async p => new CandlesHistoryDepthResponseModel
+                        {
+                            AssetPairId = p.Id,
+                            OldestAskTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Ask, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestBidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Bid, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestMidTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Mid, CandleTimeInterval.Sec))?.Timestamp,
+                            OldestTradesTimestamp = (await _candlesManager.TryGetOldestCandleAsync(p.Id, CandlePriceType.Trades, CandleTimeInterval.Sec))?.Timestamp
+                        }));
+                    result.AddRange(batchResults);
+                }
 
-                    })
-                );
-
-                return Ok(result);
+                return Ok(result.ToArray());
             }
             catch (Exception ex)
             {
@@ -108,13 +111,18 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAssetPairHistoryDepth(string assetPairId)
         {
+            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
+            }
+            
             var resultTasks = Services.Candles.Constants.StoredPriceTypes
                 .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
                 .ToList();
 
             try
             {
-                var results = await Task.WhenAll(resultTasks);
+                var results = (await Task.WhenAll(resultTasks)).Where(c => c != null).ToArray();
 
                 return Ok(new CandlesHistoryDepthResponseModel
                 {
@@ -165,17 +173,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (request.FromMoment > request.ToMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
-            }
-
-            var notConfiguerdAssetPairs = request.AssetPairs
-                .Where(p => !_candleHistoryAssetConnections.ContainsKey(p))
-                .ToArray();
-
-            if (notConfiguerdAssetPairs.Any())
-            {
-                return BadRequest(
-                    ErrorResponse.Create(nameof(request.AssetPairs),
-                    $"Asset pairs [{string.Join(", ", notConfiguerdAssetPairs)}] are not configured"));
             }
 
             var enabledPairsTask = request.AssetPairs.Select(p => _assetPairsManager.TryGetEnabledPairAsync(p)).ToArray();
@@ -259,10 +256,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
             if (fromMoment > toMoment)
             {
                 return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
-            }
-            if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
-            {
-                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is not configured"));
             }
             if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
             {
