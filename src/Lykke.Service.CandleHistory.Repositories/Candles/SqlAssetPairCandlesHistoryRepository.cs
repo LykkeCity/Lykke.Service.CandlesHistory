@@ -31,7 +31,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
                                                  "[LastTradePrice] [float] NOT NULL, " +
                                                  "[Timestamp] [datetime] NULL, " +
                                                  "[LastUpdateTimestamp] [datetime] NULL" +
-                                                 ", INDEX IX_{0} UNIQUE NONCLUSTERED (Timestamp, PriceType, TimeInterval));"; 
+                                                 ",INDEX IX_UNIQUEINDEX UNIQUE NONCLUSTERED (Timestamp, PriceType, TimeInterval));"; 
 
         private readonly string _tableName;
         private readonly string _connectionString;
@@ -39,11 +39,12 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         public SqlAssetPairCandlesHistoryRepository(string assetName, string connectionString, ILog log)
         {
             _connectionString = connectionString;
-            _tableName = $"[Candles].[CandlesHistory_{assetName}]";
+            _tableName = $"[Candles].[candleshistory_{assetName}]";
+            var createTableScript = CreateTableScript.Replace("UNIQUEINDEX", assetName);
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try { conn.CreateTableIfDoesntExists(CreateTableScript, _tableName); }
+                try { conn.CreateTableIfDoesntExists(createTableScript, _tableName); }
                 catch (Exception ex)
                 {
                     log?.WriteErrorAsync(nameof(SqlAssetPairCandlesHistoryRepository), "CreateTableIfDoesntExists", null, ex);
