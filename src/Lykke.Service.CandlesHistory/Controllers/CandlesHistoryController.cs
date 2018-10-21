@@ -111,6 +111,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> GetAssetPairHistoryDepth(string assetPairId)
         {
+            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
+            }
+            
             var resultTasks = Services.Candles.Constants.StoredPriceTypes
                 .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
                 .ToList();
