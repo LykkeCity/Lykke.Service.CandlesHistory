@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.2.2" />
-    <PackageReference Include="Lykke.Common" Version="7.0.1" />
+    <PackageReference Include="Lykke.Common" Version="7.3.0" />
     <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.9.0" />
     <PackageReference Include="Lykke.Logs" Version="5.1.0" />
     <PackageReference Include="Lykke.RabbitMq.Azure" Version="5.1.0" />
