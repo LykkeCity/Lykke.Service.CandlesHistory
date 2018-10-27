@@ -74,10 +74,8 @@ namespace Lykke.Service.CandlesHistory
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
 
-                Log = CreateLogWithSlack(
-                    Configuration,
-                    services,
-                    settings);
+                Log = CreateLogWithSlack(Configuration, services, candlesHistory, 
+                    settings.CurrentValue.SlackNotifications);
                 
                 builder.RegisterModule(new ApiModule(
                     marketType,
@@ -184,23 +182,24 @@ namespace Lykke.Service.CandlesHistory
         }
 
         private static ILog CreateLogWithSlack(IConfiguration configuration, IServiceCollection services, 
-            IReloadingManager<AppSettings> settings)
+            IReloadingManager<CandlesHistorySettings> settings, SlackNotificationsSettings slackSettings)
         {
-            var tableName = "CandlesHistoryServiceLog";
+            const string tableName = "CandlesHistoryServiceLog";
             var consoleLogger = new LogToConsole();
             var aggregateLogger = new AggregateLogger();
+            var settingsValue = settings.CurrentValue;
 
             aggregateLogger.AddLog(consoleLogger);
 
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log
             LykkeLogToAzureSlackNotificationsManager slackNotificationsManager = null;
-            if (settings.CurrentValue.SlackNotifications != null)
+            if (slackSettings?.AzureQueue?.ConnectionString != null && slackSettings.AzureQueue.QueueName != null)
             {
                 // Creating slack notification service, which logs own azure queue processing messages to aggregate log
                 var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueSettings
                 {
-                    ConnectionString = settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                    QueueName = settings.CurrentValue.SlackNotifications.AzureQueue.QueueName
+                    ConnectionString = slackSettings.AzureQueue.ConnectionString,
+                    QueueName = slackSettings.AzureQueue.QueueName
                 }, aggregateLogger);
 
                 slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
@@ -210,26 +209,26 @@ namespace Lykke.Service.CandlesHistory
                 aggregateLogger.AddLog(logToSlack);
             }
 
-            if (settings.CurrentValue.CandlesHistory.UseSerilog)
+            if (settingsValue.UseSerilog)
             {
                 aggregateLogger.AddLog(new SerilogLogger(typeof(Startup).Assembly, configuration));
             }
-            else if (settings.CurrentValue.CandlesHistory.Db.StorageMode == StorageMode.SqlServer)
+            else if (settingsValue.Db.StorageMode == StorageMode.SqlServer)
             {
                 aggregateLogger.AddLog(
-                    new LogToSql(new SqlLogRepository(tableName, settings.CurrentValue.CandlesHistory.Db.SnapshotsConnectionString)));
+                    new LogToSql(new SqlLogRepository(tableName, settingsValue.Db.LogsConnectionString)));
             }
-            else if (settings.CurrentValue.CandlesHistory.Db.StorageMode == StorageMode.Azure)
+            else if (settingsValue.Db.StorageMode == StorageMode.Azure)
             {
-                var dbLogConnectionString = settings.CurrentValue.CandlesHistory.Db.SnapshotsConnectionString;
+                var dbLogConnectionString = settingsValue.Db.SnapshotsConnectionString;
 
-                // Creating azure storage logger, which logs own messages to concole log
+                // Creating azure storage logger, which logs own messages to console log
                 if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") 
                                                                       && dbLogConnectionString.EndsWith("}")))
                 {
                     var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
                         AzureTableStorage<Logs.LogEntity>.Create(settings.Nested(s => 
-                            s.CandlesHistory.Db.SnapshotsConnectionString), tableName, consoleLogger),
+                            s.Db.SnapshotsConnectionString), tableName, consoleLogger),
                         consoleLogger);
 
                     var azureStorageLogger = new LykkeLogToAzureStorage(
