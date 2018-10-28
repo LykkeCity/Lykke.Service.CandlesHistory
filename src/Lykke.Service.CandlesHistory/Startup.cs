@@ -7,6 +7,7 @@ using Common.Log;
 using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
+using Lykke.Common.Api.Contract.Responses;
 using Lykke.Logs;
 using Lykke.Logs.MsSql;
 using Lykke.Logs.MsSql.Repositories;
@@ -27,6 +28,7 @@ using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Services;
+using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -36,6 +38,8 @@ namespace Lykke.Service.CandlesHistory
         private IContainer ApplicationContainer { get; set; }
         private IConfigurationRoot Configuration { get; }
         private ILog Log { get; set; }
+
+        public static string ServiceName { get; } = PlatformServices.Default.Application.ApplicationName;
 
         public Startup(IHostingEnvironment env)
         {
@@ -109,7 +113,13 @@ namespace Lykke.Service.CandlesHistory
                 {
                     app.UseHsts();
                 }
-
+                
+#if DEBUG
+                app.UseLykkeMiddleware(ServiceName, ex => ex.ToString());
+#else
+                app.UseLykkeMiddleware(ServiceName, ex => new Common.Api.Contract.Responses.ErrorResponse {ErrorMessage = ex.Message});
+#endif
+                
                 app.UseMvc();
                 app.UseSwagger(c =>
                 {
