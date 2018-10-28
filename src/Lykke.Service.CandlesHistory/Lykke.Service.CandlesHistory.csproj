@@ -3,6 +3,13 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <Version>1.0.1</Version>
+    <AssemblyName>MarginTrading.CandlesHistory</AssemblyName>
+    <RootNamespace>MarginTrading.CandlesHistory</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>1701;1702;1705;CA2007</NoWarn>
+    <UserSecretsId>F7428201-B7F7-4571-9ABD-7A6F4CF87613</UserSecretsId>
+    <AssemblyName>MarginTrading.TradingHistory</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <NoWarn>1701;1702;1705;1591</NoWarn>
@@ -14,8 +21,14 @@
     <DocumentationFile></DocumentationFile>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-  
-
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.2.2" />
     <PackageReference Include="Lykke.Common" Version="6.8.4" />
@@ -28,11 +41,10 @@
     <PackageReference Include="Lykke.Service.Assets.Client" Version="4.0.1" />
     <PackageReference Include="Lykke.SettingsReader" Version="2.4.0" />
     <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.1.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.3.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.Web" Version="2.6.4">
-      <NoWarn>NU1701</NoWarn>
-    </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.1">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.1" />
@@ -40,6 +52,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.11" />
     <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.Extensions.SecretManager.Tools" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lykke.Service.CandleHistory.Repositories\Lykke.Service.CandleHistory.Repositories.csproj" />

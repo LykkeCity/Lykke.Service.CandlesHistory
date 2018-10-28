@@ -25,6 +25,7 @@ using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Services;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -37,11 +38,10 @@ namespace Lykke.Service.CandlesHistory
 
         public Startup(IHostingEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
+            Configuration = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("env.json", optional: true)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
+                .AddEnvironmentVariables()
+                .Build();
         }
 
         [UsedImplicitly]
@@ -106,8 +106,10 @@ namespace Lykke.Service.CandlesHistory
                 {
                     app.UseDeveloperExceptionPage();
                 }
-
-                app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
+                else
+                {
+                    app.UseHsts();
+                }
 
                 app.UseMvc();
                 app.UseSwagger(c =>
@@ -217,7 +219,7 @@ namespace Lykke.Service.CandlesHistory
             {
                 var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
-                // Creating azure storage logger, which logs own messages to concole log
+                // Creating azure storage logger, which logs own messages to console log
                 if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") 
                                                                       && dbLogConnectionString.EndsWith("}")))
                 {
@@ -237,6 +239,7 @@ namespace Lykke.Service.CandlesHistory
 
             }
 
+            LogLocator.Log = aggregateLogger;
 
             return aggregateLogger;
         }
