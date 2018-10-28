@@ -7,7 +7,6 @@ using Common.Log;
 using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
-using Lykke.Common.Api.Contract.Responses;
 using Lykke.Logs;
 using Lykke.Logs.MsSql;
 using Lykke.Logs.MsSql.Repositories;
@@ -114,11 +113,7 @@ namespace Lykke.Service.CandlesHistory
                     app.UseHsts();
                 }
                 
-#if DEBUG
-                app.UseLykkeMiddleware(ServiceName, ex => ex.ToString());
-#else
-                app.UseLykkeMiddleware(ServiceName, ex => new Common.Api.Contract.Responses.ErrorResponse {ErrorMessage = ex.Message});
-#endif
+                app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
                 
                 app.UseMvc();
                 app.UseSwagger(c =>
