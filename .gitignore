@@ -290,5 +290,5 @@ __pycache__/
 
 **/appsettings.json
 **/appsettings.*.json
-**/appsettings.json
+!**/appsettings.Serilog.json
 /src/Lykke.Service.CandlesHistory/env.json
