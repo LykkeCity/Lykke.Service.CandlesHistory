@@ -7,6 +7,7 @@ using Common.Log;
 using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
+using Lykke.Common.Api.Contract.Responses;
 using Lykke.Logs;
 using Lykke.Logs.MsSql;
 using Lykke.Logs.MsSql.Repositories;
@@ -26,6 +27,8 @@ using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+using Lykke.Service.CandlesHistory.Services;
+using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Lykke.Service.CandlesHistory
 {
@@ -36,14 +39,15 @@ namespace Lykke.Service.CandlesHistory
         private IConfigurationRoot Configuration { get; }
         private ILog Log { get; set; }
 
+        public static string ServiceName { get; } = PlatformServices.Default.Application.ApplicationName;
+
         public Startup(IHostingEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
+            Configuration = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("env.json", optional: true)
                 .AddSerilogJson(env)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
+                .AddEnvironmentVariables()
+                .Build();
         }
 
         [UsedImplicitly]
@@ -105,9 +109,17 @@ namespace Lykke.Service.CandlesHistory
                 {
                     app.UseDeveloperExceptionPage();
                 }
-
-                app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
-
+                else
+                {
+                    app.UseHsts();
+                }
+                
+#if DEBUG
+                app.UseLykkeMiddleware(ServiceName, ex => ex.ToString());
+#else
+                app.UseLykkeMiddleware(ServiceName, ex => new Common.Api.Contract.Responses.ErrorResponse {ErrorMessage = ex.Message});
+#endif
+                
                 app.UseMvc();
                 app.UseSwagger(c =>
                 {
@@ -243,6 +255,7 @@ namespace Lykke.Service.CandlesHistory
 
             }
 
+            LogLocator.Log = aggregateLogger;
 
             return aggregateLogger;
         }
