@@ -3,23 +3,22 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <Version>1.0.1</Version>
-    <AssemblyName>MarginTrading.CandlesHistory</AssemblyName>
-    <RootNamespace>MarginTrading.CandlesHistory</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Lykke.Service.CandlesHistory</AssemblyName>
+    <RootNamespace>Lykke.Service.CandlesHistory</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <NoWarn>1701;1702;1705;CA2007</NoWarn>
-    <UserSecretsId>F7428201-B7F7-4571-9ABD-7A6F4CF87613</UserSecretsId>
-    <AssemblyName>MarginTrading.TradingHistory</AssemblyName>
+    <UserSecretsId>F7428201-B7F7-4571-9ABD-3A1F4CF87613</UserSecretsId>
+    <AssemblyName>Lykke.Service.CandlesHistory</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <NoWarn>1701;1702;1705;1591</NoWarn>
     <DocumentationFile>bin\Release\netcoreapp2.0\Lykke.Service.CandlesHistory.xml</DocumentationFile>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;1591</NoWarn>
-    <DocumentationFile></DocumentationFile>
-    <LangVersion>latest</LangVersion>
+    <DocumentationFile>bin\Debug\netcoreapp2.0\Lykke.Service.CandlesHistory.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Content Update="appsettings.json">
@@ -60,9 +59,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.11" />
     <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
-  </ItemGroup>
-  <ItemGroup>
-    <DotNetCliToolReference Include="Microsoft.Extensions.SecretManager.Tools" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lykke.Service.CandleHistory.Repositories\Lykke.Service.CandleHistory.Repositories.csproj" />
