@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Autofac;
+using JetBrains.Annotations;
 using Lykke.Common;
 using Lykke.Service.Assets.Client;
 using Lykke.Service.CandleHistory.Repositories.Candles;
@@ -15,8 +16,9 @@ using Lykke.Service.CandlesHistory.Services.Settings;
 using Lykke.SettingsReader;
 using StackExchange.Redis;
 
-namespace Lykke.Service.CandlesHistory.DependencyInjection
+namespace Lykke.Service.CandlesHistory.Modules
 {
+    [UsedImplicitly]
     public class ApiModule : Module
     {
         private readonly MarketType _marketType;
@@ -25,17 +27,19 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
         private readonly RedisSettings _redisSettings;
         private readonly IReloadingManager<Dictionary<string, string>> _candleHistoryAssetConnections;
 
-        public ApiModule(MarketType marketType,
-            CandlesHistorySettings settings,
-            AssetsSettings assetsSettings,
-            RedisSettings redisSettings,
-            IReloadingManager<Dictionary<string, string>> candleHistoryAssetConnections)
+        public ApiModule(IReloadingManager<AppSettings> settings)
         {
-            _marketType = marketType;
-            _settings = settings;
-            _assetSettings = assetsSettings;
-            _redisSettings = redisSettings;
-            _candleHistoryAssetConnections = candleHistoryAssetConnections;
+            _marketType = settings.CurrentValue.CandlesHistory != null
+                ? MarketType.Spot
+                : MarketType.Mt;
+            
+            _settings = settings.CurrentValue.CandlesHistory ?? settings.CurrentValue.MtCandlesHistory;
+            
+            _assetSettings = settings.CurrentValue.Assets;
+            _redisSettings = settings.CurrentValue.RedisSettings;
+            _candleHistoryAssetConnections = settings.CurrentValue.CandleHistoryAssetConnections != null
+                ? settings.Nested(x => x.CandleHistoryAssetConnections)
+                : settings.Nested(x => x.MtCandleHistoryAssetConnections);
         }
 
         protected override void Load(ContainerBuilder builder)

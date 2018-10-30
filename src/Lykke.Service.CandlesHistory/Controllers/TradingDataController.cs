@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Common.Log;
 using Lykke.Job.CandlesProducer.Contract;
-using Lykke.Service.CandlesHistory.Core.Services;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
@@ -32,13 +32,16 @@ namespace Lykke.Service.CandlesHistory.Controllers
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
             Dictionary<string, string> candleHistoryAssetConnections,
-            ILog log)
+            ILogFactory logFactory)
         {
             _candlesManager = candlesManager ?? throw new ArgumentNullException(nameof(assetPairsManager));
             _assetPairsManager = assetPairsManager ?? throw new ArgumentNullException(nameof(assetPairsManager));
             _candleHistoryAssetConnections = candleHistoryAssetConnections ?? throw new ArgumentNullException(nameof(candleHistoryAssetConnections));
+
+            if (logFactory == null)
+                throw new ArgumentNullException(nameof(logFactory));
             
-            _log = log?.CreateComponentScope(nameof(TradingDataController)) ?? throw new ArgumentNullException(nameof(log));
+            _log = logFactory.CreateLog(this);
         }
 
         #endregion
@@ -73,7 +76,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex, assetPairId);
+                return NegativeResponseOnException(ex, assetPairId);
             }
         }
 
@@ -112,7 +115,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex);
+                return NegativeResponseOnException(ex);
             }
         }
 
@@ -144,7 +147,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex, assetPairId);
+                return NegativeResponseOnException(ex, assetPairId);
             }
         }
 
@@ -183,7 +186,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex);
+                return NegativeResponseOnException(ex);
             }
         }
 
@@ -219,7 +222,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex, assetPairId);
+                return NegativeResponseOnException(ex, assetPairId);
             }
         }
 
@@ -258,7 +261,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex);
+                return NegativeResponseOnException(ex);
             }
         }
 
@@ -290,7 +293,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex, assetPairId);
+                return NegativeResponseOnException(ex, assetPairId);
             }
         }
 
@@ -329,7 +332,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             catch (Exception ex)
             {
-                return await NegativeResponseOnExceptionAsync(ex);
+                return NegativeResponseOnException(ex);
             }
         }
 
@@ -375,13 +378,12 @@ namespace Lykke.Service.CandlesHistory.Controllers
             return CheckupAssetPair(assetPairId, out var unused);
         }
 
-        private async Task<IActionResult> NegativeResponseOnExceptionAsync(Exception ex, string assetPairId = null)
+        private IActionResult NegativeResponseOnException(Exception ex, string assetPairId = null)
         {
-            await _log.WriteErrorAsync(nameof(GetTradePriceTodayChangeAsync), assetPairId ?? string.Empty, ex);
+            _log.Error(nameof(GetTradePriceTodayChangeAsync), ex, context: assetPairId);
             return StatusCode((int)HttpStatusCode.InternalServerError, ErrorResponse.Create("Internal", $"Internal service error: {ex.Message}"));
         }
 
         #endregion
-
     }
 }
