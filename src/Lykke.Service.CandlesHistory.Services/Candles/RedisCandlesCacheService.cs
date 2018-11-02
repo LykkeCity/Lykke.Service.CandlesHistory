@@ -48,9 +48,8 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             throw new NotSupportedException();
         }
         
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, SlotType activeSlot)
         {
-            SlotType activeSlot = GetActiveSlot();
             var key = GetKey(assetPairId, priceType, timeInterval, activeSlot);
             var from = fromMoment.ToString(TimestampFormat);
             var to = toMoment.ToString(TimestampFormat);
@@ -58,6 +57,15 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to, Exclude.Stop);
             
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
+        }
+        
+        public SlotType GetActiveSlot()
+        {
+            var database = _multiplexer.GetDatabase();
+
+            var value = database.StringGet(_activeSlotKey);
+
+            return value.HasValue ? Enum.Parse<SlotType>(value) : SlotType.Slot0;
         }
 
         private static ICandle DeserializeCandle(byte[] value, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)
@@ -90,15 +98,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
         }
 
-        private SlotType GetActiveSlot()
-        {
-            var database = _multiplexer.GetDatabase();
-
-            return database.KeyExists(_activeSlotKey) 
-                ? Enum.Parse<SlotType>(database.StringGet(_activeSlotKey)) 
-                : SlotType.Slot0;
-        }
-
         private string GetKey(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, SlotType slotType)
         {
             return $"CandlesHistory:{_market}:{slotType.ToString()}:{assetPairId}:{priceType}:{timeInterval}";
@@ -106,7 +105,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         
         private string GetActiveSlotKey(MarketType marketType)
         {
-            return $"CandlesHistory:{_market}:ActiveSlot";
+            return $"CandlesHistory:{marketType}:ActiveSlot";
         }
     }
 }
