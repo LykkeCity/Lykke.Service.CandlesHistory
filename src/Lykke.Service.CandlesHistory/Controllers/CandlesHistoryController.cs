@@ -191,10 +191,11 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             var allHistory = new Dictionary<string, CandlesHistoryResponseModel>();
             var tasks = new List<Task<IEnumerable<ICandle>>>();
+            var activeSlot = _candlesManager.GetActiveSlot();
             foreach (var assetPair in request.AssetPairs)
             {
                 allHistory[assetPair] = new CandlesHistoryResponseModel { History = Array.Empty<CandlesHistoryResponseModel.Candle>() };
-                tasks.Add(_candlesManager.GetCandlesAsync(assetPair, request.PriceType, request.TimeInterval, request.FromMoment, request.ToMoment));
+                tasks.Add(_candlesManager.GetCandlesAsync(assetPair, request.PriceType, request.TimeInterval, request.FromMoment, request.ToMoment, activeSlot));
             }
 
             await Task.WhenAll(tasks);
@@ -269,7 +270,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
             }
 
-            var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
+            var activeSlot = _candlesManager.GetActiveSlot();
+            var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, activeSlot);
 
             // May return much less candles than it was requested or even an empty set of data for now the service looks
             // only through the cache (no persistent data is used).
