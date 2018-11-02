@@ -41,7 +41,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <summary>
         /// Obtains candles history from cache, doing time interval remap and read persistent history if needed
         /// </summary>
-        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, SlotType? activeSlot = null)
         {
             CheckupAssetPairOrFail(assetPairId);
 
@@ -53,13 +53,16 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 alignedToMoment = alignedFromMoment.AddIntervalTicks(1, timeInterval);
             }
 
+            if (!activeSlot.HasValue)
+                activeSlot = GetActiveSlot();
+
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
-                return await GetStoredCandlesAsync(assetPairId, priceType, timeInterval, alignedFromMoment, alignedToMoment);
+                return await GetStoredCandlesAsync(assetPairId, priceType, timeInterval, alignedFromMoment, alignedToMoment, activeSlot.Value);
             }
 
             var sourceInterval = GetToStoredIntervalsMap[timeInterval];
-            var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment);
+            var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment, activeSlot.Value);
 
             // Merging candles from sourceInterval (e.g. Minute) to bigger timeInterval (e.g. Min15)
             return CandlesMerger.MergeIntoBiggerIntervals(sourceHistory, timeInterval);
@@ -81,6 +84,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             var firstCandle = await _candlesHistoryRepository.TryGetFirstCandleAsync(assetPairId, interval, priceType);
             
             return firstCandle; // The risk of the null is minimal but not excluded.
+        }
+
+        public SlotType GetActiveSlot()
+        {
+            return _candlesCacheService.GetActiveSlot();
         }
 
         #endregion
@@ -105,11 +113,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <param name="timeInterval"></param>
         /// <param name="fromMoment"></param>
         /// <param name="toMoment"></param>
+        /// <param name="activeSlot"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        private async Task<IEnumerable<ICandle>> GetStoredCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, SlotType activeSlot)
         {
             var cachedHistory = (await _candlesCacheService
-                .GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment))
+                .GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, activeSlot))
                 .ToArray();
 
             return cachedHistory;
