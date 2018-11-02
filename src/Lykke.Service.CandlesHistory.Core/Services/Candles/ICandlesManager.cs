@@ -8,7 +8,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 {
     public interface ICandlesManager
     {
-        Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
+        Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, SlotType activeSlot);
 
         /// <summary>
         /// Gets the summary trading volume and opposite trading volume for the specified asset pair.
@@ -44,5 +44,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
         Task<decimal> GetTradePriceChangeAsync(string assetPairId, CandleTimeInterval interval, int ticksToPast);
 
         Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
+
+        SlotType GetActiveSlot();
     }
 }
