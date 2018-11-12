@@ -84,9 +84,8 @@ namespace Lykke.Service.CandlesHistory.Modules
         {
             builder.Register(c =>
                 {
-                    var cm = ConnectionMultiplexer.Connect(_redisSettings.Configuration);
-                    cm.PreserveAsyncOrder = false;
-                    return cm;
+                    var lazy = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(_redisSettings.Configuration)); 
+                    return lazy.Value;
                 })
                 .As<IConnectionMultiplexer>()
                 .SingleInstance();
