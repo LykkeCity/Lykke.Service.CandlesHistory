@@ -59,11 +59,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
         }
         
-        public SlotType GetActiveSlot()
+        public async Task<SlotType> GetActiveSlotAsync()
         {
-            var database = _multiplexer.GetDatabase();
-
-            var value = database.StringGet(_activeSlotKey);
+            var value = await _multiplexer.GetDatabase().StringGetAsync(_activeSlotKey);
 
             return value.HasValue ? Enum.Parse<SlotType>(value) : SlotType.Slot0;
         }
