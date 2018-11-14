@@ -45,6 +45,6 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
 
         Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
 
-        SlotType GetActiveSlot();
+        Task<SlotType> GetActiveSlotAsync();
     }
 }

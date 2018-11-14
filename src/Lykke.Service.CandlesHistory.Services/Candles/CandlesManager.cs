@@ -54,7 +54,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             }
 
             if (!activeSlot.HasValue)
-                activeSlot = GetActiveSlot();
+                activeSlot = await GetActiveSlotAsync();
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
@@ -142,9 +142,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return firstCandle; // The risk of the null is minimal but not excluded.
         }
 
-        public SlotType GetActiveSlot()
+        public Task<SlotType> GetActiveSlotAsync()
         {
-            return _candlesCacheService.GetActiveSlot();
+            return _candlesCacheService.GetActiveSlotAsync();
         }
 
         #endregion
