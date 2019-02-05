@@ -40,9 +40,10 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
         {
             _connectionString = connectionString;
             const string schemaName = "Candles";
-            var justTableName = $"candleshistory_{assetName}";
+            var fixedAssetName = assetName.Replace("-", "_");
+            var justTableName = $"candleshistory_{fixedAssetName}";
             _tableName = $"[{schemaName}].[{justTableName}]";
-            var createTableScript = CreateTableScript.Replace("UNIQUEINDEX", assetName);
+            var createTableScript = CreateTableScript.Replace("UNIQUEINDEX", fixedAssetName);
 
             using (var conn = new SqlConnection(_connectionString))
             {
