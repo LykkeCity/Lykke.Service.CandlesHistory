@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Job.CandlesProducer.Contract;
@@ -11,16 +10,6 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 {
     public class CandlesManager : ICandlesManager
     {
-        private static readonly ImmutableDictionary<CandleTimeInterval, CandleTimeInterval> GetToStoredIntervalsMap = ImmutableDictionary.CreateRange(new[]
-        {
-            KeyValuePair.Create(CandleTimeInterval.Min5, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Min15, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Min30, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Hour4, CandleTimeInterval.Hour),
-            KeyValuePair.Create(CandleTimeInterval.Hour6, CandleTimeInterval.Hour),
-            KeyValuePair.Create(CandleTimeInterval.Hour12, CandleTimeInterval.Hour)
-        });
-
         private readonly ICandlesCacheService _candlesCacheService;
         private readonly ICandlesHistoryRepository _candlesHistoryRepository;
 
@@ -61,11 +50,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 return await GetStoredCandlesAsync(assetPairId, priceType, timeInterval, alignedFromMoment, alignedToMoment, activeSlot.Value);
             }
 
-            var sourceInterval = GetToStoredIntervalsMap[timeInterval];
-            var sourceHistory = await GetStoredCandlesAsync(assetPairId, priceType, sourceInterval, alignedFromMoment, alignedToMoment, activeSlot.Value);
-
-            // Merging candles from sourceInterval (e.g. Minute) to bigger timeInterval (e.g. Min15)
-            return CandlesMerger.MergeIntoBiggerIntervals(sourceHistory, timeInterval);
+            return Array.Empty<ICandle>();
         }
 
         /// <inheritdoc cref="ICandlesManager"/>
