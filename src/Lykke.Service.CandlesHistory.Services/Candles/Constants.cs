@@ -11,6 +11,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             CandleTimeInterval.Min15,
             CandleTimeInterval.Min30,
             CandleTimeInterval.Hour,
+            CandleTimeInterval.Hour4,
             CandleTimeInterval.Hour6,
             CandleTimeInterval.Hour12,
             CandleTimeInterval.Day,
