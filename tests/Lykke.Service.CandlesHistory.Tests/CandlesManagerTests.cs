@@ -80,19 +80,19 @@ namespace Lykke.Service.CandlesHistory.Tests
         public async Task Getting_candles_passes_asset_price_type_and_time_interval_to_cached_candles_service_and_repository()
         {
             // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
+            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
 
             // Assert
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(
                     It.Is<string>(a => a == "EURUSD"),
                     It.Is<CandlePriceType>(p => p == CandlePriceType.Mid),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Min5),
                     It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
                 Times.Once);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.Is<string>(a => a == "EURUSD"),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Min5),
                     It.Is<CandlePriceType>(p => p == CandlePriceType.Mid),
                     It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Never);
@@ -123,103 +123,32 @@ namespace Lykke.Service.CandlesHistory.Tests
         public async Task Getting_candles_with_time_interval_that_is_stored_doing_directly()
         {
             // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
+            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
 
             // Assert
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(), It.IsAny<CandlePriceType>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Min5),
                     It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
                 Times.Once);
 
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(), It.IsAny<CandlePriceType>(),
-                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Min5),
                     It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
                 Times.Never);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Min5),
                     It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Never);
 
             _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
                     It.IsAny<string>(),
-                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Minute),
+                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Min5),
                     It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
                 Times.Never);
-        }
-
-        [TestMethod]
-        public async Task Getting_candles_with_time_interval_that_is_not_stored_doing_by_mapping_from_nearest_smaller_stored_interval()
-        {
-            // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min15, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Hour4, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Hour6, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Hour12, new DateTime(2017, 06, 23, 17, 18, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
-
-            // Assert
-            _cacheServiceMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(), It.IsAny<CandlePriceType>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
-                    It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
-                Times.Exactly(2));
-
-            _cacheServiceMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(), It.IsAny<CandlePriceType>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Hour),
-                    It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
-                Times.Exactly(3));
-
-            _cacheServiceMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(), It.IsAny<CandlePriceType>(),
-                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Minute && i != CandleTimeInterval.Hour),
-                    It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()), Times.Never);
-
-            _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Minute),
-                    It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Exactly(0));
-
-            _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(),
-                    It.Is<CandleTimeInterval>(i => i == CandleTimeInterval.Hour),
-                    It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Exactly(0));
-
-            _historyRepositoryMock.Verify(s => s.GetCandlesAsync(
-                    It.IsAny<string>(),
-                    It.Is<CandleTimeInterval>(i => i != CandleTimeInterval.Minute && i != CandleTimeInterval.Hour),
-                    It.IsAny<CandlePriceType>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                Times.Never);
-        }
-
-        [TestMethod]
-        public async Task Getting_candles_with_time_interval_that_is_not_stored_doing_by_merging_candles_to_requested_interval()
-        {
-            // Arrange
-            _cacheServiceMock
-                .Setup(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandlePriceType>(), It.IsAny<CandleTimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()))
-                 .Returns((string a, CandlePriceType p, CandleTimeInterval i, DateTime f, DateTime t, SlotType s) => Task.FromResult<IEnumerable<ICandle>>(new ICandle[]
-                {
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 13, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 14, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 15, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 16, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
-                    new TestCandle{Timestamp = new DateTime(2017, 06, 23, 17, 17, 00), TimeInterval = CandleTimeInterval.Min15, PriceType = CandlePriceType.Mid},
-                }));
-
-            // Act
-            var candles = (await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min15, new DateTime(2017, 06, 23), new DateTime(2017, 07, 23), _activeSlot)).ToArray();
-
-            // Assert
-            Assert.AreEqual(2, candles.Length);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 00, 00), candles[0].Timestamp);
-            Assert.AreEqual(new DateTime(2017, 06, 23, 17, 15, 00), candles[1].Timestamp);
         }
 
         [TestMethod]
@@ -238,7 +167,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 }));
 
             // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 17, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
+            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 17, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
 
             // Assert
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandlePriceType>(), It.IsAny<CandleTimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
@@ -264,7 +193,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 }));
 
             // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
+            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
 
             // Assert
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandlePriceType>(), It.IsAny<CandleTimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
@@ -278,7 +207,7 @@ namespace Lykke.Service.CandlesHistory.Tests
         public async Task Getting_candles_that_not_cached_at_all_for_requested_from_and_to_moments_are_gets_from_cache_and_repository()
         {
             // Act
-            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
+            await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot);
 
             // Assert
             _cacheServiceMock.Verify(s => s.GetCandlesAsync(It.IsAny<string>(), It.IsAny<CandlePriceType>(), It.IsAny<CandleTimeInterval>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<SlotType>()),
@@ -376,7 +305,7 @@ namespace Lykke.Service.CandlesHistory.Tests
                 }));
 
             // Act
-            var candles = (await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Minute, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot)).ToArray();
+            var candles = (await _manager.GetCandlesAsync("EURUSD", CandlePriceType.Mid, CandleTimeInterval.Min5, new DateTime(2017, 06, 23, 16, 13, 34), new DateTime(2017, 07, 23, 17, 18, 23), _activeSlot)).ToArray();
 
             // Assert
             Assert.AreEqual(5, candles.Length);
