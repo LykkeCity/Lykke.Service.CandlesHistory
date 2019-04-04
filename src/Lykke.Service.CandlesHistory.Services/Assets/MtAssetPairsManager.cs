@@ -7,64 +7,96 @@ using Lykke.Service.Assets.Client.Models;
 using MarginTrading.SettingsService.Contracts;
 using Polly;
 using System;
+using System.Threading;
+using Common;
 using Lykke.Service.CandlesHistory.Core.Services.Assets;
 
 namespace Lykke.Service.CandlesHistory.Services.Assets
 {
-    public class MtAssetPairsManager : IAssetPairsManager
+    public class MtAssetPairsManager : TimerPeriod, IAssetPairsManager
     {
-        private readonly IAssetPairsApi _apiService;
+        private readonly IAssetPairsApi _assetPairsApi;
         private readonly ILog _log;
+        
+        private Dictionary<string, AssetPair> _cache = new Dictionary<string, AssetPair>();
+        private readonly ReaderWriterLockSlim _readerWriterLockSlim = new ReaderWriterLockSlim();
 
-        public MtAssetPairsManager(ILog log, IAssetPairsApi apiService)
+        public MtAssetPairsManager(IAssetPairsApi assetPairsApi, TimeSpan expirationPeriod, ILog log)
+            : base(nameof(MtAssetPairsManager), (int)expirationPeriod.TotalMilliseconds, log)
         {
-            _apiService = apiService;
+            _assetPairsApi = assetPairsApi;
             _log = log;
         }
 
-        public async Task<AssetPair> TryGetEnabledPairAsync(string assetPairId)
+        public Task<AssetPair> TryGetEnabledPairAsync(string assetPairId)
         {
-            var pair = await _apiService.Get(assetPairId);
+            if (string.IsNullOrWhiteSpace(assetPairId))
+            {
+                return Task.FromResult((AssetPair)null);
+            }
+            
+            _readerWriterLockSlim.EnterReadLock();
 
-            return pair == null ? null : MapAssetPair(pair);
-
-
+            try
+            {
+                return _cache.TryGetValue(assetPairId, out var assetPair)
+                    ? Task.FromResult(assetPair)
+                    : Task.FromResult((AssetPair)null);
+            }
+            finally
+            {
+                _readerWriterLockSlim.ExitReadLock();
+            }
         }
 
         public Task<AssetPair> TryGetAssetPairAsync(string assetPairId)
         {
-            return Policy
-                .Handle<Exception>()
-                .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timespan) => _log.WriteErrorAsync("Get asset pair with retry", assetPairId, exception))
-                .ExecuteAsync(() => TryGetEnabledPairAsync(assetPairId));
+            return TryGetEnabledPairAsync(assetPairId);
         }
 
 
         public Task<IEnumerable<AssetPair>> GetAllEnabledAsync()
         {
-
-            return Policy
-                .Handle<Exception>()
-                .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timespan) => _log.WriteErrorAsync("Get all asset pairs with retry", string.Empty, exception))
-                .ExecuteAsync(async () => (await _apiService.List()).Select(pair => MapAssetPair(pair)));
-        }
-
-        public AssetPair MapAssetPair(MarginTrading.SettingsService.Contracts.AssetPair.AssetPairContract pair)
-        {
-            return new AssetPair
+            _readerWriterLockSlim.EnterReadLock();
+            try
             {
-                Id = pair.Id,
-                Name = pair.Name,
-                BaseAssetId = pair.BaseAssetId,
-                QuotingAssetId = pair.QuoteAssetId,
-                Accuracy = pair.Accuracy,
-                InvertedAccuracy = pair.Accuracy
-            };
+                return Task.FromResult(_cache.Values.AsEnumerable());
+            }
+            finally
+            {
+                _readerWriterLockSlim.ExitReadLock();
+            }
         }
 
+        public override void Start()
+        {
+            base.Start();
+            
+            Execute().GetAwaiter().GetResult();
+        }
+
+        public override async Task Execute()
+        {
+            var assetPairs = (await _assetPairsApi.List())?
+                             .ToDictionary(pair => pair.Id, pair => new AssetPair
+                             {
+                                 Id = pair.Id,
+                                 Name = pair.Name,
+                                 BaseAssetId = pair.BaseAssetId,
+                                 QuotingAssetId = pair.QuoteAssetId,
+                                 Accuracy = pair.Accuracy,
+                                 InvertedAccuracy = pair.Accuracy
+                             }) ?? new Dictionary<string, AssetPair>();
+
+            _readerWriterLockSlim.EnterWriteLock();
+            try
+            {
+                _cache = assetPairs;
+            }
+            finally
+            {
+                _readerWriterLockSlim.ExitWriteLock();
+            }
+        }
     }
 }
