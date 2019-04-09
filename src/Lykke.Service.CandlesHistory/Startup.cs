@@ -27,6 +27,7 @@ using Lykke.Service.CandlesHistory.Services.Settings;
 using AzureQueueSettings = Lykke.AzureQueueIntegration.AzureQueueSettings;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Services;
+using Lykke.Service.CandlesHistory.Services.Assets;
 using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Lykke.Service.CandlesHistory
@@ -87,7 +88,14 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.RedisSettings,
                     candlesHistory.ConnectionString(x => x.Db.SnapshotsConnectionString),
                     Log));
+                
+                if (marketType == MarketType.Mt)
+                {
+                    builder.RegisterBuildCallback(c => c.Resolve<MtAssetPairsManager>());
+                }
+                
                 builder.Populate(services);
+                
                 ApplicationContainer = builder.Build();
 
                 return new AutofacServiceProvider(ApplicationContainer);

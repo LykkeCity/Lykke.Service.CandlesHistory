@@ -126,8 +126,11 @@ namespace Lykke.Service.CandlesHistory.DependencyInjection
                 builder.RegisterClient<IAssetPairsApi>(_assetSettings.ServiceUrl);
 
                 builder.RegisterType<MtAssetPairsManager>()
+                    .AsSelf()
                     .As<IAssetPairsManager>()
-                    .SingleInstance();
+                    .SingleInstance()
+                    .OnActivated(args => args.Instance.Start())
+                    .WithParameter(new TypedParameter(typeof(TimeSpan), _settings.AssetsCache.ExpirationPeriod));
             }
         }
 
