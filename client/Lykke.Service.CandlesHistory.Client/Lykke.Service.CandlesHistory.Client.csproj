@@ -5,11 +5,12 @@
     <Version>1.0.1</Version>
     <Authors>Lykke</Authors>
     <Company>Lykke</Company>
-    <Description>Client for Lykke.Service.CandlesHistory API</Description>
-    <PackageLicenseUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client</PackageProjectUrl>
+    <PackageId>Lykke.MarginTrading.CandlesHistory.Contracts</PackageId>
+    <Description>Contracts for Lykke.Service.CandlesHistory API</Description>
+    <PackageLicenseUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory</PackageProjectUrl>
     <PackageIconUrl>https://avatars3.githubusercontent.com/u/14153330?v=3&amp;s=200</PackageIconUrl>
-    <RepositoryUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Lykke</PackageTags>
   </PropertyGroup>
