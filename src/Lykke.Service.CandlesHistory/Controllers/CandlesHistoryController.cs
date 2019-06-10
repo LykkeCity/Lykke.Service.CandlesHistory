@@ -210,7 +210,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                         Low = c.Low,
                         TradingVolume = c.TradingVolume,
                         TradingOppositeVolume = c.TradingOppositeVolume,
-                        LastTradePrice = c.LastTradePrice
+                        LastTradePrice = c.LastTradePrice,
+                        LastUpdateTimestamp = c.LastUpdateTimestamp,
                     }
                 }).ToArray();
 
@@ -224,7 +225,9 @@ namespace Lykke.Service.CandlesHistory.Controllers
         }
 
         /// <summary>
-        /// Asset's candles history
+        /// Asset's candles history.
+        /// May return much less candles than it was requested or even an empty set of data for now the service looks
+        /// only through the cache (no persistent data is used).
         /// </summary>
         /// <param name="assetPairId">Asset pair ID</param>
         /// <param name="priceType">Price type</param>
@@ -264,8 +267,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             var candles = await _candlesManager.GetCandlesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment);
 
-            // May return much less candles than it was requested or even an empty set of data for now the service looks
-            // only through the cache (no persistent data is used).
             return Ok(new CandlesHistoryResponseModel
             {
                 History = candles.Select(c => new CandlesHistoryResponseModel.Candle
@@ -277,7 +278,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     Low = c.Low,
                     TradingVolume = c.TradingVolume,
                     TradingOppositeVolume = c.TradingOppositeVolume,
-                    LastTradePrice = c.LastTradePrice
+                    LastTradePrice = c.LastTradePrice,
+                    LastUpdateTimestamp = c.LastUpdateTimestamp,
                 })
             });
         }

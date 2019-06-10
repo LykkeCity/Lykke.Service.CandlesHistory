@@ -5,18 +5,19 @@
     <Version>1.0.1</Version>
     <Authors>Lykke</Authors>
     <Company>Lykke</Company>
-    <Description>Client for Lykke.Service.CandlesHistory API</Description>
-    <PackageLicenseUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client</PackageProjectUrl>
+    <PackageId>Lykke.MarginTrading.CandlesHistory.Contracts</PackageId>
+    <Description>Contracts for Lykke.Service.CandlesHistory API</Description>
+    <PackageLicenseUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory</PackageProjectUrl>
     <PackageIconUrl>https://avatars3.githubusercontent.com/u/14153330?v=3&amp;s=200</PackageIconUrl>
-    <RepositoryUrl>https://github.com/LykkeCity/Lykke.Service.CandlesHistory.Client.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/lykkecloud/Lykke.Service.CandlesHistory.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Lykke</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lykke.Common" Version="6.8.4" />
-    <PackageReference Include="Lykke.Logs" Version="4.3.4" />
+    <PackageReference Include="Lykke.Common" Version="7.3.1" />
+    <PackageReference Include="Lykke.Logs" Version="7.2.1" />
     <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.5" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.11" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
