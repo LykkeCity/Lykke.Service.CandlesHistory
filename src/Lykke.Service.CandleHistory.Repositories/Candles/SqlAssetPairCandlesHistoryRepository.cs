@@ -1,4 +1,7 @@
-﻿using Common.Log;
+﻿// Copyright (c) 2019 Lykke Corp.
+// See the LICENSE file in the project root for more information.
+
+using Common.Log;
 using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using System;
 using System.Collections.Generic;

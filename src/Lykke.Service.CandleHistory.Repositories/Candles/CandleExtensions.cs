@@ -1,4 +1,7 @@
-﻿using Lykke.Service.CandlesHistory.Core.Domain.Candles;
+﻿// Copyright (c) 2019 Lykke Corp.
+// See the LICENSE file in the project root for more information.
+
+using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 
 namespace Lykke.Service.CandleHistory.Repositories.Candles
 {

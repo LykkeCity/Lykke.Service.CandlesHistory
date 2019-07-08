@@ -1,4 +1,7 @@
-﻿namespace Lykke.Service.CandlesHistory.Core
+﻿// Copyright (c) 2019 Lykke Corp.
+// See the LICENSE file in the project root for more information.
+
+namespace Lykke.Service.CandlesHistory.Core
 {
     public static class MathEx
     {
