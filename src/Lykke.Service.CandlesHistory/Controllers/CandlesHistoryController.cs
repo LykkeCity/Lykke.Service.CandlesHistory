@@ -81,7 +81,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 // I.e., if we have 10 asset pairs, we get here 10 parallel tasks with 4 sequential
                 // data queries in each, but not 10 * 4 parallel tasks.
                 // UPD: the batch introduced to not to die with 1500 asset pairs.
-                foreach(var batchedAssetPairs in assetPairs.Batch(10))
+                foreach (var batchedAssetPairs in assetPairs.Batch(10))
                 {
                     var batchResults = await Task.WhenAll(
                         batchedAssetPairs.Select(async p => new CandlesHistoryDepthResponseModel
@@ -118,7 +118,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             {
                 return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
             }
-            
+
             var resultTasks = Services.Candles.Constants.StoredPriceTypes
                 .Select(pt => _candlesManager.TryGetOldestCandleAsync(assetPairId, pt, CandleTimeInterval.Sec))
                 .ToList();
@@ -253,7 +253,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             if (priceType == CandlePriceType.Unspecified)
             {
-                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Price type should not be {CandlePriceType.Unspecified}"));
+                return BadRequest(ErrorResponse.Create(nameof(priceType), $"Price type should not be {CandlePriceType.Unspecified}"));
             }
             if (timeInterval == CandleTimeInterval.Unspecified)
             {
@@ -284,6 +284,47 @@ namespace Lykke.Service.CandlesHistory.Controllers
                     LastTradePrice = c.LastTradePrice,
                     LastUpdateTimestamp = c.LastUpdateTimestamp,
                 })
+            });
+        }
+
+        /// <summary>
+        /// Returns the time of the closest available bar in the past if any.
+        /// </summary>
+        /// <param name="assetPairId">Asset pair ID</param>
+        /// <param name="priceType">Price type</param>
+        /// <param name="timeInterval">Time interval</param>
+        /// <param name="lastMoment">From moment in ISO 8601</param>
+        [HttpGet("nextTime/{assetPairId}/{priceType}/{timeInterval}/{lastMoment:datetime}")]
+        [SwaggerOperation("GetNextTimeOrError")]
+        [ProducesResponseType(typeof(RecentCandleTimeResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
+        public async Task<IActionResult> GetRecentCandleTime(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
+        {
+            lastMoment = lastMoment.ToUniversalTime();
+
+            if (string.IsNullOrWhiteSpace(assetPairId))
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is required"));
+            }
+            if (priceType == CandlePriceType.Unspecified)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(priceType), $"Price type should not be {CandlePriceType.Unspecified}"));
+            }
+            if (timeInterval == CandleTimeInterval.Unspecified)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {CandleTimeInterval.Unspecified}"));
+            }
+            if (await _assetPairsManager.TryGetEnabledPairAsync(assetPairId) == null)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found or disabled"));
+            }
+
+            var recentTime = await _candlesManager.GetRecentCandleTimeAsync(assetPairId, priceType, timeInterval, lastMoment);
+
+            return Ok(new RecentCandleTimeResponseModel
+            {
+                ResultTimestamp = recentTime
             });
         }
 

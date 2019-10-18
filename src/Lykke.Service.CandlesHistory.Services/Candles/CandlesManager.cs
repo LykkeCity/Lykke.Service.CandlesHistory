@@ -82,6 +82,32 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return firstCandle; // The risk of the null is minimal but not excluded.
         }
 
+        /// <summary>
+        /// Finds out the recent stored candle's time (if any).
+        /// </summary>
+        /// <param name="assetPairId"></param>
+        /// <param name="priceType"></param>
+        /// <param name="timeInterval"></param>
+        /// <param name="lastMoment"></param>
+        /// <returns>The recent candle's time or null./></returns>
+        /// <exception cref="InvalidOperationException">If the specified asset pair is not currently supported by storage.</exception>
+        public async Task<DateTime?> GetRecentCandleTimeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
+        {
+            var alignedLastMoment = lastMoment.TruncateTo(timeInterval);
+
+            if (Constants.StoredIntervals.Contains(timeInterval))
+            {
+                return await TryGetStoredRecentCandleTimeAsync(assetPairId, priceType, timeInterval, alignedLastMoment);
+            }
+
+            var sourceInterval = GetToStoredIntervalsMap[timeInterval];
+            var recentTime = await TryGetStoredRecentCandleTimeAsync(assetPairId, priceType, sourceInterval, alignedLastMoment);
+
+            return recentTime.HasValue
+                ? recentTime.Value.TruncateTo(timeInterval)
+                : (DateTime?)null;
+        }
+
         #endregion
 
         #region Private
@@ -102,6 +128,13 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
                 .ToArray();
 
             return cachedHistory;
+        }
+
+        private async Task<DateTime?> TryGetStoredLatestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
+        {
+            var latestCandle = await _candlesCacheService.GetLatestCandleAsync(assetPairId, priceType, timeInterval, lastMoment);
+
+            return latestCandle.Timestamp;
         }
 
         #endregion
