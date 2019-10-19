@@ -294,8 +294,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="priceType">Price type</param>
         /// <param name="timeInterval">Time interval</param>
         /// <param name="lastMoment">From moment in ISO 8601</param>
-        [HttpGet("nextTime/{assetPairId}/{priceType}/{timeInterval}/{lastMoment:datetime}")]
-        [SwaggerOperation("GetNextTimeOrError")]
+        [HttpGet("recentCandleTime/{assetPairId}/{priceType}/{timeInterval}/{lastMoment:datetime}")]
+        [SwaggerOperation("GetRecentCandleTimeOrError")]
         [ProducesResponseType(typeof(RecentCandleTimeResponseModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
@@ -324,7 +324,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
 
             return Ok(new RecentCandleTimeResponseModel
             {
-                ResultTimestamp = recentTime
+                Exists = recentTime.HasValue,
+                ResultTimestamp = recentTime ?? default
             });
         }
 

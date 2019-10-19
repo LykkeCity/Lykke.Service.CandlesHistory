@@ -97,11 +97,11 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
-                return await TryGetStoredRecentCandleTimeAsync(assetPairId, priceType, timeInterval, alignedLastMoment);
+                return await GetStoredRecentCandleTimeAsync(assetPairId, priceType, timeInterval, alignedLastMoment);
             }
 
             var sourceInterval = GetToStoredIntervalsMap[timeInterval];
-            var recentTime = await TryGetStoredRecentCandleTimeAsync(assetPairId, priceType, sourceInterval, alignedLastMoment);
+            var recentTime = await GetStoredRecentCandleTimeAsync(assetPairId, priceType, sourceInterval, alignedLastMoment);
 
             return recentTime.HasValue
                 ? recentTime.Value.TruncateTo(timeInterval)
@@ -130,7 +130,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
             return cachedHistory;
         }
 
-        private async Task<DateTime?> TryGetStoredLatestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
+        private async Task<DateTime?> GetStoredRecentCandleTimeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
         {
             var latestCandle = await _candlesCacheService.GetLatestCandleAsync(assetPairId, priceType, timeInterval, lastMoment);
 

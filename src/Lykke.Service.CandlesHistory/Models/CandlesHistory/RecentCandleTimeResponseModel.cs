@@ -6,6 +6,7 @@ namespace Lykke.Service.CandlesHistory.Models.CandlesHistory
 {
     public class RecentCandleTimeResponseModel
     {
-        public DateTime? ResultTimestamp { get; set; }
+        public bool Exists { get; set; }
+        public DateTime ResultTimestamp { get; set; }
     }
 }

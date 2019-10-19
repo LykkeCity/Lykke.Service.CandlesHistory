@@ -132,15 +132,73 @@ namespace Lykke.Service.CandlesHistory.Client
                 {
                     return _result.Body;
                 }
-            }
+        }
 
-            /// <summary>
-            /// Checks service is alive
-            /// </summary>
-            /// <param name='operations'>
-            /// The operations group for this extension method.
-            /// </param>
-            public static IsAliveResponse IsAlive(this ICandleshistoryservice operations)
+        /// <summary>
+        /// Returns the time of the closest available bar in the past if any.
+        /// </summary>
+        /// <param name='operations'>
+        /// The operations group for this extension method.
+        /// </param>
+        /// <param name='assetPairId'>
+        /// Asset pair ID
+        /// </param>
+        /// <param name='priceType'>
+        /// Price type. Possible values include: 'Unspecified', 'Bid', 'Ask', 'Mid',
+        /// 'Trades'
+        /// </param>
+        /// <param name='timeInterval'>
+        /// Time interval. Possible values include: 'Unspecified', 'Sec', 'Minute',
+        /// 'Min5', 'Min15', 'Min30', 'Hour', 'Hour4', 'Hour6', 'Hour12', 'Day',
+        /// 'Week', 'Month'
+        /// </param>
+        /// <param name='lastMoment'>
+        /// From moment in ISO 8601
+        /// </param>
+        public static object GetRecentCandleTimeOrError(this ICandleshistoryservice operations, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime lastMoment)
+        {
+            return operations.GetRecentCandleTimeOrErrorAsync(assetPairId, priceType, timeInterval, lastMoment).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Returns the time of the closest available bar in the past if any.
+        /// </summary>
+        /// <param name='operations'>
+        /// The operations group for this extension method.
+        /// </param>
+        /// <param name='assetPairId'>
+        /// Asset pair ID
+        /// </param>
+        /// <param name='priceType'>
+        /// Price type. Possible values include: 'Unspecified', 'Bid', 'Ask', 'Mid',
+        /// 'Trades'
+        /// </param>
+        /// <param name='timeInterval'>
+        /// Time interval. Possible values include: 'Unspecified', 'Sec', 'Minute',
+        /// 'Min5', 'Min15', 'Min30', 'Hour', 'Hour4', 'Hour6', 'Hour12', 'Day',
+        /// 'Week', 'Month'
+        /// </param>
+        /// <param name='lastMoment'>
+        /// From moment in ISO 8601
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        public static async Task<object> GetRecentCandleTimeOrErrorAsync(this ICandleshistoryservice operations, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime lastMoment, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            using (var _result = await operations.GetRecentCandleTimeOrErrorWithHttpMessagesAsync(assetPairId, priceType, timeInterval, lastMoment, null, cancellationToken).ConfigureAwait(false))
+            {
+                return _result.Body;
+            }
+        }
+
+        /// <summary>
+        /// Checks service is alive
+        /// </summary>
+        /// <param name='operations'>
+        /// The operations group for this extension method.
+        /// </param>
+        public static IsAliveResponse IsAlive(this ICandleshistoryservice operations)
             {
                 return operations.IsAliveAsync().GetAwaiter().GetResult();
             }
