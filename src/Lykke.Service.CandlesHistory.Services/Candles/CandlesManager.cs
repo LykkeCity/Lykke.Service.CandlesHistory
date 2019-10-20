@@ -134,7 +134,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var latestCandle = await _candlesCacheService.GetLatestCandleAsync(assetPairId, priceType, timeInterval, lastMoment);
 
-            return latestCandle.Timestamp;
+            return latestCandle?.Timestamp;
         }
 
         #endregion
