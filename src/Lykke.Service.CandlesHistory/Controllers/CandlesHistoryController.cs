@@ -162,8 +162,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
             }
 
-            request.FromMoment = request.FromMoment.ToUniversalTime();
-            request.ToMoment = request.ToMoment.ToUniversalTime();
+            request.FromMoment = DateTime.SpecifyKind(request.FromMoment, DateTimeKind.Utc);
+            request.ToMoment = DateTime.SpecifyKind(request.ToMoment, DateTimeKind.Utc);
 
             if (request.PriceType == CandlePriceType.Unspecified)
             {
@@ -244,8 +244,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            fromMoment = fromMoment.ToUniversalTime();
-            toMoment = toMoment.ToUniversalTime();
+            fromMoment = DateTime.SpecifyKind(fromMoment, DateTimeKind.Utc);
+            toMoment = DateTime.SpecifyKind(toMoment, DateTimeKind.Utc);
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
@@ -301,7 +301,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetRecentCandleTime(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
         {
-            lastMoment = lastMoment.ToUniversalTime();
+            lastMoment = DateTime.SpecifyKind(lastMoment, DateTimeKind.Utc);
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
