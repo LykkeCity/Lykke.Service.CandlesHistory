@@ -47,9 +47,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         public async Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
             var alignedFromMoment = fromMoment.TruncateTo(timeInterval);
-            var alignedToMoment = toMoment
-                .TruncateTo(timeInterval)
-                .AddIntervalTicks(1, timeInterval);
+            var alignedToMoment = toMoment.TruncateTo(timeInterval);
+
+            if (alignedFromMoment == alignedToMoment)
+            {
+                alignedToMoment = alignedFromMoment.AddIntervalTicks(1, timeInterval);
+            }
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
@@ -90,9 +93,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <exception cref="InvalidOperationException">If the specified asset pair is not currently supported by storage.</exception>
         public async Task<DateTime?> GetRecentCandleTimeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
         {
-            var alignedLastMoment = lastMoment
-                .TruncateTo(timeInterval)
-                .AddIntervalTicks(1, timeInterval);
+            var alignedLastMoment = lastMoment.TruncateTo(timeInterval);
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {

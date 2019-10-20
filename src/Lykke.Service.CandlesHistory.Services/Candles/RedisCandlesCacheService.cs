@@ -53,7 +53,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var from = fromMoment.ToString(TimestampFormat);
-            var to = toMoment.ToString(TimestampFormat);
+            var to = toMoment.AddIntervalTicks(1, timeInterval).ToString(TimestampFormat);
             var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to, Exclude.Start);
             
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
@@ -63,7 +63,7 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var min = DateTime.MinValue.ToString(TimestampFormat);
-            var max = lastMoment.ToString(TimestampFormat);
+            var max = lastMoment.AddIntervalTicks(1, timeInterval).ToString(TimestampFormat);
             var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key,
                 min: min,
                 max: max, 
