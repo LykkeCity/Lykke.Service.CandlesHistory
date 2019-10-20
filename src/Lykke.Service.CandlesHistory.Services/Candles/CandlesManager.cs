@@ -93,7 +93,9 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         /// <exception cref="InvalidOperationException">If the specified asset pair is not currently supported by storage.</exception>
         public async Task<DateTime?> GetRecentCandleTimeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
         {
-            var alignedLastMoment = lastMoment.TruncateTo(timeInterval);
+            var alignedLastMoment = lastMoment
+                .TruncateTo(timeInterval)
+                .AddIntervalTicks(1, timeInterval);
 
             if (Constants.StoredIntervals.Contains(timeInterval))
             {
