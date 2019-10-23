@@ -78,7 +78,7 @@ namespace Lykke.Service.CandlesHistory.Client.Models
         public System.DateTime FromMoment { get; set; }
 
         /// <summary>
-        /// Gets or sets exclusive to moment. If equals to the
+        /// Gets or sets inclusive to moment. If equals to the
         /// Lykke.Service.CandlesHistory.Models.CandlesHistory.GetCandlesHistoryBatchRequest.FromMoment,
         /// then exactly candle for exactly this moment will be returned
         /// </summary>
