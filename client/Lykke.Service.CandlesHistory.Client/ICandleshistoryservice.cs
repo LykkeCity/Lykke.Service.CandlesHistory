@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Lykke Corp.
+﻿// Copyright (c) 2019 Lykke Corp.
 // See the LICENSE file in the project root for more information.
 
 namespace Lykke.Service.CandlesHistory.Client
@@ -73,7 +73,7 @@ namespace Lykke.Service.CandlesHistory.Client
         /// From moment in ISO 8601 (inclusive)
         /// </param>
         /// <param name='toMoment'>
-        /// To moment in ISO 8601 (exclusive)
+        /// To moment in ISO 8601 (inclusive)
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.

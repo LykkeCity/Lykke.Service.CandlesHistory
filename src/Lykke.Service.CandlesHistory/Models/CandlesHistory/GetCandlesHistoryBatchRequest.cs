@@ -16,7 +16,7 @@ namespace Lykke.Service.CandlesHistory.Models.CandlesHistory
         /// </summary>
         public DateTime FromMoment { get; set; }
         /// <summary>
-        /// Exclusive to moment. If equals to the <see cref="FromMoment"/>, then exactly candle for exactly this moment will be returned
+        /// Inclusive to moment. If equals to the <see cref="FromMoment"/>, then exactly candle for exactly this moment will be returned
         /// </summary>
         public DateTime ToMoment { get; set; }
     }

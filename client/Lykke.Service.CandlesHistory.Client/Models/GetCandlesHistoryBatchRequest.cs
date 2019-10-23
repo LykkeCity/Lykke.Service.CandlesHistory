@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Lykke Corp.
+﻿// Copyright (c) 2019 Lykke Corp.
 // See the LICENSE file in the project root for more information.
 
 namespace Lykke.Service.CandlesHistory.Client.Models
@@ -32,7 +32,7 @@ namespace Lykke.Service.CandlesHistory.Client.Models
         /// 'Sec', 'Minute', 'Min5', 'Min15', 'Min30', 'Hour', 'Hour4',
         /// 'Hour6', 'Hour12', 'Day', 'Week', 'Month'</param>
         /// <param name="fromMoment">Inclusive from moment</param>
-        /// <param name="toMoment">Exclusive to moment. If equals to the
+        /// <param name="toMoment">Inclusive to moment. If equals to the
         /// Lykke.Service.CandlesHistory.Models.CandlesHistory.GetCandlesHistoryBatchRequest.FromMoment,
         /// then exactly candle for exactly this moment will be
         /// returned</param>

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Lykke Corp.
+﻿// Copyright (c) 2019 Lykke Corp.
 // See the LICENSE file in the project root for more information.
 
 namespace Lykke.Service.CandlesHistory.Client
@@ -92,41 +92,41 @@ namespace Lykke.Service.CandlesHistory.Client
             /// From moment in ISO 8601 (inclusive)
             /// </param>
             /// <param name='toMoment'>
-            /// To moment in ISO 8601 (exclusive)
+            /// To moment in ISO 8601 (inclusive)
             /// </param>
             public static object GetCandlesHistoryOrError(this ICandleshistoryservice operations, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment)
             {
                 return operations.GetCandlesHistoryOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Asset's candles history
-            /// </summary>
-            /// <param name='operations'>
-            /// The operations group for this extension method.
-            /// </param>
-            /// <param name='assetPairId'>
-            /// Asset pair ID
-            /// </param>
-            /// <param name='priceType'>
-            /// Price type. Possible values include: 'Unspecified', 'Bid', 'Ask', 'Mid',
-            /// 'Trades'
-            /// </param>
-            /// <param name='timeInterval'>
-            /// Time interval. Possible values include: 'Unspecified', 'Sec', 'Minute',
-            /// 'Min5', 'Min15', 'Min30', 'Hour', 'Hour4', 'Hour6', 'Hour12', 'Day',
-            /// 'Week', 'Month'
-            /// </param>
-            /// <param name='fromMoment'>
-            /// From moment in ISO 8601 (inclusive)
-            /// </param>
-            /// <param name='toMoment'>
-            /// To moment in ISO 8601 (exclusive)
-            /// </param>
-            /// <param name='cancellationToken'>
-            /// The cancellation token.
-            /// </param>
-            public static async Task<object> GetCandlesHistoryOrErrorAsync(this ICandleshistoryservice operations, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Asset's candles history
+        /// </summary>
+        /// <param name='operations'>
+        /// The operations group for this extension method.
+        /// </param>
+        /// <param name='assetPairId'>
+        /// Asset pair ID
+        /// </param>
+        /// <param name='priceType'>
+        /// Price type. Possible values include: 'Unspecified', 'Bid', 'Ask', 'Mid',
+        /// 'Trades'
+        /// </param>
+        /// <param name='timeInterval'>
+        /// Time interval. Possible values include: 'Unspecified', 'Sec', 'Minute',
+        /// 'Min5', 'Min15', 'Min30', 'Hour', 'Hour4', 'Hour6', 'Hour12', 'Day',
+        /// 'Week', 'Month'
+        /// </param>
+        /// <param name='fromMoment'>
+        /// From moment in ISO 8601 (inclusive)
+        /// </param>
+        /// <param name='toMoment'>
+        /// To moment in ISO 8601 (inclusive)
+        /// </param>
+        /// <param name='cancellationToken'>
+        /// The cancellation token.
+        /// </param>
+        public static async Task<object> GetCandlesHistoryOrErrorAsync(this ICandleshistoryservice operations, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, System.DateTime fromMoment, System.DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetCandlesHistoryOrErrorWithHttpMessagesAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, null, cancellationToken).ConfigureAwait(false))
                 {
