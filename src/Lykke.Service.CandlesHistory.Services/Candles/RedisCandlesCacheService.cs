@@ -53,10 +53,33 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
         {
             var key = GetKey(assetPairId, priceType, timeInterval);
             var from = fromMoment.ToString(TimestampFormat);
-            var to = toMoment.ToString(TimestampFormat);
-            var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to, Exclude.Start);
+            var to = toMoment
+                // Each value for candles in redis has additional data after TimestampFormat.
+                // Hence to include current interval we have to use max border of the next interval.
+                .AddIntervalTicks(1, timeInterval)
+                .ToString(TimestampFormat);
+            var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key, from, to);
             
             return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval));
+        }
+
+        public async Task<ICandle> GetLatestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
+        {
+            var key = GetKey(assetPairId, priceType, timeInterval);
+            var min = DateTime.MinValue.ToString(TimestampFormat);
+            var max = lastMoment
+                // Each value for candles in redis has additional data after TimestampFormat.
+                // Hence to include current interval we have to use max border of the next interval.
+                .AddIntervalTicks(1, timeInterval)
+                .ToString(TimestampFormat);
+            var serializedValues = await _multiplexer.GetDatabase().SortedSetRangeByValueAsync(key,
+                min: min,
+                max: max, 
+                order: Order.Descending, 
+                skip: 0, 
+                take: 1);
+
+            return serializedValues.Select(v => DeserializeCandle(v, assetPairId, priceType, timeInterval)).SingleOrDefault();
         }
 
         private static ICandle DeserializeCandle(byte[] value, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval)

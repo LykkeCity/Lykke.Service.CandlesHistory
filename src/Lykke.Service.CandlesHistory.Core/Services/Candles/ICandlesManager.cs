@@ -14,5 +14,7 @@ namespace Lykke.Service.CandlesHistory.Core.Services.Candles
         Task<IEnumerable<ICandle>> GetCandlesAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment);
 
         Task<ICandle> TryGetOldestCandleAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval);
+
+        Task<DateTime?> GetRecentCandleTimeAsync(string assetPairId, CandlePriceType priceType, CandleTimeInterval interval, DateTime lastMoment);
     }
 }
