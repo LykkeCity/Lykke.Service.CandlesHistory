@@ -235,8 +235,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// <param name="assetPairId">Asset pair ID</param>
         /// <param name="priceType">Price type</param>
         /// <param name="timeInterval">Time interval</param>
-        /// <param name="fromMoment">From moment in ISO 8601 (inclusive)</param>
-        /// <param name="toMoment">To moment in ISO 8601 (exclusive)</param>
+        /// <param name="fromMoment">From moment in ISO 8601 (exclusive)</param>
+        /// <param name="toMoment">To moment in ISO 8601 (inclusive)</param>
         [HttpGet("{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
         [SwaggerOperation("GetCandlesHistoryOrError")]
         [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
