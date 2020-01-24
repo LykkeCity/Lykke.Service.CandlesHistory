@@ -32,12 +32,16 @@ using Lykke.Service.CandlesHistory.Core.Domain.Candles;
 using Lykke.Service.CandlesHistory.Services;
 using Lykke.Service.CandlesHistory.Services.Assets;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.Logging;
+using Lykke.Snow.Common.Startup.Log;
+using Lykke.Snow.Common.Startup.Hosting;
 
 namespace Lykke.Service.CandlesHistory
 {
     [UsedImplicitly]
     public class Startup
     {
+        private IHostingEnvironment Environment { get; set; }
         private IContainer ApplicationContainer { get; set; }
         private IConfigurationRoot Configuration { get; }
         private ILog Log { get; set; }
@@ -51,6 +55,7 @@ namespace Lykke.Service.CandlesHistory
                 .AddSerilogJson(env)
                 .AddEnvironmentVariables()
                 .Build();
+            Environment = env;
         }
 
         [UsedImplicitly]
@@ -81,9 +86,11 @@ namespace Lykke.Service.CandlesHistory
                     ? settings.Nested(x => x.CandlesHistory)
                     : settings.Nested(x => x.MtCandlesHistory);
 
-                Log = CreateLogWithSlack(Configuration, services, candlesHistory, 
+                Log = CreateLogWithSlack(Configuration, services, candlesHistory,
                     settings.CurrentValue.SlackNotifications);
-                
+
+                services.AddSingleton<ILoggerFactory>(x => new WebHostLoggerFactory(Log));
+
                 builder.RegisterModule(new ApiModule(
                     marketType,
                     candlesHistory.CurrentValue,
@@ -91,14 +98,14 @@ namespace Lykke.Service.CandlesHistory
                     settings.CurrentValue.RedisSettings,
                     candlesHistory.ConnectionString(x => x.Db.SnapshotsConnectionString),
                     Log));
-                
+
                 if (marketType == MarketType.Mt)
                 {
                     builder.RegisterBuildCallback(c => c.Resolve<MtAssetPairsManager>());
                 }
-                
+
                 builder.Populate(services);
-                
+
                 ApplicationContainer = builder.Build();
 
                 return new AutofacServiceProvider(ApplicationContainer);
@@ -123,9 +130,9 @@ namespace Lykke.Service.CandlesHistory
                 {
                     app.UseHsts();
                 }
-                
+
                 app.UseLykkeMiddleware(nameof(Startup), ex => ErrorResponse.Create("Technical problem"));
-                
+
                 app.UseMvc();
                 app.UseSwagger(c =>
                 {
@@ -153,6 +160,8 @@ namespace Lykke.Service.CandlesHistory
         {
             try
             {
+                await Program.Host.WriteLogsAsync(Environment, Log);
+
                 await Log.WriteMonitorAsync("", "", "Started");
             }
             catch (Exception ex)
@@ -199,7 +208,7 @@ namespace Lykke.Service.CandlesHistory
             }
         }
 
-        private static ILog CreateLogWithSlack(IConfiguration configuration, IServiceCollection services, 
+        private static ILog CreateLogWithSlack(IConfiguration configuration, IServiceCollection services,
             IReloadingManager<CandlesHistorySettings> settings, SlackNotificationsSettings slackSettings)
         {
             const string tableName = "CandlesHistoryServiceLog";
@@ -241,11 +250,11 @@ namespace Lykke.Service.CandlesHistory
                 var dbLogConnectionString = settingsValue.Db.SnapshotsConnectionString;
 
                 // Creating azure storage logger, which logs own messages to console log
-                if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${") 
+                if (!string.IsNullOrEmpty(dbLogConnectionString) && !(dbLogConnectionString.StartsWith("${")
                                                                       && dbLogConnectionString.EndsWith("}")))
                 {
                     var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
-                        AzureTableStorage<Logs.LogEntity>.Create(settings.Nested(s => 
+                        AzureTableStorage<Logs.LogEntity>.Create(settings.Nested(s =>
                             s.Db.SnapshotsConnectionString), tableName, consoleLogger),
                         consoleLogger);
 
