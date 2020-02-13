@@ -14,6 +14,7 @@ using Lykke.Service.CandlesHistory.Core.Services.Candles;
 using Lykke.Service.CandlesHistory.Models;
 using Lykke.Service.CandlesHistory.Models.CandlesHistory;
 using Lykke.Service.CandlesHistory.Services.Settings;
+using Lykke.Service.CandlesHistory.Utils;
 using Microsoft.AspNetCore.Mvc;
 using MoreLinq;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -162,8 +163,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 return Ok(new Dictionary<string, CandlesHistoryResponseModel>());
             }
 
-            request.FromMoment = DateTime.SpecifyKind(request.FromMoment, DateTimeKind.Utc);
-            request.ToMoment = DateTime.SpecifyKind(request.ToMoment, DateTimeKind.Utc);
+            request.FromMoment = request.FromMoment.ConvertToUtc();
+            request.ToMoment = request.ToMoment.ConvertToUtc();
 
             if (request.PriceType == CandlePriceType.Unspecified)
             {
@@ -244,8 +245,8 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetCandlesHistory(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
         {
-            fromMoment = DateTime.SpecifyKind(fromMoment, DateTimeKind.Utc);
-            toMoment = DateTime.SpecifyKind(toMoment, DateTimeKind.Utc);
+            fromMoment = fromMoment.ConvertToUtc();
+            toMoment = toMoment.ConvertToUtc();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
@@ -301,7 +302,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetRecentCandleTime(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime lastMoment)
         {
-            lastMoment = DateTime.SpecifyKind(lastMoment, DateTimeKind.Utc);
+            lastMoment = lastMoment.ConvertToUtc();
 
             if (string.IsNullOrWhiteSpace(assetPairId))
             {
