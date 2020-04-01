@@ -16,12 +16,12 @@ namespace Lykke.Service.CandlesHistory.Services.Candles
     {
         private static readonly ImmutableDictionary<CandleTimeInterval, CandleTimeInterval> GetToStoredIntervalsMap = ImmutableDictionary.CreateRange(new[]
         {
-            KeyValuePair.Create(CandleTimeInterval.Min5, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Min15, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Min30, CandleTimeInterval.Minute),
-            KeyValuePair.Create(CandleTimeInterval.Hour4, CandleTimeInterval.Hour),
-            KeyValuePair.Create(CandleTimeInterval.Hour6, CandleTimeInterval.Hour),
-            KeyValuePair.Create(CandleTimeInterval.Hour12, CandleTimeInterval.Hour)
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Min5, CandleTimeInterval.Minute),
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Min15, CandleTimeInterval.Minute),
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Min30, CandleTimeInterval.Minute),
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Hour4, CandleTimeInterval.Hour),
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Hour6, CandleTimeInterval.Hour),
+            new KeyValuePair<CandleTimeInterval, CandleTimeInterval>(CandleTimeInterval.Hour12, CandleTimeInterval.Hour)
         });
 
         private readonly ICandlesCacheService _candlesCacheService;

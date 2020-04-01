@@ -71,7 +71,7 @@ namespace Lykke.Service.CandleHistory.Repositories.Candles
             try
             {
                 await _semaphore.WaitAsync();
-                _assetPairRepositories.Remove(key, out _);
+                _assetPairRepositories.Remove(key);
 
             }
             finally
