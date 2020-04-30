@@ -26,7 +26,6 @@ namespace Lykke.Service.CandlesHistory.Controllers
         /// Checks service is alive
         /// </summary>
         [HttpGet]
-        [SwaggerOperation("IsAlive")]
         public IsAliveResponse Get()
         {
             return new IsAliveResponse

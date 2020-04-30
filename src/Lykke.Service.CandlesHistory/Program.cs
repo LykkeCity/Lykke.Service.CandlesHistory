@@ -5,12 +5,14 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Autofac.Extensions.DependencyInjection;
 using JetBrains.Annotations;
 using Lykke.Service.CandlesHistory.Services;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Lykke.Service.CandlesHistory
@@ -18,7 +20,7 @@ namespace Lykke.Service.CandlesHistory
     [UsedImplicitly]
     internal sealed class Program
     {
-        internal static IWebHost Host { get; private set; }
+        internal static IHost AppHost { get; private set; }
 
         public static string EnvInfo => Environment.GetEnvironmentVariable("ENV_INFO");
         
@@ -45,13 +47,20 @@ namespace Lykke.Service.CandlesHistory
                         .AddEnvironmentVariables()
                         .Build();
 
-                    Host = WebHost.CreateDefaultBuilder()
-                        .UseConfiguration(configuration)
-                        .UseStartup<Startup>()
-                        .UseApplicationInsights()
+                    AppHost = Host.CreateDefaultBuilder()
+                        .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                        .ConfigureWebHostDefaults(webBuilder =>
+                        {
+                            webBuilder.ConfigureKestrel(serverOptions =>
+                                {
+                                    // Set properties and call methods on options
+                                })
+                                .UseConfiguration(configuration)
+                                .UseStartup<Startup>();
+                        })
                         .Build();
 
-                    await Host.RunAsync();
+                    await AppHost.RunAsync();
                 }
                 catch (Exception e)
                 {
