@@ -23,6 +23,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
     {
         private readonly ICandlesManager _candlesManager;
         private readonly IAssetPairsManager _assetPairsManager;
+        private readonly ICandlesHistoryRepository _candlesHistoryRepository;
         private readonly Dictionary<string, string> _candleHistoryAssetConnections;
 
         #region Initialization
@@ -30,10 +31,12 @@ namespace Lykke.Service.CandlesHistory.Controllers
         public CandlesHistoryController(
             ICandlesManager candlesManager,
             IAssetPairsManager assetPairsManager,
+            ICandlesHistoryRepository candlesHistoryRepository,
             Dictionary<string, string> candleHistoryAssetConnections)
         {
             _candlesManager = candlesManager;
             _assetPairsManager = assetPairsManager;
+            _candlesHistoryRepository = candlesHistoryRepository;
             _candleHistoryAssetConnections = candleHistoryAssetConnections;
         }
 
@@ -227,7 +230,7 @@ namespace Lykke.Service.CandlesHistory.Controllers
             }
             return Ok(allHistory);
         }
-        
+
         /// <summary>
         /// Asset's candles history
         /// </summary>
@@ -291,7 +294,68 @@ namespace Lykke.Service.CandlesHistory.Controllers
                 })
             });
         }
-        
+
+        /// <summary>
+        /// Candles history from db
+        /// </summary>
+        /// <param name="assetPairId">Asset pair ID</param>
+        /// <param name="priceType">Price type</param>
+        /// <param name="timeInterval">Time interval</param>
+        /// <param name="fromMoment">From moment in ISO 8601 (inclusive)</param>
+        /// <param name="toMoment">To moment in ISO 8601 (exclusive)</param>
+        [HttpGet("db/{assetPairId}/{priceType}/{timeInterval}/{fromMoment:datetime}/{toMoment:datetime}")]
+        [SwaggerOperation("GetCandlesHistoryFromDb")]
+        [ProducesResponseType(typeof(CandlesHistoryResponseModel), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
+        public async Task<IActionResult> GetCandlesHistoryFromDb(string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment)
+        {
+            fromMoment = fromMoment.ToUniversalTime();
+            toMoment = toMoment.ToUniversalTime();
+
+            if (string.IsNullOrWhiteSpace(assetPairId))
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is required"));
+            }
+            if (priceType == CandlePriceType.Unspecified)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Price type should not be {CandlePriceType.Unspecified}"));
+            }
+            if (timeInterval == CandleTimeInterval.Unspecified)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(timeInterval), $"Time interval should not be {CandleTimeInterval.Unspecified}"));
+            }
+            if (fromMoment > toMoment)
+            {
+                return BadRequest(ErrorResponse.Create("From date should be early or equal than To date"));
+            }
+            if (!_candleHistoryAssetConnections.ContainsKey(assetPairId))
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair is not configured"));
+            }
+            if (await _assetPairsManager.TryGetAssetPairAsync(assetPairId) == null)
+            {
+                return BadRequest(ErrorResponse.Create(nameof(assetPairId), "Asset pair not found"));
+            }
+
+            var candles = await _candlesHistoryRepository.GetCandlesAsync(assetPairId, timeInterval, priceType, fromMoment, toMoment);
+
+            return Ok(new CandlesHistoryResponseModel
+            {
+                History = candles.Select(c => new CandlesHistoryResponseModel.Candle
+                {
+                    DateTime = c.Timestamp,
+                    Open = c.Open,
+                    Close = c.Close,
+                    High = c.High,
+                    Low = c.Low,
+                    TradingVolume = c.TradingVolume,
+                    TradingOppositeVolume = c.TradingOppositeVolume,
+                    LastTradePrice = c.LastTradePrice
+                })
+            });
+        }
+
         #endregion
     }
 }
