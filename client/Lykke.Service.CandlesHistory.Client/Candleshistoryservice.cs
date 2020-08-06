@@ -6,6 +6,8 @@
 
 using System;
 
+using System;
+
 namespace Lykke.Service.CandlesHistory.Client
 {
     using Microsoft.Rest;

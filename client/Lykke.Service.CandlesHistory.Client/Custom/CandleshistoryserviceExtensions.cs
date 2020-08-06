@@ -51,26 +51,21 @@ namespace Lykke.Service.CandlesHistory.Client
         // *** Candles History Batch ***
 
         // ReSharper disable once UnusedMember.Global
-        [Obsolete]
-        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>>
-            TryGetCandlesHistoryBatchAsync(
-                this ICandleshistoryservice service,
-                IList<string> assetPairs,
-                CandlePriceType priceType,
-                CandleTimeInterval timeInterval,
-                DateTime fromMoment,
-                DateTime toMoment,
-                CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> TryGetCandlesHistoryBatchAsync(
+            this ICandleshistoryservice service,
+            IList<string> assetPairs,
+            CandlePriceType priceType,
+            CandleTimeInterval timeInterval,
+            DateTime fromMoment,
+            DateTime toMoment,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = await service.GetCandlesHistoryBatchOrErrorAsync(
-                new GetCandlesHistoryBatchRequest(priceType, timeInterval, fromMoment, toMoment, assetPairs),
-                cancellationToken);
+            var result = await service.GetCandlesHistoryBatchOrErrorAsync(new GetCandlesHistoryBatchRequest(priceType, timeInterval, fromMoment, toMoment, assetPairs), cancellationToken);
 
             return result as IReadOnlyDictionary<string, CandlesHistoryResponseModel>;
         }
 
         // ReSharper disable once UnusedMember.Global
-        [Obsolete]
         public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> GetCandlesHistoryBatchAsync(
             this ICandleshistoryservice service,
             IList<string> assetPairs,
@@ -80,13 +75,27 @@ namespace Lykke.Service.CandlesHistory.Client
             DateTime toMoment,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = await service.GetCandlesHistoryBatchOrErrorAsync(
-                new GetCandlesHistoryBatchRequest(priceType, timeInterval, fromMoment, toMoment, assetPairs),
-                cancellationToken);
+            var result = await service.GetCandlesHistoryBatchOrErrorAsync(new GetCandlesHistoryBatchRequest(priceType, timeInterval, fromMoment, toMoment, assetPairs), cancellationToken);
 
             switch (result)
             {
                 case IReadOnlyDictionary<string, CandlesHistoryResponseModel> candlesHistoryResponseModel:
+                    return candlesHistoryResponseModel;
+                case ErrorResponse errorResponse:
+                    throw new ErrorResponseException(errorResponse);
+            }
+
+            throw new InvalidOperationException($"Unexpected response type: {result?.GetType()}");
+        }
+
+        // ReSharper disable once UnusedMember.Global
+        public static async Task<CandlesHistoryResponseModel> GetCandlesHistoryFromDbAsync(this ICandleshistoryservice service, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var result = await service.GetCandlesHistoryFromDbOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, cancellationToken);
+
+            switch (result)
+            {
+                case CandlesHistoryResponseModel candlesHistoryResponseModel:
                     return candlesHistoryResponseModel;
                 case ErrorResponse errorResponse:
                     throw new ErrorResponseException(errorResponse);
