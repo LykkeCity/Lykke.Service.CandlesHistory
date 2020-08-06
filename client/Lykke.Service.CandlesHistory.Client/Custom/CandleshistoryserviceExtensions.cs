@@ -37,11 +37,11 @@ namespace Lykke.Service.CandlesHistory.Client
 
         // ReSharper disable once UnusedMember.Global
         public static async Task<IReadOnlyDictionary<string, CandlesHistoryResponseModel>> TryGetCandlesHistoryBatchAsync(
-            this ICandleshistoryservice service, 
-            IList<string> assetPairs, 
+            this ICandleshistoryservice service,
+            IList<string> assetPairs,
             CandlePriceType priceType,
             CandleTimeInterval timeInterval,
-            DateTime fromMoment, 
+            DateTime fromMoment,
             DateTime toMoment,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -65,6 +65,22 @@ namespace Lykke.Service.CandlesHistory.Client
             switch (result)
             {
                 case IReadOnlyDictionary<string, CandlesHistoryResponseModel> candlesHistoryResponseModel:
+                    return candlesHistoryResponseModel;
+                case ErrorResponse errorResponse:
+                    throw new ErrorResponseException(errorResponse);
+            }
+
+            throw new InvalidOperationException($"Unexpected response type: {result?.GetType()}");
+        }
+
+        // ReSharper disable once UnusedMember.Global
+        public static async Task<CandlesHistoryResponseModel> GetCandlesHistoryFromDbAsync(this ICandleshistoryservice service, string assetPairId, CandlePriceType priceType, CandleTimeInterval timeInterval, DateTime fromMoment, DateTime toMoment, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var result = await service.GetCandlesHistoryFromDbOrErrorAsync(assetPairId, priceType, timeInterval, fromMoment, toMoment, cancellationToken);
+
+            switch (result)
+            {
+                case CandlesHistoryResponseModel candlesHistoryResponseModel:
                     return candlesHistoryResponseModel;
                 case ErrorResponse errorResponse:
                     throw new ErrorResponseException(errorResponse);
