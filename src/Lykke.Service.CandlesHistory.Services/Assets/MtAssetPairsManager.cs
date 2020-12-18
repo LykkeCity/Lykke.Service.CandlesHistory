@@ -66,7 +66,9 @@ namespace Lykke.Service.CandlesHistory.Services.Assets
             //https://stackoverflow.com/questions/13042045/interlocked-compareexchangeint-using-greaterthan-or-lessthan-instead-of-equali
             if (result == null && DateTime.UtcNow - _cacheInvalidatedAt > _cacheInvalidationProtectionPeriod)
             {
-                _log.Warning($"Forcibly invalidating cache, because asset pair {assetPairId} not found");
+                await _log.WriteWarningAsync( nameof(MtAssetPairsManager), 
+                    nameof(TryGetEnabledPairAsync),
+                    $"Forcibly invalidating cache, because asset pair {assetPairId} not found");
 
                 _cacheInvalidatedAt = DateTime.UtcNow;
                 await InvalidateCache();
